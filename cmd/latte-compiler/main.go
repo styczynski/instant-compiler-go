@@ -34,16 +34,21 @@ int fact (int n) {
   while (i < n+1) {
     r = r * i ;
     i++ ;
+while (i < n+1) {
+    r = r * i ;
+    i++ ;
+  }
   }
   return r ;
 }
 
 // rekurencyjnie
 int factr (int n) {
-  if (n < 2)
+  if (n < 2) {
     return 1 ;
-  else
+ } else {
     return (n * factr(n-1)) ;
+ }
 }
 `), context)
 	if err != nil {
@@ -51,5 +56,9 @@ int factr (int n) {
 	}
 
 	pr := printer.CreateLattePrinter()
-	fmt.Printf("%s", pr.StructRepr(ast, context))
+	content, err := pr.Format(ast, context)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s", content)
 }

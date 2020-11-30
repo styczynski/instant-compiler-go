@@ -5,6 +5,21 @@ import (
 	"strings"
 )
 
+func makeBlockFromStatement(statement *Statement) *Block {
+	if statement.IsBlockStatement() {
+		return statement.BlockStatement
+	}
+	return &Block{
+		Statements: []*Statement{ statement },
+	}
+}
+
+func makeBlockFromExpression(expression *Expression) *Block {
+	return makeBlockFromStatement(&Statement{
+		Expression: expression,
+	})
+}
+
 type LatteProgram struct {
 	Definitions []*TopDef `@@*`
 }
@@ -14,7 +29,7 @@ func (ast *LatteProgram) Print(c *ParsingContext) string {
 	for _, def := range ast.Definitions {
 		defs = append(defs, def.Print(c))
 	}
-	return fmt.Sprintf("%s", strings.Join(defs, ";\n"))
+	return fmt.Sprintf("%s\n", strings.Join(defs, "\n\n"))
 }
 
 type FnDef struct {
@@ -43,10 +58,15 @@ type Block struct {
 
 func (ast *Block) Print(c *ParsingContext) string {
 	statementsList := []string{}
+	if c.PrinterConfiguration.SkipStatementIdent {
+		c.PrinterConfiguration.SkipStatementIdent = false
+	}
+	c.BlockPush()
 	for _, statement := range ast.Statements {
 		statementsList = append(statementsList, statement.Print(c))
 	}
-	return fmt.Sprintf("{\n%s\n}", strings.Join(statementsList, "\n"))
+	c.BlockPop()
+	return fmt.Sprintf("{\n%s\n%s}", strings.Join(statementsList, "\n"), strings.Repeat("  ", c.BlockDepth))
 }
 
 type Arg struct {
@@ -130,27 +150,46 @@ func (ast *Statement) IsExpression() bool {
 	return ast.Expression != nil
 }
 
-func (ast *Statement) Print(c *ParsingContext) string {
-	if ast.IsEmpty() {
-		return ";"
-	} else if ast.IsBlockStatement() {
-		return ast.BlockStatement.Print(c)
-	} else if ast.IsDeclaration() {
-		return ast.Declaration.Print(c)
-	} else if ast.IsAssignment() {
-		return ast.Assignment.Print(c)
-	} else if ast.IsUnaryStatement() {
-		return ast.UnaryStatement.Print(c)
-	} else if ast.IsReturn() {
-		return ast.Return.Print(c)
-	} else if ast.IsIf() {
-		return ast.If.Print(c)
-	} else if ast.IsWhile() {
-		return ast.While.Print(c)
-	} else if ast.IsExpression() {
-		return fmt.Sprintf("%s;", ast.Expression.Print(c))
+func (ast *Statement) formatStatementInstruction(statement string, c *ParsingContext) string {
+	if c.PrinterConfiguration.SkipStatementIdent {
+		c.PrinterConfiguration.SkipStatementIdent = false
+		return statement
 	}
-	return "UNKNOWN"
+	return fmt.Sprintf("%s%s", strings.Repeat("  ", c.BlockDepth), statement)
+}
+
+func (ast *Statement) Print(c *ParsingContext) string {
+	ret := "UNKNOWN"
+	propagateSkipStatementIdent := false
+	if ast.IsEmpty() {
+		ret = ";"
+	} else if ast.IsBlockStatement() {
+		if c.PrinterConfiguration.SkipStatementIdent {
+			propagateSkipStatementIdent = true
+		}
+		ret = ast.BlockStatement.Print(c)
+	} else if ast.IsDeclaration() {
+		ret = ast.Declaration.Print(c)
+	} else if ast.IsAssignment() {
+		ret = ast.Assignment.Print(c)
+	} else if ast.IsUnaryStatement() {
+		ret = ast.UnaryStatement.Print(c)
+	} else if ast.IsReturn() {
+		ret = ast.Return.Print(c)
+	} else if ast.IsIf() {
+		ret =  ast.If.Print(c)
+	} else if ast.IsWhile() {
+		ret = ast.While.Print(c)
+	} else if ast.IsExpression() {
+		ret = fmt.Sprintf("%s;", ast.Expression.Print(c))
+	}
+	if propagateSkipStatementIdent {
+		c.PrinterConfiguration.SkipStatementIdent = true
+		ret = ast.formatStatementInstruction(ret, c)
+	} else {
+		ret = ast.formatStatementInstruction(ret, c)
+	}
+	return ret
 }
 
 type Assignment struct {
@@ -183,9 +222,9 @@ func (ast *If) HasElseBlock() bool {
 
 func (ast *If) Print(c *ParsingContext) string {
 	if ast.HasElseBlock(){
-		return fmt.Sprintf("if (%s) { %s } else { %s }", ast.Condition.Print(c), ast.Then.Print(c), ast.Else.Print(c))
+		return fmt.Sprintf("if (%s) %s else %s", ast.Condition.Print(c), makeBlockFromStatement(ast.Then).Print(c), makeBlockFromStatement(ast.Else).Print(c))
 	}
-	return fmt.Sprintf("if (%s) { %s }", ast.Condition.Print(c), ast.Then.Print(c))
+	return fmt.Sprintf("if (%s) %s", ast.Condition.Print(c), ast.Then.Print(c))
 }
 
 type While struct {
@@ -194,7 +233,9 @@ type While struct {
 }
 
 func (ast *While) Print(c *ParsingContext) string {
-	return fmt.Sprintf("while (%s) { %s }", ast.Condition.Print(c), ast.Do.Print(c))
+	c.PrinterConfiguration.SkipStatementIdent = true
+	body := ast.Do.Print(c)
+	return fmt.Sprintf("while (%s) %s", ast.Condition.Print(c), body)
 }
 
 type Declaration struct {
