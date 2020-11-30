@@ -109,32 +109,64 @@ func (ast *Multiplication) Print(c *ParsingContext) string {
 type Unary struct {
 	Op      string   `  ( @( "!" | "-" )`
 	Unary   *Unary   `    @@ )`
-	Primary *Primary `| @@`
+	UnaryApplication *UnaryApplication `| @@`
 }
 
 func (ast *Unary) IsOperation() bool {
 	return ast.Unary != nil
 }
 
-func (ast *Unary) IsPrimary() bool {
-	return ast.Primary != nil
+func (ast *Unary) IsUnaryApplication() bool {
+	return ast.UnaryApplication != nil
 }
 
 func (ast *Unary) Print(c *ParsingContext) string {
 	if ast.IsOperation() {
 		return printUnaryOperation(c, ast.Op, ast.Unary.Print(c))
+	} else if ast.IsUnaryApplication() {
+		return ast.UnaryApplication.Print(c)
+	}
+	return "UNKNOWN"
+}
+
+type UnaryApplication struct {
+	Target *string   `( @Ident`
+	Arguments []*Expression   `"(" (@@ ("," @@)*)? ")" )`
+	Primary *Primary `| @@`
+}
+
+func (ast *UnaryApplication) IsApplication() bool {
+	return ast.Target != nil
+}
+
+func (ast *UnaryApplication) IsPrimary() bool {
+	return ast.Primary != nil
+}
+
+func (ast *UnaryApplication) Print(c *ParsingContext) string {
+	if ast.IsApplication() {
+		args := []string{}
+		for _, argument := range ast.Arguments {
+			args = append(args, argument.Print(c))
+		}
+		return fmt.Sprintf("%s(%s)", *ast.Target, strings.Join(args, ", "))
 	} else if ast.IsPrimary() {
 		return ast.Primary.Print(c)
 	}
 	return "UNKNOWN"
 }
 
+
 type Primary struct {
-	Int        *int64    `@Int`
+	Variable   *string   `@Ident`
+	Int        *int64    `| @Int`
 	String        *string     `| @String`
 	Bool          *bool       `| ( @"true" | "false" )`
 	SubExpression *Expression `| "(" @@ ")" `
-	Application *ExpressionApplication `| @@`
+}
+
+func (ast *Primary) IsVariable() bool {
+	return ast.Variable != nil
 }
 
 func (ast *Primary) IsInt() bool {
@@ -153,12 +185,10 @@ func (ast *Primary) IsSubexpression() bool {
 	return ast.SubExpression != nil
 }
 
-func (ast *Primary) IsApplication() bool {
-	return ast.Application != nil
-}
-
 func (ast *Primary) Print(c *ParsingContext) string {
-	if ast.IsInt() {
+	if ast.IsVariable() {
+		return fmt.Sprintf("%s", *ast.Variable)
+	} else if ast.IsInt() {
 		return fmt.Sprintf("%d", *ast.Int)
 	} else if ast.IsString() {
 		return fmt.Sprintf("\"%s\"", *ast.String)
@@ -166,21 +196,6 @@ func (ast *Primary) Print(c *ParsingContext) string {
 		return fmt.Sprintf("%b", *ast.Bool)
 	} else if ast.IsSubexpression() {
 		return fmt.Sprintf("(%s)", ast.SubExpression.Print(c))
-	} else if ast.IsApplication() {
-		return ast.Application.Print(c)
 	}
 	return "UNKNOWN"
-}
-
-type ExpressionApplication struct {
-	Target string `@Ident`
-	Arguments []*Expression `"(" @@* ")"`
-}
-
-func (ast *ExpressionApplication) Print(c *ParsingContext) string {
-	args := []string{}
-	for _, argument := range ast.Arguments {
-		args = append(args, argument.Print(c))
-	}
-	return fmt.Sprintf("%s(%s)", strings.Join(args, ", "))
 }

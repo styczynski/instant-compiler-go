@@ -6,17 +6,21 @@ import (
 )
 
 type LatteProgram struct {
-	TopDef *TopDef `@@`
+	Definitions []*TopDef `@@*`
 }
 
 func (ast *LatteProgram) Print(c *ParsingContext) string {
-	return fmt.Sprintf("%s", ast.TopDef.Print(c))
+	defs := []string{}
+	for _, def := range ast.Definitions {
+		defs = append(defs, def.Print(c))
+	}
+	return fmt.Sprintf("%s", strings.Join(defs, ";\n"))
 }
 
 type FnDef struct {
 	ReturnType Type `@@`
 	Name string `@Ident`
-	Arg []*Arg `"(" @@ ( "," @@ )* ")"`
+	Arg []*Arg `"(" (@@ ( "," @@ )*)? ")"`
 	Body Block `@@`
 }
 
@@ -70,14 +74,21 @@ func (ast *TopDef) Print(c *ParsingContext) string {
 	return fmt.Sprintf("%s", ast.Function.Print(c))
 }
 
+type Return struct {
+	Expression *Expression `"return" (@@)? ";"`
+}
+
+func (ast *Return) Print(c *ParsingContext) string {
+	return fmt.Sprintf("return %s;", ast.Expression.Print(c))
+}
+
 type Statement struct {
 	Empty *string `";"`
 	BlockStatement *Block `| @@`
 	Declaration *Declaration `| @@`
 	Assignment *Assignment `| @@`
 	UnaryStatement *UnaryStatement `| @@`
-	Return *Expression `| "return" @@ ";"`
-	ReturnVoid *string `"return" ";"`
+	Return *Return `| @@`
 	If *If `| @@`
 	While *While `| @@`
 	Expression *Expression `| @@ ";"`
@@ -107,10 +118,6 @@ func (ast *Statement) IsReturn() bool {
 	return ast.Return != nil
 }
 
-func (ast *Statement) IsReturnVoid() bool {
-	return ast.ReturnVoid != nil
-}
-
 func (ast *Statement) IsIf() bool {
 	return ast.If != nil
 }
@@ -135,9 +142,7 @@ func (ast *Statement) Print(c *ParsingContext) string {
 	} else if ast.IsUnaryStatement() {
 		return ast.UnaryStatement.Print(c)
 	} else if ast.IsReturn() {
-		return fmt.Sprintf("return %s;", ast.Return.Print(c))
-	} else if ast.IsReturnVoid() {
-		return fmt.Sprintf("return;")
+		return ast.Return.Print(c)
 	} else if ast.IsIf() {
 		return ast.If.Print(c)
 	} else if ast.IsWhile() {
@@ -159,11 +164,11 @@ func (ast *Assignment) Print(c *ParsingContext) string {
 
 type UnaryStatement struct {
 	TargetName *string `@Ident`
-	Operation string `@( "++" | "--" ) ";"`
+	Operation string `@( "+" "+" | "-" "-" ) ";"`
 }
 
 func (ast *UnaryStatement) Print(c *ParsingContext) string {
-	return fmt.Sprintf("%s%s;", ast.TargetName, ast.Operation)
+	return fmt.Sprintf("%s%s;", *ast.TargetName, ast.Operation)
 }
 
 type If struct {
