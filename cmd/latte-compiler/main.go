@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/MartinHeinz/go-project-blueprint/cmd/blueprint/config"
+	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 )
 
 func main() {

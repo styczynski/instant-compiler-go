@@ -9,9 +9,9 @@ matrix:
         - export GO111MODULE=on
         - go mod vendor  # Download dependencies
         - make build  # Build application
-        - test -f bin/linux_amd64/blueprint  # Test for presence of binary built in previous step
+        - test -f bin/linux_amd64/latte-compiler  # Test for presence of binary built in previous step
         - make all-container  # Make all Docker containers
-        - docker images | grep "^docker.pkg.github.com/martinheinz/go-project-blueprint/blueprint.*__linux_amd64"  # Check presence of created images
+        - docker images | grep "^docker.pkg.github.com/styczynski/latte-compiler/latte-compiler.*__linux_amd64"  # Check presence of created images
         - make test  # Runs tests inside test image
 
     - language: go  # SonarCloud

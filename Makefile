@@ -1,10 +1,10 @@
 # This is adapted from https://github.com/thockin/go-build-template
 
 # The binary to build (just the basename).
-BIN := blueprint
+BIN := latte-compiler
 
 # Where to push the docker image.
-REGISTRY ?= docker.pkg.github.com/martinheinz/go-project-blueprint
+REGISTRY ?= docker.pkg.github.com/styczynski/latte-compiler
 
 # This version-strategy uses git tags to set the version string
 VERSION := $(shell git describe --tags --always --dirty)

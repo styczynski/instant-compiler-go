@@ -1,4 +1,4 @@
-module github.com/MartinHeinz/go-project-blueprint
+module github.com/styczynski/latte-compiler
 
 go 1.12
 
