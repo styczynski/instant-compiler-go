@@ -17,14 +17,15 @@ func main() {
 
 	fmt.Println(config.Config.ConfigVar)
 
+	context := parser.NewParsingContext()
 	p := parser.CreateLatteParser()
 	ast, err := p.ParseInput(strings.NewReader("int test(int y) {" +
-		"2*2;" +
-		"}"))
+		"a = 2||2<5*2&&1+4;" +
+		"}"), context)
 	if err != nil {
 		panic(err)
 	}
 
 	pr := printer.CreateLattePrinter()
-	fmt.Printf("%s", pr.StructRepr(ast))
+	fmt.Printf("%s", pr.StructRepr(ast, context))
 }

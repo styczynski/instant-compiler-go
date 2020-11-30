@@ -1,8 +1,6 @@
 package printer
 
 import (
-	"github.com/alecthomas/repr"
-
 	"github.com/styczynski/latte-compiler/src/parser"
 )
 
@@ -12,6 +10,6 @@ func CreateLattePrinter() *LattePrinter {
 	return &LattePrinter{}
 }
 
-func (p *LattePrinter) StructRepr(program *parser.LatteProgram) string {
-	return repr.String(program)
+func (p *LattePrinter) StructRepr(program *parser.LatteProgram, c *parser.ParsingContext) string {
+	return program.Print(c)
 }

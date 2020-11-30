@@ -11,15 +11,16 @@ type LatteParser struct {
 
 func CreateLatteParser() *LatteParser {
 	paserInstance := participle.MustBuild(&LatteProgram{},
-		participle.Lexer(iniLexer),
-		participle.Unquote("String"),
+		//participle.Lexer(iniLexer),
+		participle.UseLookahead(2),
+		//participle.Unquote("String"),
 	)
 	return &LatteParser{
 		parserInstance: paserInstance,
 	}
 }
 
-func (p *LatteParser) ParseInput(input io.Reader) (*LatteProgram, error) {
+func (p *LatteParser) ParseInput(input io.Reader, c *ParsingContext) (*LatteProgram, error) {
 	output := &LatteProgram{}
 	err := p.parserInstance.Parse("", input, output)
 	if err != nil {
