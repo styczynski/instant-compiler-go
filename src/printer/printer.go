@@ -18,17 +18,14 @@ func (p *LattePrinter) Raw(program *parser.LatteProgram, c *parser.ParsingContex
 	return program.Print(c)
 }
 
-func (p *LattePrinter) Format(program *parser.LatteProgram, c *parser.ParsingContext) (string, error) {
+func (p *LattePrinter) FormatRaw(input string) (string, error) {
 	lexer := lexers.Get("latte")
 	style := styles.Get("colorful")
-	if style == nil {
-		style = styles.Fallback
-	}
 	formatter := formatters.Get("terminal16m")
 	if formatter == nil {
 		formatter = formatters.Fallback
 	}
-	contents := []byte(p.Raw(program, c))
+	contents := []byte(input)
 	iterator, err := lexer.Tokenise(nil, string(contents))
 	if err != nil {
 		return "", err
@@ -39,4 +36,8 @@ func (p *LattePrinter) Format(program *parser.LatteProgram, c *parser.ParsingCon
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func (p *LattePrinter) Format(program *parser.LatteProgram, c *parser.ParsingContext) (string, error) {
+	return p.FormatRaw(p.Raw(program, c))
 }

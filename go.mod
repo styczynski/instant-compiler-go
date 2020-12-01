@@ -10,7 +10,8 @@ require (
 	github.com/alecthomas/repr v0.0.0-20201120212035-bb82daffcca2
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/dlclark/regexp2 v1.2.0
-	github.com/mattn/go-colorable v0.1.6
+	github.com/fatih/color v1.10.0
+	github.com/mattn/go-colorable v0.1.8
 	github.com/mattn/go-isatty v0.0.12
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0

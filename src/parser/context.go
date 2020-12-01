@@ -1,7 +1,10 @@
 package parser
 
+import "github.com/alecthomas/participle/v2/lexer"
+
 type PrinterConfiguration struct {
 	SkipStatementIdent bool
+	MaxPrintPosition *lexer.Position
 }
 
 type ParsingContext struct {

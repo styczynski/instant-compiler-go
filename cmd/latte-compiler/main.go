@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
@@ -15,11 +16,10 @@ func main() {
 		panic(fmt.Errorf("invalid application configuration: %s", err))
 	}
 
-	fmt.Println(config.Config.ConfigVar)
-
 	context := parser.NewParsingContext()
-	p := parser.CreateLatteParser()
-	ast, err := p.ParseInput(strings.NewReader(`
+	pr := printer.CreateLattePrinter()
+	p := parser.CreateLatteParser(pr)
+	ast, latteError := p.ParseInput(strings.NewReader(`
 int main () {
   printInt(fact(7)) ;
   printInt(factr(7)) ;
@@ -31,15 +31,15 @@ int fact (int n) {
   int i,r ;
   i = 1 ;
   r = 1 ;
-  while (i < n+1) {
+  while i < n+1) {
     r = r * i ;
     i++ ;
-while (i < n+1) {
+while i < n+1) {
     r = r * i ;
     i++ ;
   }
   }
-  return r ;
+  return r) ;
 }
 
 // rekurencyjnie
@@ -51,11 +51,11 @@ int factr (int n) {
  }
 }
 `), context)
-	if err != nil {
-		panic(err)
+	if latteError != nil {
+		fmt.Print(latteError.CliMessage())
+		os.Exit(1)
 	}
 
-	pr := printer.CreateLattePrinter()
 	content, err := pr.Format(ast, context)
 	if err != nil {
 		panic(err)
