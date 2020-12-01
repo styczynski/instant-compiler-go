@@ -42,11 +42,10 @@ while (i < n+1) {
   r;
 }
 
-// rekurencyjnie
 int factr (int n) {
   if (n < 2) {
-    return 1 ;
- } els
+    return 1 ; // rekurencyjnie
+ } else {
     return (n * factr(n-1)) ;
  }
 }

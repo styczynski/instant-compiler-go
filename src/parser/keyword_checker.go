@@ -48,7 +48,14 @@ func searchKeywords(input string, keywords []string) string {
 			minVal = keyword
 		}
 	}
-	if minDist < 5 {
+	limit := 5
+	if len(input) <= 2 {
+		limit = 2
+	}
+	if input == minVal {
+		return ""
+	}
+	if minDist < limit {
 		return minVal
 	}
 	return ""

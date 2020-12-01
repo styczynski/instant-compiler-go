@@ -188,7 +188,11 @@ func examineParsingErrorMessage(message string, recommendedBracket string) strin
 		message := strings.ReplaceAll(messageRaw[1:len(messageRaw)-1], "expected ", "")
 		additionalInfo := ""
 		if len(recommendedBracket) > 0 {
-			additionalInfo = fmt.Sprintf(" You probably forgot a \"%s\" bracket.", recommendedBracket)
+			if recommendedBracket == "/" {
+				additionalInfo = fmt.Sprintf(" You probably forgot a leading \"/\" on the start of the comment?")
+			} else {
+				additionalInfo = fmt.Sprintf(" You probably forgot a \"%s\" bracket.", recommendedBracket)
+			}
 		}
 		if message == "\")\" Statement" && tokenName == "{" {
 			return fmt.Sprintf("Parser encountered invalid bracketing. You misplaced a curly bracket { after/in the same place where ) is.")
