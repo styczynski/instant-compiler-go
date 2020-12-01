@@ -147,14 +147,14 @@ var formatErrorMessageFg = color.New(color.FgRed).SprintFunc()
 
 var formatErrorMetaInfoFg = color.New(color.FgHiBlue).SprintFunc()
 
-func (p *LatteParser) formatParsingError(c *ParsingContext, parsingError participle.Error) errors.LatteError {
+func (p *LatteParser) formatParsingError(c *ParsingContext, parsingError participle.Error, recommendedBracket string) errors.LatteError {
 
 	locationMessage := fmt.Sprintf("%s %s %s %d %s %d",
 		formatErrorMetaInfoFg("Error in file"),
 		parsingError.Position().Filename,
-		formatErrorMetaInfoFg(" in line "),
+		formatErrorMetaInfoFg("in line"),
 		parsingError.Position().Line,
-		formatErrorMetaInfoFg(", column"),
+		formatErrorMetaInfoFg("column"),
 		parsingError.Position().Column)
 
 	codeContext, lineStart, _ := p.getFileContext(c, nil, parsingError.Position().Line, parsingError.Position().Column)
@@ -164,11 +164,13 @@ func (p *LatteParser) formatParsingError(c *ParsingContext, parsingError partici
 		formattedCode = codeContext
 	}
 
+	errorMessage := examineParsingErrorMessage(parsingError.Message(), recommendedBracket)
+
 	textMessage := fmt.Sprintf("%s\n%s\n %s: %s\n",
 		locationMessage,
 		indentCodeLines(formattedCode, parsingError.Position().Line, lineStart),
 		formatErrorFg(formatErrorBg(" ParserError ")),
-		formatErrorMessageFg(formatParsingErrorMessage(parsingError.Message())))
+		formatErrorMessageFg(errorMessage))
 
 	message := parsingError.Error()
 	return &ParsingError{
@@ -177,15 +179,43 @@ func (p *LatteParser) formatParsingError(c *ParsingContext, parsingError partici
 	}
 }
 
-func formatParsingErrorMessage(message string) string {
+func examineParsingErrorMessage(message string, recommendedBracket string) string {
 	r := regexp.MustCompile(`unexpected token "([^"]*)" (.*)`)
 	matches := r.FindStringSubmatch(message)
 	if len(matches) > 0 {
 		tokenName := matches[1]
 		messageRaw := matches[2]
 		message := strings.ReplaceAll(messageRaw[1:len(messageRaw)-1], "expected ", "")
-		return fmt.Sprintf("The parser encountered unexpected keyword. Expected %s got %s.", message, tokenName)
+		additionalInfo := ""
+		if len(recommendedBracket) > 0 {
+			additionalInfo = fmt.Sprintf(" You probably forgot a \"%s\" bracket.", recommendedBracket)
+		}
+		if message == "\")\" Statement" && tokenName == "{" {
+			return fmt.Sprintf("Parser encountered invalid bracketing. You misplaced a curly bracket { after/in the same place where ) is.")
+		} else if message == "\")\" Statement" {
+			return fmt.Sprintf("Parser encountered invalid syntax. The closing bracket \")\" and a statement was expected in place of \"%s\"", tokenName)
+		} else if message == "\";\"" {
+			return fmt.Sprintf("The parser encountered unexpected keyword. The semicolon was expected in place of \"%s\". Please make sure you have semicolons in right places.", tokenName)
+		}
+
+		if message == "\")\" Block" {
+			message = "bracket \")\" with instructions block"
+		}
+
+		suggestion := searchKeywords(tokenName, SUGGESTED_KEYWORDS)
+		suggestionInfo := ""
+		if len(suggestion) > 0 {
+			suggestionInfo = fmt.Sprintf("\n                Did you mean \"%s\"?", suggestion)
+		}
+		return fmt.Sprintf("The parser encountered unexpected keyword. Expected %s got \"%s\".%s%s", message, tokenName, additionalInfo, suggestionInfo)
 	}
+
+	r = regexp.MustCompile(`unexpected token "([^"]*)"`)
+	matches = r.FindStringSubmatch(message)
+	if len(matches) > 0 {
+		return fmt.Sprintf("The parser encountered unexpected code fragment. \"%s\" was unexpected here.", matches[1])
+	}
+
 	return message
 }
 
@@ -199,7 +229,9 @@ func (p *LatteParser) ParseInput(input io.Reader, c *ParsingContext) (*LatteProg
 
 	err = p.parserInstance.ParseBytes("<input>", p.parserInput, output)
 	if err != nil {
-		return nil, p.formatParsingError(c, err.(participle.Error))
+		parserError := err.(participle.Error)
+		bracket := tryInsertingBrackets(p.parserInstance, p.parserInput, parserError.Position().Line, parserError.Position().Column)
+		return nil, p.formatParsingError(c, parserError, bracket)
 	}
 	return output, nil
 }

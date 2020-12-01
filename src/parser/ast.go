@@ -6,6 +6,19 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 )
 
+var SUGGESTED_KEYWORDS = []string{
+	"int",
+	"string",
+	"bool",
+	"true",
+	"false",
+	"void",
+	"return",
+	"if",
+	"while",
+	"else",
+}
+
 func makeBlockFromStatement(statement *Statement) *Block {
 	if statement.IsBlockStatement() {
 		return statement.BlockStatement
