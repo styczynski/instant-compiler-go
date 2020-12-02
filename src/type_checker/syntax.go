@@ -25,6 +25,18 @@ func (n λ) Name() hindley_milner.NameGroup     { return hindley_milner.Names(n.
 func (n λ) Body() hindley_milner.Expression { return n.body }
 func (n λ) IsLambda() bool   { return true }
 
+type em struct {}
+
+func (n em) Body() hindley_milner.Expression {
+	return em{}
+}
+func (n em) IsEmbeddedType() bool {
+	return true
+}
+func (n em) Type() *hindley_milner.Scheme {
+	return hindley_milner.NewScheme(nil, hindley_milner.NewFnType(Prim(Float), Prim(Float), Prim(Float)))
+}
+
 type lit string
 
 func (n lit) Name() hindley_milner.NameGroup     { return hindley_milner.Name(string(n)) }
@@ -197,7 +209,7 @@ func Example_greenspun() {
 			def:  λ{
 				args: []string{ "x", "y" },
 				body: app{
-					lit("+"),
+					em{},
 					[]hindley_milner.Expression{
 						lit("x"),
 						lit("y"),

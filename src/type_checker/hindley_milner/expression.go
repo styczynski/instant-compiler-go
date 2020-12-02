@@ -9,6 +9,7 @@ type Namer interface {
 
 type NameGroup struct {
 	names []string
+	types []*Scheme
 }
 
 func (g NameGroup) GetNames() []string {
@@ -16,11 +17,15 @@ func (g NameGroup) GetNames() []string {
 }
 
 func Name(s string) NameGroup {
-	return NameGroup{names: []string { s }}
+	return NameGroup{[]string { s }, nil}
 }
 
 func Names(s []string) NameGroup {
-	return NameGroup{s}
+	return NameGroup{s, nil}
+}
+
+func NamesWithTypes(names []string, types []*Scheme) NameGroup {
+	return NameGroup{names, types}
 }
 
 // A Typer is an Expression node that knows its own Type
@@ -115,4 +120,17 @@ type Lambda interface {
 	Expression
 	Namer
 	IsLambda() bool
+}
+
+// EmbeddedType is a type directly embedded into the code
+type EmbeddedType interface {
+	Expression
+	Type() *Scheme
+	IsEmbeddedType() bool
+}
+
+// Block is an imperative block of code
+type Block interface {
+	GetContents() Batch
+	IsBlock() bool
 }

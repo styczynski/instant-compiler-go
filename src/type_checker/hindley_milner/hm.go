@@ -2,6 +2,7 @@ package hindley_milner
 
 import (
 	"fmt"
+	"math/rand"
 
 	"github.com/pkg/errors"
 )
@@ -94,6 +95,13 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 			infer.env.Add(name, &Scheme{t: et.Type()})
 			err = nil
 		}
+
+	case EmbeddedType:
+		scheme := et.Type()
+		tempName := fmt.Sprintf("__embt_%s", string(rand.Int63()))
+		infer.env.Add(tempName, scheme)
+		err = infer.lookup(false, tempName)
+		infer.env.Remove(tempName)
 
 	case Lambda:
 
