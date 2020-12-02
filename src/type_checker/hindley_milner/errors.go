@@ -16,6 +16,18 @@ func (err UnificationLengthError) Error() string {
 		err.TypeB.String())
 }
 
+type UnificationWrongTypeError struct {
+	TypeA Type
+	TypeB Type
+	Constraint Constraint
+}
+
+func (err UnificationWrongTypeError) Error() string {
+	return fmt.Sprintf("Failed to unify types %s and %s. Mismatched types.",
+		err.TypeA.String(),
+		err.TypeB.String())
+}
+
 type UnificationRecurrentTypeError struct {
 	Type Type
 	Variable TypeVariable

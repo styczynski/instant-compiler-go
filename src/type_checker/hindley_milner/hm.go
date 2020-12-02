@@ -110,14 +110,24 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 
 		names := et.Name().GetNames()
 		for _, name := range names {
+			varType := et.Name().GetTypeOf(name)
+
 			tv = append(tv, infer.Fresh())
 			env = append(env, infer.env) // backup
 
 			infer.env = infer.env.Clone()
 			infer.env.Remove(name)
 			sc := new(Scheme)
-			sc.t = tv[len(tv)-1]
+			sc.t = tv[len(tv)-1].WithContext(CreateCodeContext(expr))
 			infer.env.Add(name, sc)
+
+			if varType != nil {
+				infer.cs = append(infer.cs, Constraint{
+					a:       sc.t,
+					b:       Instantiate(infer, varType),
+					context: CreateCodeContext(expr),
+				})
+			}
 		}
 
 		if err = infer.consGen(et.Body()); err != nil {
@@ -125,8 +135,7 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 		}
 
 		for i:=0; i<len(names); i++ {
-			infer.t = NewFnType(tv[len(tv)-1], infer.t)
-			infer.t = saveExprContext(infer.t, &expr)
+			infer.t = NewFnType(tv[len(tv)-1], infer.t).WithContext(CreateCodeContext(expr))
 
 			infer.env = env[len(env)-1] // restore backup
 			env = env[:len(env)-1]
@@ -429,7 +438,11 @@ func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 
 	e:
 	}
-	err = errors.Errorf("Unification Fail: %v [%s] ~ %v [%s] cannot be unified", a, a.GetContext().String(), b, b.GetContext().String())
+	err = UnificationWrongTypeError{
+		TypeA:      a,
+		TypeB:      b,
+		Constraint: context,
+	}
 	return
 }
 

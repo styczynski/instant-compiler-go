@@ -9,23 +9,46 @@ type Namer interface {
 
 type NameGroup struct {
 	names []string
-	types []*Scheme
+	types map[string]*Scheme
+	hasTypesMap bool
 }
 
 func (g NameGroup) GetNames() []string {
 	return g.names
 }
 
+func (g NameGroup) HasTypes() bool {
+	return g.hasTypesMap
+}
+
+func (g NameGroup) GetTypeOf(name string) *Scheme {
+	if !g.hasTypesMap {
+		return nil
+	}
+	if v, ok := g.types[name]; ok {
+		return v
+	}
+	return nil
+}
+
 func Name(s string) NameGroup {
-	return NameGroup{[]string { s }, nil}
+	return NameGroup{[]string { s }, nil, false}
 }
 
 func Names(s []string) NameGroup {
-	return NameGroup{s, nil}
+	return NameGroup{s, nil, false}
 }
 
-func NamesWithTypes(names []string, types []*Scheme) NameGroup {
-	return NameGroup{names, types}
+func NamesWithTypes(names []string, types map[string]*Scheme) NameGroup {
+	return NameGroup{names, types, true}
+}
+
+func NamesWithTypesFromMap(args map[string]*Scheme) NameGroup {
+	names := []string{}
+	for name, _ := range args {
+		names = append(names, name)
+	}
+	return NameGroup{names, args, true}
 }
 
 // A Typer is an Expression node that knows its own Type

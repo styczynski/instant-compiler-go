@@ -17,11 +17,11 @@ type TyperExpression interface {
 }
 
 type λ struct {
-	args []string
+	args map[string]*hindley_milner.Scheme
 	body hindley_milner.Expression
 }
 
-func (n λ) Name() hindley_milner.NameGroup     { return hindley_milner.Names(n.args) }
+func (n λ) Name() hindley_milner.NameGroup     { return hindley_milner.NamesWithTypesFromMap(n.args) }
 func (n λ) Body() hindley_milner.Expression { return n.body }
 func (n λ) IsLambda() bool   { return true }
 
@@ -205,24 +205,27 @@ func Example_greenspun() {
 	//}
 
 	fac := let{
-			name: "test",
-			def:  λ{
-				args: []string{ "x", "y" },
-				body: app{
-					em{},
-					[]hindley_milner.Expression{
-						lit("x"),
-						lit("y"),
-					},
-				},
+		name: "test",
+		def: λ{
+			args: map[string]*hindley_milner.Scheme{
+				"x": hindley_milner.NewScheme(nil, Prim(Float)),
+				"y": hindley_milner.NewScheme(nil, Prim(Bool)),
 			},
-			in:   app{
-				lit("test"),
+			body: app{
+				em{},
 				[]hindley_milner.Expression{
-					lit("2"),
-					lit("5"),
+					lit("x"),
+					lit("y"),
 				},
 			},
+		},
+		in: app{
+			lit("test"),
+			[]hindley_milner.Expression{
+				lit("2"),
+				lit("5"),
+			},
+		},
 	}
 
 	env := hindley_milner.CreateSimpleEnv(map[string]*hindley_milner.Scheme{
