@@ -24,7 +24,7 @@ type Type interface {
 
 func TypeStringPrefix(t Type) string {
 	if !t.GetContext().IsEmpty() {
-		return "@@"
+		//return "@@"
 	}
 	return ""
 }

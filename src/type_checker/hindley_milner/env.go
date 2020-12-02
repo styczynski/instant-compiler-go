@@ -12,6 +12,15 @@ type Env interface {
 
 type SimpleEnv map[string]*Scheme
 
+func CreateSimpleEnv(env map[string]*Scheme) SimpleEnv {
+	for k, v := range env {
+		env[k].t = v.t.MapTypes(func (child Type) Type {
+			return child.WithContext(CreateBuilinCodeContext(k, env[k]))
+		})
+	}
+	return env
+}
+
 func (e SimpleEnv) Apply(sub Subs) Substitutable {
 	logf("Applying %v to env", sub)
 	if sub == nil {

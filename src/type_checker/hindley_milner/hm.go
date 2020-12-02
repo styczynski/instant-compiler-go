@@ -1,6 +1,8 @@
 package hindley_milner
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 // Cloner is any type that can clone
 type Cloner interface {
@@ -13,10 +15,7 @@ type Fresher interface {
 }
 
 func saveExprContext(t Type, source *Expression) Type {
-	return t.WithContext(CodeContext{
-		Source:  source,
-		Builtin: false,
-	})
+	return t.WithContext(CreateCodeContext(*source))
 }
 
 type inferer struct {
@@ -41,10 +40,14 @@ func (infer *inferer) Fresh() TypeVariable {
 	}
 }
 
-func (infer *inferer) lookup(name string) error {
+func (infer *inferer) lookup(isLiteral bool, name string) error {
 	s, ok := infer.env.SchemeOf(name)
 	if !ok {
-		return errors.Errorf("Undefined %v", name)
+		return UndefinedSymbol{
+			Name: name,
+			IsLiteral: isLiteral,
+			IsVariable: !isLiteral,
+		}
 	}
 	infer.t = Instantiate(infer, s)
 	return nil
@@ -72,10 +75,10 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 
 	switch et := expr.(type) {
 	case Literal:
-		return infer.lookup(et.Name())
+		return infer.lookup(true, et.Name())
 
 	case Var:
-		if err = infer.lookup(et.Name()); err != nil {
+		if err = infer.lookup(false, et.Name()); err != nil {
 			infer.env.Add(et.Name(), &Scheme{t: et.Type()})
 			err = nil
 		}
@@ -111,7 +114,7 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 
 		tv := infer.Fresh()
 		cs := append(fnCs, bodyCs...)
-		cs = append(cs, Constraint{fnType, NewFnType(bodyType, tv)})
+		cs = append(cs, Constraint{fnType, saveExprContext(NewFnType(bodyType, tv), &expr), CreateCodeContext(expr)})
 
 		infer.t = tv
 		infer.t = saveExprContext(infer.t, &expr)
@@ -342,21 +345,21 @@ func Infer(env Env, expr Expression) (*Scheme, error) {
 //		---------------
 //		 a ~ T : [a/T]
 //
-func Unify(a, b Type) (sub Subs, err error) {
+func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 	logf("%v ~ %v", a, b)
 	enterLoggingContext()
 	defer leaveLoggingContext()
 
 	switch at := a.(type) {
 	case TypeVariable:
-		return bind(at, b)
+		return bind(at, b, context, a)
 	default:
 		if a.Eq(b) {
 			return nil, nil
 		}
 
 		if btv, ok := b.(TypeVariable); ok {
-			return bind(btv, a)
+			return bind(btv, a, context, b)
 		}
 		atypes := a.Types()
 		btypes := b.Types()
@@ -367,21 +370,25 @@ func Unify(a, b Type) (sub Subs, err error) {
 			goto e
 		}
 
-		return unifyMany(atypes, btypes)
+		return unifyMany(atypes, btypes, a, b, context)
 
 	e:
 	}
-	err = errors.Errorf("Unification Fail: %v ~ %v cannot be unified", a, b)
+	err = errors.Errorf("Unification Fail: %v [%s] ~ %v [%s] cannot be unified", a, a.GetContext().String(), b, b.GetContext().String())
 	return
 }
 
-func unifyMany(a, b Types) (sub Subs, err error) {
+func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Subs, err error) {
 	logf("UnifyMany %v %v", a, b)
 	enterLoggingContext()
 	defer leaveLoggingContext()
 
 	if len(a) != len(b) {
-		return nil, errors.Errorf("Unequal length. a: %v b %v", a, b)
+		return nil, UnificationLengthError{
+			TypeA:      contextA,
+			TypeB:      contextB,
+			Constraint: context,
+		}
 	}
 
 	for i, at := range a {
@@ -393,7 +400,7 @@ func unifyMany(a, b Types) (sub Subs, err error) {
 		}
 
 		var s2 Subs
-		if s2, err = Unify(at, bt); err != nil {
+		if s2, err = Unify(at, bt, context); err != nil {
 			return nil, err
 		}
 
@@ -411,12 +418,17 @@ func unifyMany(a, b Types) (sub Subs, err error) {
 	return
 }
 
-func bind(tv TypeVariable, t Type) (sub Subs, err error) {
+func bind(tv TypeVariable, t Type, context Constraint, tvt Type) (sub Subs, err error) {
 	logf("Binding %v to %v", tv, t)
 	switch {
 	// case tv == t:
 	case occurs(tv, t):
-		err = errors.Errorf("recursive unification")
+		err = UnificationRecurrentTypeError{
+			Type:       t,
+			Variable:   tv,
+			VariableTypeSource: tvt,
+			Constraint: context,
+		}
 	default:
 		ssub := BorrowSSubs(1)
 		ssub.s[0] = Substitution{tv, t}
