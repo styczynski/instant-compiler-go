@@ -55,7 +55,7 @@ func testSubs(t *testing.T, sub Subs) {
 	for _, s := range sub.Iter() {
 		var found bool
 		for _, c := range correct {
-			if s.T == c.T && s.Tv == c.Tv {
+			if s.T.Eq(c.T) && s.Tv.Eq(c.Tv) {
 				found = true
 				break
 			}

@@ -71,7 +71,7 @@ func (s *sSubs) Clone() Subs {
 
 func (s *sSubs) index(tv TypeVariable) int {
 	for i, sub := range s.s {
-		if sub.Tv == tv {
+		if sub.Tv.Eq(tv) {
 			return i
 		}
 	}

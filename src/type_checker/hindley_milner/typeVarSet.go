@@ -56,7 +56,7 @@ func (s TypeVarSet) Difference(other TypeVarSet) TypeVarSet {
 
 func (s TypeVarSet) Contains(tv TypeVariable) bool {
 	for _, v := range s {
-		if v == tv {
+		if v.Eq(tv) {
 			return true
 		}
 	}
@@ -65,7 +65,7 @@ func (s TypeVarSet) Contains(tv TypeVariable) bool {
 
 func (s TypeVarSet) Index(tv TypeVariable) int {
 	for i, v := range s {
-		if v == tv {
+		if v.Eq(tv) {
 			return i
 		}
 	}
