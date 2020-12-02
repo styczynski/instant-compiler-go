@@ -79,31 +79,51 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 	case Batch:
 		panic(fmt.Errorf("Batch cannot be used directly inside the expression."))
 	case Literal:
-		return infer.lookup(true, et.Name())
+		if len(et.Name().GetNames()) != 1 {
+			return fmt.Errorf("Literal entity cannot conntain other value than one variable name. You cannot use Names batch here.")
+		}
+		name := et.Name().GetNames()[0]
+		return infer.lookup(true, name)
 
 	case Var:
-		if err = infer.lookup(false, et.Name()); err != nil {
-			infer.env.Add(et.Name(), &Scheme{t: et.Type()})
+		if len(et.Name().GetNames()) != 1 {
+			return fmt.Errorf("Var entity cannot conntain other value than one variable name. You cannot use Names batch here.")
+		}
+		name := et.Name().GetNames()[0]
+		if err = infer.lookup(false, name); err != nil {
+			infer.env.Add(name, &Scheme{t: et.Type()})
 			err = nil
 		}
 
 	case Lambda:
-		tv := infer.Fresh()
-		env := infer.env // backup
 
-		infer.env = infer.env.Clone()
-		infer.env.Remove(et.Name())
-		sc := new(Scheme)
-		sc.t = tv
-		infer.env.Add(et.Name(), sc)
+		env := []Env{}
+		tv := []TypeVariable{}
+
+		names := et.Name().GetNames()
+		for _, name := range names {
+			tv = append(tv, infer.Fresh())
+			env = append(env, infer.env) // backup
+
+			infer.env = infer.env.Clone()
+			infer.env.Remove(name)
+			sc := new(Scheme)
+			sc.t = tv[len(tv)-1]
+			infer.env.Add(name, sc)
+		}
 
 		if err = infer.consGen(et.Body()); err != nil {
 			return errors.Wrapf(err, "Unable to infer body of %v. Body: %v", et, et.Body())
 		}
 
-		infer.t = NewFnType(tv, infer.t)
-		infer.t = saveExprContext(infer.t, &expr)
-		infer.env = env // restore backup
+		for i:=0; i<len(names); i++ {
+			infer.t = NewFnType(tv[len(tv)-1], infer.t)
+			infer.t = saveExprContext(infer.t, &expr)
+
+			infer.env = env[len(env)-1] // restore backup
+			env = env[:len(env)-1]
+			tv = tv[:len(tv)-1]
+		}
 
 	case Apply:
 
@@ -140,9 +160,14 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 		tv := infer.Fresh()
 		// env := infer.env // backup
 
+		if len(et.Name().GetNames()) != 1 {
+			return fmt.Errorf("LetRec entity cannot conntain other value than one variable name. You cannot use Names batch here.")
+		}
+		name := et.Name().GetNames()[0]
+
 		infer.env = infer.env.Clone()
-		infer.env.Remove(et.Name())
-		infer.env.Add(et.Name(), &Scheme{tvs: TypeVarSet{tv}, t: tv})
+		infer.env.Remove(name)
+		infer.env.Add(name, &Scheme{tvs: TypeVarSet{tv}, t: tv})
 
 		if err = infer.consGen(et.Def()); err != nil {
 			return errors.Wrapf(err, "Unable to infer the definition of a letRec %v. Def: %v", et, et.Def())
@@ -157,8 +182,8 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 
 		sc := Generalize(infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 
-		infer.env.Remove(et.Name())
-		infer.env.Add(et.Name(), sc)
+		infer.env.Remove(name)
+		infer.env.Add(name, sc)
 
 		if err = infer.consGen(et.Body()); err != nil {
 			return errors.Wrapf(err, "Unable to infer body of letRec %v. Body: %v", et, et.Body())
@@ -170,6 +195,12 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 		infer.cs = append(infer.cs, defCs...)
 
 	case Let:
+
+		if len(et.Name().GetNames()) != 1 {
+			return fmt.Errorf("Let entity cannot conntain other value than one variable name. You cannot use Names batch here.")
+		}
+		name := et.Name().GetNames()[0]
+
 		env := infer.env
 
 		if err = infer.consGen(et.Def()); err != nil {
@@ -185,8 +216,8 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 
 		sc := Generalize(env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 		infer.env = infer.env.Clone()
-		infer.env.Remove(et.Name())
-		infer.env.Add(et.Name(), sc)
+		infer.env.Remove(name)
+		infer.env.Add(name, sc)
 
 		if err = infer.consGen(et.Body()); err != nil {
 			return errors.Wrapf(err, "Unable to infer body of let %v. Body: %v", et, et.Body())

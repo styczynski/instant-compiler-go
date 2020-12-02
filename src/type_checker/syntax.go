@@ -17,17 +17,17 @@ type TyperExpression interface {
 }
 
 type λ struct {
-	name string
+	args []string
 	body hindley_milner.Expression
 }
 
-func (n λ) Name() string     { return n.name }
+func (n λ) Name() hindley_milner.NameGroup     { return hindley_milner.Names(n.args) }
 func (n λ) Body() hindley_milner.Expression { return n.body }
 func (n λ) IsLambda() bool   { return true }
 
 type lit string
 
-func (n lit) Name() string     { return string(n) }
+func (n lit) Name() hindley_milner.NameGroup     { return hindley_milner.Name(string(n)) }
 func (n lit) Body() hindley_milner.Expression { return n }
 func (n lit) Type() hindley_milner.Type {
 	switch {
@@ -61,7 +61,7 @@ type let struct {
 	in   hindley_milner.Expression
 }
 
-func (n let) Name() string     { return n.name }
+func (n let) Name() hindley_milner.NameGroup     { return hindley_milner.Name(n.name) }
 func (n let) Def() hindley_milner.Expression  { return n.def }
 func (n let) Body() hindley_milner.Expression { return n.in }
 
@@ -71,7 +71,7 @@ type letrec struct {
 	in   hindley_milner.Expression
 }
 
-func (n letrec) Name() string           { return n.name }
+func (n letrec) Name() hindley_milner.NameGroup           { return hindley_milner.Name(n.name) }
 func (n letrec) Def() hindley_milner.Expression        { return n.def }
 func (n letrec) Body() hindley_milner.Expression       { return n.in }
 func (n letrec) Children() []hindley_milner.Expression { return []hindley_milner.Expression{n.def, n.in} }
@@ -192,12 +192,25 @@ func Example_greenspun() {
 	//	},
 	//}
 
-	fac := app{
-		lit("+"),
-		[]hindley_milner.Expression{
-			lit("2"),
-			lit("5"),
-		},
+	fac := let{
+			name: "test",
+			def:  λ{
+				args: []string{ "x", "y" },
+				body: app{
+					lit("+"),
+					[]hindley_milner.Expression{
+						lit("x"),
+						lit("y"),
+					},
+				},
+			},
+			in:   app{
+				lit("test"),
+				[]hindley_milner.Expression{
+					lit("2"),
+					lit("5"),
+				},
+			},
 	}
 
 	env := hindley_milner.CreateSimpleEnv(map[string]*hindley_milner.Scheme{

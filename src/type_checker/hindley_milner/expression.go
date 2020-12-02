@@ -4,7 +4,23 @@ import "fmt"
 
 // A Namer is anything that knows its own name
 type Namer interface {
-	Name() string
+	Name() NameGroup
+}
+
+type NameGroup struct {
+	names []string
+}
+
+func (g NameGroup) GetNames() []string {
+	return g.names
+}
+
+func Name(s string) NameGroup {
+	return NameGroup{names: []string { s }}
+}
+
+func Names(s []string) NameGroup {
+	return NameGroup{s}
 }
 
 // A Typer is an Expression node that knows its own Type
