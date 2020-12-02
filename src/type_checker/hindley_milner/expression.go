@@ -23,11 +23,11 @@ type Expression interface {
 }
 
 type Batch struct {
-	expressions []Expression
+	Exp []Expression
 }
 
 func (b Batch) Expressions() []Expression {
-	return b.expressions
+	return b.Exp
 }
 
 func (b Batch) Body() Expression {

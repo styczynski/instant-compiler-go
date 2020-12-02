@@ -113,6 +113,7 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 				if err = infer.consGen(et.Fn()); err != nil {
 					return errors.Wrapf(err, "Unable to infer Fn of Apply: %v. Fn: %v", et, et.Fn())
 				}
+				firstExec = false
 			}
 			fnType, fnCs := infer.t, infer.cs
 

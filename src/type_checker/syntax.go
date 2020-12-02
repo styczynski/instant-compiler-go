@@ -44,12 +44,16 @@ func (n lit) IsLambda() bool { return true }
 
 type app struct {
 	f   hindley_milner.Expression
-	arg hindley_milner.Expression
+	args []hindley_milner.Expression
 }
 
 func (n app) Fn() hindley_milner.Expression   { return n.f }
-func (n app) Body() hindley_milner.Expression { return n.arg }
-func (n app) Arg() hindley_milner.Expression  { return n.arg }
+func (n app) Body() hindley_milner.Expression {
+	return hindley_milner.Batch{
+		n.args,
+	}
+}
+//func (n app) Arg() hindley_milner.Expression  { return n.arg }
 
 type let struct {
 	name string
@@ -176,15 +180,23 @@ func Example_greenspun() {
 
 	// but first, let's start with something simple:
 	// let x = 3 in x+5
-	fac := let{
-		"x",
-		lit("3"),
-		app{
-			app{
-				lit("+"),
-				lit("5"),
-			},
-			lit("x"),
+	//fac := let{
+	//	"x",
+	//	lit("3"),
+	//	app{
+	//		app{
+	//			lit("+"),
+	//			lit("5"),
+	//		},
+	//		lit("x"),
+	//	},
+	//}
+
+	fac := app{
+		lit("+"),
+		[]hindley_milner.Expression{
+			lit("2"),
+			lit("5"),
 		},
 	}
 
