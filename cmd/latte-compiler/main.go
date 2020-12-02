@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strings"
+	//"os"
+	//"strings"
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/parser"
-	"github.com/styczynski/latte-compiler/src/printer"
+	//"github.com/styczynski/latte-compiler/src/printer"
+	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
 func main() {
@@ -17,47 +18,51 @@ func main() {
 	}
 
 	context := parser.NewParsingContext()
-	pr := printer.CreateLattePrinter()
-	p := parser.CreateLatteParser(pr)
-	ast, latteError := p.ParseInput(strings.NewReader(`
-int main () {
-  printInt(fact(7)) ;
-  printInt(factr(7)) ;
-  return 0 ;
-}
+	tc := type_checker.CreateLatteTypeChecker()
+//	pr := printer.CreateLattePrinter()
+//	p := parser.CreateLatteParser(pr)
+//	ast, latteError := p.ParseInput(strings.NewReader(`
+//int main () {
+//  printInt(fact(7)) ;
+//  printInt(factr(7)) ;
+//  return 0 ;
+//}
+//
+//// iteracyjnie
+//int fact (int n) {
+//  int i,r ;
+//  i = 1 ;
+//  r = 1 ;
+//  while (i < n+1) {
+//    r = r * i ;
+//    i++ ;
+//while (i < n+1) {
+//    r = r * i ;
+//    i++ ;
+//  }
+//  }
+//  r;
+//}
+//
+//int factr (int n) {
+//  if (n < 2) {
+//    return 1 ; // rekurencyjnie
+// } else {
+//    return (n * factr(n-1)) ;
+// }
+//}
+//`), context)
+//	if latteError != nil {
+//		fmt.Print(latteError.CliMessage())
+//		os.Exit(1)
+//	}
+//
+//	content, err := pr.Format(ast, context)
+//	if err != nil {
+//		panic(err)
+//	}
 
-// iteracyjnie
-int fact (int n) {
-  int i,r ;
-  i = 1 ;
-  r = 1 ;
-  while (i < n+1) {
-    r = r * i ;
-    i++ ;
-while (i < n+1) {
-    r = r * i ;
-    i++ ;
-  }
-  }
-  r;
-}
+	tc.Test(context)
 
-int factr (int n) {
-  if (n < 2) {
-    return 1 ; // rekurencyjnie
- } else {
-    return (n * factr(n-1)) ;
- }
-}
-`), context)
-	if latteError != nil {
-		fmt.Print(latteError.CliMessage())
-		os.Exit(1)
-	}
-
-	content, err := pr.Format(ast, context)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%s", content)
+	//fmt.Printf("%s", content)
 }
