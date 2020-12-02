@@ -150,43 +150,43 @@ func Example_greenspun() {
 	// 		let fac n = if n == 0 then 1 else n * fac (n - 1) in fac 5
 	// and what we have is the AST
 
-	fac := letrec{
-		"fac",
-		λ{
-			"n",
-			app{
-				app{
-					app{
-						lit("if"),
-						app{
-							lit("isZero"),
-							lit("n"),
-						},
-					},
-					lit("1"),
-				},
-				app{
-					app{lit("mul"), lit("n")},
-					app{lit("fac"), app{lit("--"), lit("n")}},
-				},
-			},
-		},
-		app{lit("fac"), lit("fac")},
-	}
+	//fac := letrec{
+	//	"fac",
+	//	λ{
+	//		"n",
+	//		app{
+	//			app{
+	//				app{
+	//					lit("if"),
+	//					app{
+	//						lit("isZero"),
+	//						lit("n"),
+	//					},
+	//				},
+	//				lit("1"),
+	//			},
+	//			app{
+	//				app{lit("mul"), lit("n")},
+	//				app{lit("fac"), app{lit("--"), lit("n")}},
+	//			},
+	//		},
+	//	},
+	//	app{lit("fac"), lit("5")},
+	//}
 
 	// but first, let's start with something simple:
 	// let x = 3 in x+5
-	//simple := let{
-	//	"x",
-	//	lit("3"),
-	//	app{
-	//		app{
-	//			lit("+"),
-	//			lit("5"),
-	//		},
-	//		lit("x"),
-	//	},
-	//}
+	fac := let{
+		"x",
+		lit("3"),
+		app{
+			app{
+				lit("+"),
+				lit("5"),
+			},
+			lit("x"),
+		},
+	}
 
 	env := hindley_milner.CreateSimpleEnv(map[string]*hindley_milner.Scheme{
 		"--":     hindley_milner.NewScheme(hindley_milner.TypeVarSet{hindley_milner.TVar('a')}, hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'))),

@@ -1,6 +1,8 @@
 package hindley_milner
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 )
 
@@ -74,6 +76,8 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 	// fallbacks
 
 	switch et := expr.(type) {
+	case Batch:
+		panic(fmt.Errorf("Batch cannot be used directly inside the expression."))
 	case Literal:
 		return infer.lookup(true, et.Name())
 
@@ -102,23 +106,34 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 		infer.env = env // restore backup
 
 	case Apply:
-		if err = infer.consGen(et.Fn()); err != nil {
-			return errors.Wrapf(err, "Unable to infer Fn of Apply: %v. Fn: %v", et, et.Fn())
+
+		firstExec := true
+		batchErr := ApplyBatch(et.Body(), func(body Expression) error {
+			if firstExec {
+				if err = infer.consGen(et.Fn()); err != nil {
+					return errors.Wrapf(err, "Unable to infer Fn of Apply: %v. Fn: %v", et, et.Fn())
+				}
+			}
+			fnType, fnCs := infer.t, infer.cs
+
+			if err = infer.consGen(body); err != nil {
+				return errors.Wrapf(err, "Unable to infer body of Apply: %v. Body: %v", et, body)
+			}
+			bodyType, bodyCs := infer.t, infer.cs
+
+			tv := infer.Fresh()
+			cs := append(fnCs, bodyCs...)
+			cs = append(cs, Constraint{fnType, saveExprContext(NewFnType(bodyType, tv), &expr), CreateCodeContext(expr)})
+
+			infer.t = tv
+			infer.t = saveExprContext(infer.t, &expr)
+			infer.cs = cs
+
+			return nil
+		})
+		if batchErr != nil {
+			return batchErr
 		}
-		fnType, fnCs := infer.t, infer.cs
-
-		if err = infer.consGen(et.Body()); err != nil {
-			return errors.Wrapf(err, "Unable to infer body of Apply: %v. Body: %v", et, et.Body())
-		}
-		bodyType, bodyCs := infer.t, infer.cs
-
-		tv := infer.Fresh()
-		cs := append(fnCs, bodyCs...)
-		cs = append(cs, Constraint{fnType, saveExprContext(NewFnType(bodyType, tv), &expr), CreateCodeContext(expr)})
-
-		infer.t = tv
-		infer.t = saveExprContext(infer.t, &expr)
-		infer.cs = cs
 
 	case LetRec:
 		tv := infer.Fresh()

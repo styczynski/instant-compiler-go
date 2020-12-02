@@ -1,5 +1,7 @@
 package hindley_milner
 
+import "fmt"
+
 // A Namer is anything that knows its own name
 type Namer interface {
 	Name() string
@@ -18,6 +20,45 @@ type Inferer interface {
 // An Expression is basically an AST node. In its simplest form, it's lambda calculus
 type Expression interface {
 	Body() Expression
+}
+
+type Batch struct {
+	expressions []Expression
+}
+
+func (b Batch) Expressions() []Expression {
+	return b.expressions
+}
+
+func (b Batch) Body() Expression {
+	panic(fmt.Errorf("Batch Body() method cannot be called."))
+}
+
+func IsBatch(exp Expression) bool {
+	_, ok := exp.(Batch)
+	return ok
+}
+
+func FlattenBatch(exp Expression) []Expression {
+	if IsBatch(exp) {
+		ret := []Expression{}
+		for _, e := range exp.(Batch).Expressions() {
+			ret = append(ret, FlattenBatch(e)...)
+		}
+		return ret
+	} else {
+		return []Expression{ exp }
+	}
+}
+
+func ApplyBatch(exp Expression, fn func(e Expression) error) error {
+	for _, e := range FlattenBatch(exp) {
+		err := fn(e)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Var is an expression representing a variable
