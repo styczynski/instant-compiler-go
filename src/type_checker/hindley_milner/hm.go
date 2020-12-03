@@ -25,13 +25,16 @@ type inferer struct {
 	env Env
 	cs  Constraints
 	t   Type
+	returns []Type
 
 	count int
+	config *InferConfiguration
 }
 
-func newInferer(env Env) *inferer {
+func newInferer(env Env, config *InferConfiguration) *inferer {
 	return &inferer{
 		env: env,
+		config: config,
 	}
 }
 
@@ -76,15 +79,49 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 
 	// fallbacks
 
-	switch et := expr.(type) {
-	case Literal:
+	exprType := expr.ExpressionType()
+	switch exprType {
+	case E_CUSTOM:
+		et := expr.(CustomExpression)
+
+		context := CustomExpressionEnv{
+			Env:                 infer.env,
+			InferencedType:      infer.t,
+			LookupEnv:           infer.lookup,
+			GenerateConstraints: func(expr Expression) (e error, env Env, i Type, constraints Constraints) {
+				backupT := infer.t
+				backupEnv := infer.env
+				backupCS := infer.cs
+				if err = infer.consGen(et.Body()); err != nil {
+					return errors.Wrapf(err, "Unable to infer statement using GenerateConstraints(...) call %v. Body: %v", et, et.Body()), nil, nil, nil
+				}
+				retT := infer.t
+				retEnv := infer.env
+				retCS := infer.cs
+				infer.t = backupT
+				infer.env = backupEnv
+				infer.cs = backupCS
+				return nil, retEnv, retT, retCS
+			},
+		}
+		err, newEnv, newType, newCS := et.GenerateConstraints(context)
+		if err != nil {
+			return err
+		}
+		infer.env = newEnv
+		infer.t = newType
+		infer.cs = newCS
+
+	case E_LITERAL:
+		et := expr.(Literal)
 		if len(et.Name().GetNames()) != 1 {
 			return fmt.Errorf("Literal entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
 		name := et.Name().GetNames()[0]
 		return infer.lookup(true, name)
 
-	case Var:
+	case E_VAR:
+		et := expr.(Var)
 		if len(et.Name().GetNames()) != 1 {
 			return fmt.Errorf("Var entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
@@ -94,17 +131,46 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 			err = nil
 		}
 
-	case EmbeddedType:
+	case E_TYPE:
+		et := expr.(EmbeddedType)
 		scheme := et.Type()
 		tempName := fmt.Sprintf("__embt_%s", string(rand.Int63()))
 		infer.env.Add(tempName, scheme)
 		err = infer.lookup(false, tempName)
 		infer.env.Remove(tempName)
 
-	case Lambda:
+	case E_RETURN:
+		et := expr.(Return)
+		if err = infer.consGen(et.Body()); err != nil {
+			return errors.Wrapf(err, "Unable to infer return of %v. Body: %v", et, et.Body())
+		}
+		infer.returns = append(infer.returns, infer.t)
+		tv := infer.Fresh()
+		infer.t = tv
+		if defaultTyper, ok := et.(DefaultTyper); ok {
+			infer.cs = append(infer.cs, Constraint{
+				a:       tv,
+				b:       Instantiate(infer, defaultTyper.DefaultType()),
+				context: CreateCodeContext(expr),
+			})
+		} else if infer.config.CreateDefaultEmptyType() != nil {
+			infer.cs = append(infer.cs, Constraint{
+				a:       tv,
+				b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
+				context: CreateCodeContext(expr),
+			})
+		}
+		infer.t = tv
+
+	case E_LAMBDA, E_FUNCTION:
+		et := expr.(Lambda)
 
 		env := []Env{}
 		tv := []TypeVariable{}
+
+		// Clear returns
+		rets := infer.returns // backup
+		infer.returns = []Type{}
 
 		names := et.Name().GetNames()
 		for _, name := range names {
@@ -128,8 +194,13 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 			}
 		}
 
-		if err = infer.consGen(et.Body()); err != nil {
-			return errors.Wrapf(err, "Unable to infer body of %v. Body: %v", et, et.Body())
+		if exprType == E_FUNCTION {
+			bodyType := infer.Fresh()
+			infer.t = bodyType
+		} else {
+			if err = infer.consGen(et.Body()); err != nil {
+				return errors.Wrapf(err, "Unable to infer body of %v. Body: %v", et, et.Body())
+			}
 		}
 
 		for i:=0; i<len(names); i++ {
@@ -140,8 +211,34 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 			tv = tv[:len(tv)-1]
 		}
 
-	case Apply:
+		for _, ret := range infer.returns {
+			infer.cs = append(infer.cs, Constraint{
+				a:       ret,
+				b:       infer.t.(*FunctionType).Ret(true),
+				context: CreateCodeContext(expr),
+			})
+		}
+		if len(infer.returns) == 0 {
+			r := infer.t.(*FunctionType).Ret(true)
+			if defaultTyper, ok := et.(DefaultTyper); ok {
+				infer.cs = append(infer.cs, Constraint{
+					a:       r,
+					b:       Instantiate(infer, defaultTyper.DefaultType()),
+					context: CreateCodeContext(expr),
+				})
+			} else if infer.config.CreateDefaultEmptyType() != nil {
+				infer.cs = append(infer.cs, Constraint{
+					a:       r,
+					b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
+					context: CreateCodeContext(expr),
+				})
+			}
+		}
 
+		infer.returns = rets
+
+	case E_APPLICATION:
+		et := expr.(Apply)
 		firstExec := true
 		batchErr := ApplyBatch(et.Body(), func(body Expression) error {
 			if firstExec {
@@ -171,31 +268,44 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 			return batchErr
 		}
 
-	case Batch: // TODO: Block
+	case E_BLOCK:
+		et := expr.(Block)
 		env := infer.env // backup
-		t := infer.t
+		//t := infer.t
 
 		for _, statement := range et.GetContents().Expressions() {
-			_, isReturn := statement.(Return)
-			if isReturn {
-				// No-op
-			} else {
-				infer.t = t
-				infer.env = env
+			//if true { break }
+			//infer.t = t
+			//infer.env = env
 
-				if err = infer.consGen(statement); err != nil {
-					return errors.Wrapf(err, "Unable to infer the block statement: %v", statement)
-				}
-
-				infer.t = t
-				infer.env = env
+			if err = infer.consGen(statement); err != nil {
+				return errors.Wrapf(err, "Unable to infer the block statement: %v", statement)
 			}
+
+			//infer.t = t
+			//infer.env = env
 		}
 
 		tv := infer.Fresh()
+		if defaultTyper, ok := et.(DefaultTyper); ok {
+			infer.cs = append(infer.cs, Constraint{
+				a:       tv,
+				b:       Instantiate(infer, defaultTyper.DefaultType()),
+				context: CreateCodeContext(expr),
+			})
+		} else if infer.config.CreateDefaultEmptyType() != nil {
+			infer.cs = append(infer.cs, Constraint{
+				a:       tv,
+				b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
+				context: CreateCodeContext(expr),
+			})
+		}
 		infer.t = tv
+		infer.env = env
 
-	case LetRec:
+
+	case E_LET_RECURSIVE, E_DECLARATION:
+		et := expr.(Let)
 		tv := infer.Fresh()
 		// env := infer.env // backup
 
@@ -224,17 +334,35 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 		infer.env.Remove(name)
 		infer.env.Add(name, sc)
 
-		if err = infer.consGen(et.Body()); err != nil {
-			return errors.Wrapf(err, "Unable to infer body of letRec %v. Body: %v", et, et.Body())
+		if exprType == E_DECLARATION {
+			tv := infer.Fresh()
+			if defaultTyper, ok := et.(DefaultTyper); ok {
+				infer.cs = append(infer.cs, Constraint{
+					a:       tv,
+					b:       Instantiate(infer, defaultTyper.DefaultType()),
+					context: CreateCodeContext(expr),
+				})
+			} else if infer.config.CreateDefaultEmptyType() != nil {
+				infer.cs = append(infer.cs, Constraint{
+					a:       tv,
+					b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
+					context: CreateCodeContext(expr),
+				})
+			}
+			infer.t = tv
+		} else {
+			if err = infer.consGen(et.Body()); err != nil {
+				return errors.Wrapf(err, "Unable to infer body of letRec %v. Body: %v", et, et.Body())
+			}
+			infer.t = infer.t.Apply(s.sub).(Type)
+			infer.t = saveExprContext(infer.t, &expr)
+			infer.cs = infer.cs.Apply(s.sub).(Constraints)
 		}
 
-		infer.t = infer.t.Apply(s.sub).(Type)
-		infer.t = saveExprContext(infer.t, &expr)
-		infer.cs = infer.cs.Apply(s.sub).(Constraints)
 		infer.cs = append(infer.cs, defCs...)
 
-	case Let:
-
+	case E_LET:
+		et := expr.(Let)
 		if len(et.Name().GetNames()) != 1 {
 			return fmt.Errorf("Let entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
@@ -342,6 +470,16 @@ ret:
 	}
 }
 
+type InferConfiguration struct {
+	CreateDefaultEmptyType func() *Scheme
+}
+
+func NewInferConfiguration() *InferConfiguration {
+	return &InferConfiguration{
+		CreateDefaultEmptyType: func() *Scheme { return nil },
+	}
+}
+
 // Infer takes an env, and an expression, and returns a scheme.
 //
 // The Infer function is the core of the HM type inference system. This is a reference implementation and is completely servicable, but not quite performant.
@@ -382,7 +520,7 @@ ret:
 //		--------------------------------
 //		     Γ ⊢ let x = e1 in e2: T2
 //
-func Infer(env Env, expr Expression) (*Scheme, error) {
+func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, error) {
 	if expr == nil {
 		return nil, errors.Errorf("Cannot infer a nil expression")
 	}
@@ -391,7 +529,7 @@ func Infer(env Env, expr Expression) (*Scheme, error) {
 		env = make(SimpleEnv)
 	}
 
-	infer := newInferer(env)
+	infer := newInferer(env, config)
 	if err := infer.consGen(expr); err != nil {
 		return nil, err
 	}

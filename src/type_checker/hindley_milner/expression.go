@@ -61,13 +61,56 @@ type Inferer interface {
 	Infer(Env, Fresher) (Type, error)
 }
 
+type ExpressionMapper = func (e Expression) Expression
+
+type ExpressionType int
+
+const (
+	E_VAR ExpressionType = iota
+	E_LITERAL
+	E_APPLICATION
+	E_LAMBDA
+	E_FUNCTION
+	E_TYPE
+	E_BLOCK
+	E_RETURN
+	E_LET
+	E_LET_RECURSIVE
+	E_DECLARATION
+	E_CUSTOM
+)
+
 // An Expression is basically an AST node. In its simplest form, it's lambda calculus
 type Expression interface {
 	Body() Expression
+	Map(mapper ExpressionMapper) Expression
+	Visit(mapper ExpressionMapper)
+	ExpressionType() ExpressionType
 }
 
 type Batch struct {
 	Exp []Expression
+}
+
+func (b Batch) ExpressionType() ExpressionType {
+	return E_BLOCK
+}
+
+func (b Batch) Map(mapper ExpressionMapper) Expression {
+	mappedExp := []Expression{}
+	for _, exp := range b.Exp {
+		mappedExp = append(mappedExp, mapper(exp))
+	}
+	return mapper(Batch{
+		Exp: mappedExp,
+	})
+}
+
+func (b Batch) Visit(mapper ExpressionMapper) {
+	for _, exp := range b.Exp {
+		mapper(exp)
+	}
+	mapper(b)
 }
 
 func (b Batch) GetContents() Batch {
@@ -123,19 +166,12 @@ type Var interface {
 // Literal is an Expression/AST Node representing a literal
 type Literal interface {
 	Var
-	IsLit() bool
 }
 
 // Apply is an Expression/AST node that represents a function application
 type Apply interface {
 	Expression
 	Fn() Expression
-}
-
-// LetRec is an Expression/AST node that represents a recursive let
-type LetRec interface {
-	Let
-	IsRecursive() bool
 }
 
 // Let is an Expression/AST node that represents the standard let polymorphism found in functional languages
@@ -150,25 +186,38 @@ type Let interface {
 type Lambda interface {
 	Expression
 	Namer
-	IsLambda() bool
 }
 
 // EmbeddedType is a type directly embedded into the code
 type EmbeddedType interface {
 	Expression
 	Type() *Scheme
-	IsEmbeddedType() bool
 }
 
 // Block is an imperative block of code
 type Block interface {
 	Expression
 	GetContents() Batch
-	IsBlock() bool
 }
 
 // Return is an imperative return statement
 type Return interface {
 	Expression
-	IsReturn() bool
+}
+
+type DefaultTyper interface {
+	DefaultType() *Scheme
+}
+
+type CustomExpressionEnv struct {
+	Env Env
+	InferencedType Type
+	LookupEnv func(isLiteral bool, name string) error
+	GenerateConstraints func(expr Expression) (error, Env, Type, Constraints)
+	FreshTypeVariable func() TypeVariable
+}
+
+type CustomExpression interface {
+	Expression
+	GenerateConstraints(context CustomExpressionEnv) (error, Env, Type, Constraints)
 }

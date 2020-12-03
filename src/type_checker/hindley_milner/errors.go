@@ -23,9 +23,11 @@ type UnificationWrongTypeError struct {
 }
 
 func (err UnificationWrongTypeError) Error() string {
-	return fmt.Sprintf("Failed to unify types %s and %s. Mismatched types.",
+	return fmt.Sprintf("Failed to unify types %s and %s. Mismatched types. [%s]",
 		err.TypeA.String(),
-		err.TypeB.String())
+		err.TypeB.String(),
+		err.Constraint.context.String(),
+	)
 }
 
 type UnificationRecurrentTypeError struct {
