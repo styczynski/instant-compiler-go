@@ -70,6 +70,14 @@ type Batch struct {
 	Exp []Expression
 }
 
+func (b Batch) GetContents() Batch {
+	return b
+}
+
+func (b Batch) IsBlock() bool {
+	return true
+}
+
 func (b Batch) Expressions() []Expression {
 	return b.Exp
 }
@@ -154,6 +162,13 @@ type EmbeddedType interface {
 
 // Block is an imperative block of code
 type Block interface {
+	Expression
 	GetContents() Batch
 	IsBlock() bool
+}
+
+// Return is an imperative return statement
+type Return interface {
+	Expression
+	IsReturn() bool
 }

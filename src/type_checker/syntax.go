@@ -209,15 +209,24 @@ func Example_greenspun() {
 		def: λ{
 			args: map[string]*hindley_milner.Scheme{
 				"x": hindley_milner.NewScheme(nil, Prim(Float)),
-				"y": hindley_milner.NewScheme(nil, Prim(Bool)),
+				"y": hindley_milner.NewScheme(nil, Prim(Float)),
 			},
-			body: app{
-				em{},
-				[]hindley_milner.Expression{
-					lit("x"),
-					lit("y"),
+			body: hindley_milner.Batch{Exp: []hindley_milner.Expression{
+				app{
+					em{},
+					[]hindley_milner.Expression{
+						lit("x"),
+						lit("y"),
+					},
 				},
-			},
+				app{
+					em{},
+					[]hindley_milner.Expression{
+						lit("x"),
+						lit("y"),
+					},
+				},
+			}},
 		},
 		in: app{
 			lit("test"),

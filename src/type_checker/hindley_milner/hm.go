@@ -77,8 +77,6 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 	// fallbacks
 
 	switch et := expr.(type) {
-	case Batch:
-		panic(fmt.Errorf("Batch cannot be used directly inside the expression."))
 	case Literal:
 		if len(et.Name().GetNames()) != 1 {
 			return fmt.Errorf("Literal entity cannot conntain other value than one variable name. You cannot use Names batch here.")
@@ -172,6 +170,30 @@ func (infer *inferer) consGen(expr Expression) (err error) {
 		if batchErr != nil {
 			return batchErr
 		}
+
+	case Batch: // TODO: Block
+		env := infer.env // backup
+		t := infer.t
+
+		for _, statement := range et.GetContents().Expressions() {
+			_, isReturn := statement.(Return)
+			if isReturn {
+				// No-op
+			} else {
+				infer.t = t
+				infer.env = env
+
+				if err = infer.consGen(statement); err != nil {
+					return errors.Wrapf(err, "Unable to infer the block statement: %v", statement)
+				}
+
+				infer.t = t
+				infer.env = env
+			}
+		}
+
+		tv := infer.Fresh()
+		infer.t = tv
 
 	case LetRec:
 		tv := infer.Fresh()
