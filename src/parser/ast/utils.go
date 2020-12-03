@@ -1,10 +1,40 @@
-package parser
+package ast
 
 import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
+
+	"github.com/styczynski/latte-compiler/src/parser/context"
 )
+
+var SUGGESTED_KEYWORDS = []string{
+	"int",
+	"string",
+	"bool",
+	"true",
+	"false",
+	"void",
+	"return",
+	"if",
+	"while",
+	"else",
+}
+
+func makeBlockFromStatement(statement *Statement) *Block {
+	if statement.IsBlockStatement() {
+		return statement.BlockStatement
+	}
+	return &Block{
+		Statements: []*Statement{ statement },
+	}
+}
+
+func makeBlockFromExpression(expression *Expression) *Block {
+	return makeBlockFromStatement(&Statement{
+		Expression: expression,
+	})
+}
 
 type ComplexASTNode struct {
 	BaseASTNode
@@ -29,7 +59,7 @@ type TraversableNode interface {
 	GetNode() interface{}
 	Begin() lexer.Position
 	End() lexer.Position
-	Print(c *ParsingContext) string
+	Print(c *context.ParsingContext) string
 }
 
 type TraversableNodeToken struct {
@@ -94,10 +124,30 @@ func (ast *TraversableNodeToken) Begin() lexer.Position {
 	return ast.BeginPos
 }
 
-func (ast *TraversableNodeValue) Print(c *ParsingContext) string {
+func (ast *TraversableNodeValue) Print(c *context.ParsingContext) string {
 	return fmt.Sprintf("%v", ast.Value)
 }
 
-func (ast *TraversableNodeToken) Print(c *ParsingContext) string {
+func (ast *TraversableNodeToken) Print(c *context.ParsingContext) string {
 	return ast.Token
+}
+
+func TraverseAST(node TraversableNode, visitor func(ast TraversableNode)) {
+	children := node.GetChildren()
+	for _, child := range children {
+		visitor(child)
+		TraverseAST(child, visitor)
+	}
+}
+
+func printNode(c *context.ParsingContext, ast TraversableNode,format string, args ...interface{}) string {
+	if c.PrinterConfiguration.MaxPrintPosition != nil {
+		if ast.Begin().Line > c.PrinterConfiguration.MaxPrintPosition.Line {
+			return ""
+		}
+		if ast.Begin().Line == c.PrinterConfiguration.MaxPrintPosition.Line && ast.Begin().Column > c.PrinterConfiguration.MaxPrintPosition.Column {
+			return ""
+		}
+	}
+	return fmt.Sprintf(format, args...)
 }

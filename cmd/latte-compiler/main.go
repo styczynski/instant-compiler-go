@@ -6,7 +6,8 @@ import (
 	//"strings"
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
-	"github.com/styczynski/latte-compiler/src/parser"
+	context2 "github.com/styczynski/latte-compiler/src/parser/context"
+
 	//"github.com/styczynski/latte-compiler/src/printer"
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
@@ -17,7 +18,7 @@ func main() {
 		panic(fmt.Errorf("invalid application configuration: %s", err))
 	}
 
-	context := parser.NewParsingContext()
+	context := context2.NewParsingContext()
 	tc := type_checker.CreateLatteTypeChecker()
 //	pr := printer.CreateLattePrinter()
 //	p := parser.CreateLatteParser(pr)

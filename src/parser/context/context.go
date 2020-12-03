@@ -1,4 +1,4 @@
-package parser
+package context
 
 import "github.com/alecthomas/participle/v2/lexer"
 

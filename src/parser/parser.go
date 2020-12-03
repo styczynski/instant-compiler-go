@@ -13,6 +13,8 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/styczynski/latte-compiler/src/errors"
+	"github.com/styczynski/latte-compiler/src/parser/ast"
+	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
 type LatteParser struct {
@@ -22,7 +24,7 @@ type LatteParser struct {
 }
 
 func CreateLatteParser(codeFormatter CodeFormatter) *LatteParser {
-	paserInstance := participle.MustBuild(&LatteProgram{},
+	paserInstance := participle.MustBuild(&ast.LatteProgram{},
 		//participle.Lexer(iniLexer),
 		participle.UseLookahead(2),
 		//participle.Unquote("String"),
@@ -84,7 +86,7 @@ func indentCodeLines(message string, errorLine int, lineStart int) string {
 	return strings.Join(newLines, "\n")
 }
 
-func (p *LatteParser) getFileContext(c *ParsingContext, program *LatteProgram, line int, column int) (string, int, int) {
+func (p *LatteParser) getFileContext(c *context.ParsingContext, program *ast.LatteProgram, line int, column int) (string, int, int) {
 	lineOffset := 3
 
 	// There is no program AST context available so we must read raw input
@@ -111,10 +113,10 @@ func (p *LatteParser) getFileContext(c *ParsingContext, program *LatteProgram, l
 		minDistStart := 10000000
 		minDistEnd := 10000000
 
-		var start TraversableNode = program
-		var end TraversableNode = program
+		var start ast.TraversableNode = program
+		var end ast.TraversableNode = program
 
-		TraverseAST(program, func(ast TraversableNode) {
+		ast.TraverseAST(program, func(ast ast.TraversableNode) {
 			distStart := Abs(Abs(ast.Begin().Line-line) - lineOffset)
 			if distStart < minDistStart {
 				minDistStart = distStart
@@ -147,7 +149,7 @@ var formatErrorMessageFg = color.New(color.FgRed).SprintFunc()
 
 var formatErrorMetaInfoFg = color.New(color.FgHiBlue).SprintFunc()
 
-func (p *LatteParser) formatParsingError(c *ParsingContext, parsingError participle.Error, recommendedBracket string) errors.LatteError {
+func (p *LatteParser) formatParsingError(c *context.ParsingContext, parsingError participle.Error, recommendedBracket string) errors.LatteError {
 
 	locationMessage := fmt.Sprintf("%s %s %s %d %s %d",
 		formatErrorMetaInfoFg("Error in file"),
@@ -206,7 +208,7 @@ func examineParsingErrorMessage(message string, recommendedBracket string) strin
 			message = "bracket \")\" with instructions block"
 		}
 
-		suggestion := searchKeywords(tokenName, SUGGESTED_KEYWORDS)
+		suggestion := searchKeywords(tokenName, ast.SUGGESTED_KEYWORDS)
 		suggestionInfo := ""
 		if len(suggestion) > 0 {
 			suggestionInfo = fmt.Sprintf("\n                Did you mean \"%s\"?", suggestion)
@@ -223,8 +225,8 @@ func examineParsingErrorMessage(message string, recommendedBracket string) strin
 	return message
 }
 
-func (p *LatteParser) ParseInput(input io.Reader, c *ParsingContext) (*LatteProgram, errors.LatteError) {
-	output := &LatteProgram{}
+func (p *LatteParser) ParseInput(input io.Reader, c *context.ParsingContext) (*ast.LatteProgram, errors.LatteError) {
+	output := &ast.LatteProgram{}
 	var err error
 	p.parserInput, err = ioutil.ReadAll(input)
 	if err != nil {

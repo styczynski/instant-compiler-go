@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/alecthomas/participle/v2"
+
+	"github.com/styczynski/latte-compiler/src/parser/ast"
 )
 
 func tryInsertingBracket(done chan struct{}, parser *participle.Parser, bracket string, input []byte, lineNo int, pos int, goPast bool) ([]byte, bool, int, int) {
@@ -43,7 +45,7 @@ func tryInsertingBracket(done chan struct{}, parser *participle.Parser, bracket 
 	}
 
 	newContent := []byte(strings.Join(contentLines, "\n"))
-	err := parser.Parse("", bytes.NewReader(newContent), &LatteProgram{})
+	err := parser.Parse("", bytes.NewReader(newContent), &ast.LatteProgram{})
 	if err == nil {
 		return newContent, true, 10000, 10000
 	}
