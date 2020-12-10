@@ -1,5 +1,7 @@
 package hindley_milner
 
+import "fmt"
+
 // An Env is essentially a map of names to schemes
 type Env interface {
 	Substitutable
@@ -8,6 +10,7 @@ type Env interface {
 
 	Add(string, *Scheme) Env
 	Remove(string) Env
+	VarsNames() []string
 }
 
 type SimpleEnv map[string]*Scheme
@@ -19,6 +22,15 @@ func CreateSimpleEnv(env map[string]*Scheme) SimpleEnv {
 		})
 	}
 	return env
+}
+
+func PrintEnv(env Env) {
+	fmt.Printf("====== Environment ======\n")
+	for _, v := range env.VarsNames() {
+		scheme, _ := env.SchemeOf(v)
+		fmt.Printf("%s => %v\n", v, scheme)
+	}
+	fmt.Printf("=========================\n")
 }
 
 func (e SimpleEnv) Apply(sub Subs) Substitutable {
@@ -48,6 +60,14 @@ func (e SimpleEnv) Clone() Env {
 		retVal[k] = v.Clone()
 	}
 	return retVal
+}
+
+func (e SimpleEnv) VarsNames() []string {
+	names := []string{}
+	for name, _ := range e {
+		names = append(names, name)
+	}
+	return names
 }
 
 func (e SimpleEnv) Add(name string, s *Scheme) Env {

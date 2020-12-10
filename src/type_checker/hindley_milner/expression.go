@@ -73,11 +73,14 @@ const (
 	E_FUNCTION
 	E_TYPE
 	E_BLOCK
+	E_OPAQUE_BLOCK
 	E_RETURN
 	E_LET
 	E_LET_RECURSIVE
 	E_DECLARATION
+	E_FUNCTION_DECLARATION
 	E_CUSTOM
+	E_NONE
 )
 
 // An Expression is basically an AST node. In its simplest form, it's lambda calculus
@@ -174,18 +177,22 @@ type Apply interface {
 	Fn() Expression
 }
 
-// Let is an Expression/AST node that represents the standard let polymorphism found in functional languages
-type Let interface {
+type LetBase interface {
 	// let name = def in body
 	Expression
-	Namer
+	Var() NameGroup
+}
+
+// Let is an Expression/AST node that represents the standard let polymorphism found in functional languages
+type Let interface {
+	LetBase
 	Def() Expression
 }
 
 // Lambda is an Expression/AST node that represents a function definiton
 type Lambda interface {
 	Expression
-	Namer
+	Args() NameGroup
 }
 
 // EmbeddedType is a type directly embedded into the code

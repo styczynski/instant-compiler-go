@@ -3,7 +3,10 @@ package ast
 import (
 	"strings"
 
+	"github.com/alecthomas/participle/v2/lexer"
+
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Statement struct {
@@ -131,3 +134,19 @@ func (ast *Statement) Print(c *context.ParsingContext) string {
 	}
 	return ret
 }
+
+//////
+
+func (ast *Statement) Body() hindley_milner.Expression { return ast }
+func (ast *Statement) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(ast)
+}
+func (ast *Statement) Visit(mapper hindley_milner.ExpressionMapper) {
+	mapper(ast)
+}
+func (ast *Statement) Type() hindley_milner.Type {
+	return PrimitiveType{
+		name:    "void",
+	}
+}
+func (ast *Statement) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_LITERAL }

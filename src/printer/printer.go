@@ -2,7 +2,8 @@ package printer
 
 import (
 	"bytes"
-	"github.com/styczynski/latte-compiler/src/parser"
+	"github.com/styczynski/latte-compiler/src/parser/ast"
+	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/printer/chroma/styles"
 	"github.com/styczynski/latte-compiler/src/printer/chroma/formatters"
 	"github.com/styczynski/latte-compiler/src/printer/chroma/lexers"
@@ -14,7 +15,7 @@ func CreateLattePrinter() *LattePrinter {
 	return &LattePrinter{}
 }
 
-func (p *LattePrinter) Raw(program *parser.LatteProgram, c *parser.ParsingContext) string {
+func (p *LattePrinter) Raw(program *ast.LatteProgram, c *context.ParsingContext) string {
 	return program.Print(c)
 }
 
@@ -38,6 +39,6 @@ func (p *LattePrinter) FormatRaw(input string) (string, error) {
 	return buf.String(), nil
 }
 
-func (p *LattePrinter) Format(program *parser.LatteProgram, c *parser.ParsingContext) (string, error) {
+func (p *LattePrinter) Format(program *ast.LatteProgram, c *context.ParsingContext) (string, error) {
 	return p.FormatRaw(p.Raw(program, c))
 }

@@ -21,7 +21,7 @@ type λ struct {
 	body hindley_milner.Expression
 }
 
-func (n λ) Name() hindley_milner.NameGroup     { return hindley_milner.NamesWithTypesFromMap(n.args) }
+func (n λ) Args() hindley_milner.NameGroup     { return hindley_milner.NamesWithTypesFromMap(n.args) }
 func (n λ) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	return mapper(n.body)
 }
@@ -138,7 +138,7 @@ func (n let) Visit(mapper hindley_milner.ExpressionMapper) {
 	mapper(n.in)
 	mapper(n)
 }
-func (n let) Name() hindley_milner.NameGroup     { return hindley_milner.Name(n.name) }
+func (n let) Var() hindley_milner.NameGroup     { return hindley_milner.Name(n.name) }
 func (n let) Def() hindley_milner.Expression  { return n.def }
 func (n let) Body() hindley_milner.Expression { return n.in }
 func (n let) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_LET }
@@ -157,7 +157,7 @@ func (n decl) Visit(mapper hindley_milner.ExpressionMapper) {
 	mapper(n.def)
 	mapper(n)
 }
-func (n decl) Name() hindley_milner.NameGroup           { return hindley_milner.Name(n.name) }
+func (n decl) Var() hindley_milner.NameGroup           { return hindley_milner.Name(n.name) }
 func (n decl) Def() hindley_milner.Expression        { return n.def }
 func (n decl) Body() hindley_milner.Expression       { return n }
 func (n decl) Children() []hindley_milner.Expression { return []hindley_milner.Expression{n.def} }
@@ -181,7 +181,7 @@ func (n letrec) Visit(mapper hindley_milner.ExpressionMapper) {
 	mapper(n.in)
 	mapper(n)
 }
-func (n letrec) Name() hindley_milner.NameGroup           { return hindley_milner.Name(n.name) }
+func (n letrec) Var() hindley_milner.NameGroup           { return hindley_milner.Name(n.name) }
 func (n letrec) Def() hindley_milner.Expression        { return n.def }
 func (n letrec) Body() hindley_milner.Expression       { return n.in }
 func (n letrec) Children() []hindley_milner.Expression { return []hindley_milner.Expression{n.def, n.in} }
@@ -379,7 +379,7 @@ func Example_greenspun() {
 	config := hindley_milner.NewInferConfiguration()
 	config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, Prim(Void)) }
 
-	scheme, err = hindley_milner.Infer(env, fac, config)
+	scheme, _, err = hindley_milner.Infer(env, fac, config)
 	if err != nil {
 		log.Printf("%+v", errors.Cause(err))
 	}
