@@ -4,6 +4,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Comparison struct {
@@ -42,4 +43,53 @@ func (ast *Comparison) Print(c *context.ParsingContext) string {
 		return printBinaryOperation(c, ast, ast.Addition.Print(c), ast.Op, ast.Next.Print(c))
 	}
 	return ast.Addition.Print(c)
+}
+
+
+////
+
+func (ast *Comparison) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	next := ast.Next
+	if ast.HasNext() {
+		next = mapper(ast.Next).(*Comparison)
+	}
+	return mapper(&Comparison{
+		BaseASTNode: ast.BaseASTNode,
+		Addition:    mapper(ast.Addition).(*Addition),
+		Op:          ast.Op,
+		Next:        next,
+	})
+}
+
+func (ast *Comparison) Visit(mapper hindley_milner.ExpressionMapper) {
+	mapper(ast.Addition)
+	if ast.HasNext() {
+		mapper(ast.Next)
+	}
+	mapper(ast)
+}
+
+func (ast *Comparison) Fn() hindley_milner.Expression {
+	return &BuiltinFunction{
+		name: ast.Op,
+	}
+}
+
+func (ast *Comparison) Body() hindley_milner.Expression {
+	if !ast.HasNext() {
+		return ast.Addition
+	}
+	return hindley_milner.Batch{
+		Exp: []hindley_milner.Expression{
+			ast.Addition,
+			ast.Next,
+		},
+	}
+}
+
+func (ast *Comparison) ExpressionType() hindley_milner.ExpressionType {
+	if !ast.HasNext() {
+		return hindley_milner.E_PROXY
+	}
+	return hindley_milner.E_APPLICATION
 }

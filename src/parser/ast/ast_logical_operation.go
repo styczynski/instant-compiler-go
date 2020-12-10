@@ -4,6 +4,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type LogicalOperation struct {
@@ -44,3 +45,50 @@ func (ast *LogicalOperation) Print(c *context.ParsingContext) string {
 	return ast.Equality.Print(c)
 }
 
+/////
+
+func (ast *LogicalOperation) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	next := ast.Next
+	if ast.HasNext() {
+		next = mapper(ast.Next).(*LogicalOperation)
+	}
+	return mapper(&LogicalOperation{
+		BaseASTNode: ast.BaseASTNode,
+		Equality:    mapper(ast.Equality).(*Equality),
+		Op:          ast.Op,
+		Next:        next,
+	})
+}
+
+func (ast *LogicalOperation) Visit(mapper hindley_milner.ExpressionMapper) {
+	mapper(ast.Equality)
+	if ast.HasNext() {
+		mapper(ast.Next)
+	}
+	mapper(ast)
+}
+
+func (ast *LogicalOperation) Fn() hindley_milner.Expression {
+	return &BuiltinFunction{
+		name: ast.Op,
+	}
+}
+
+func (ast *LogicalOperation) Body() hindley_milner.Expression {
+	if !ast.HasNext() {
+		return ast.Equality
+	}
+	return hindley_milner.Batch{
+		Exp: []hindley_milner.Expression{
+			ast.Equality,
+			ast.Next,
+		},
+	}
+}
+
+func (ast *LogicalOperation) ExpressionType() hindley_milner.ExpressionType {
+	if !ast.HasNext() {
+		return hindley_milner.E_PROXY
+	}
+	return hindley_milner.E_APPLICATION
+}

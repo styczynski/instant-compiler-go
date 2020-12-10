@@ -29,11 +29,7 @@ func main() {
 	p := parser.CreateLatteParser(pr)
 	ast, latteError := p.ParseInput(strings.NewReader(`
 int main (int a) {
- return 0;
-}
-
-int test(int b, int c) {
- return 2;
+ void e = (2<3) || (1>3);
 }
 `), context)
 	if latteError != nil {

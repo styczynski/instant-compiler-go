@@ -4,6 +4,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Unary struct {
@@ -54,4 +55,56 @@ func (ast *Unary) Print(c *context.ParsingContext) string {
 		return ast.UnaryApplication.Print(c)
 	}
 	return "UNKNOWN"
+}
+
+////
+
+
+func (ast *Unary) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	if ast.IsOperation() {
+		return mapper(&Unary{
+			BaseASTNode:      ast.BaseASTNode,
+			Op:               ast.Op,
+			Unary:            mapper(ast.Unary).(*Unary),
+		})
+	} else if ast.IsUnaryApplication() {
+		return mapper(&Unary{
+			BaseASTNode:      ast.BaseASTNode,
+			UnaryApplication: mapper(ast.UnaryApplication).(*UnaryApplication),
+		})
+	}
+	panic("Invalid Unary operation type")
+}
+
+func (ast *Unary) Visit(mapper hindley_milner.ExpressionMapper) {
+	if ast.IsOperation() {
+		mapper(ast.Unary)
+	} else if ast.IsUnaryApplication() {
+		mapper(ast.UnaryApplication)
+	}
+	mapper(ast)
+}
+
+func (ast *Unary) Fn() hindley_milner.Expression {
+	return &BuiltinFunction{
+		name: ast.Op,
+	}
+}
+
+func (ast *Unary) Body() hindley_milner.Expression {
+	if ast.IsUnaryApplication() {
+		return ast.UnaryApplication
+	}
+	return hindley_milner.Batch{
+		Exp: []hindley_milner.Expression{
+			ast.Unary,
+		},
+	}
+}
+
+func (ast *Unary) ExpressionType() hindley_milner.ExpressionType {
+	if ast.IsUnaryApplication() {
+		return hindley_milner.E_PROXY
+	}
+	return hindley_milner.E_APPLICATION
 }

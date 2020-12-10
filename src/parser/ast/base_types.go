@@ -6,6 +6,31 @@ import (
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
+type Primitive int
+
+const (
+	T_BOOL Primitive = iota
+	T_INT
+	T_VOID
+	T_STRING
+)
+
+func CreatePrimitive(p Primitive) PrimitiveType {
+	name := "void"
+	if p == T_STRING {
+		name = "string"
+	} else if p == T_BOOL {
+		name = "bool"
+	} else if p == T_INT {
+		name = "int"
+	} else if p == T_VOID {
+		name = "void"
+	}
+	return PrimitiveType{
+		name:    name,
+	}
+}
+
 type PrimitiveType struct {
 	name string
 	context hindley_milner.CodeContext

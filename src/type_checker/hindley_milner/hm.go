@@ -47,20 +47,37 @@ func (infer *inferer) Fresh() TypeVariable {
 	}
 }
 
-func (infer *inferer) lookup(isLiteral bool, name string) error {
+func (infer *inferer) lookup(isLiteral bool, name string, source Expression) error {
 	s, ok := infer.env.SchemeOf(name)
 	if !ok {
-		return UndefinedSymbol{
+		panic(UndefinedSymbol{
 			Name: name,
+			Source: source,
 			IsLiteral: isLiteral,
 			IsVariable: !isLiteral,
-		}
+		})
 	}
 	infer.t = Instantiate(infer, s)
 	return nil
 }
 
 func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error) {
+
+	// fallbacks
+
+	exprType := expr.ExpressionType()
+	if forceType != E_NONE {
+		exprType = forceType
+	}
+
+	// Resolve unions
+	for {
+		if exprType != E_PROXY {
+			break
+		}
+		expr = expr.Body()
+		exprType = expr.ExpressionType()
+	}
 
 	// explicit types/inferers - can fail
 	switch et := expr.(type) {
@@ -78,12 +95,6 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		err = nil // reset errors
 	}
 
-	// fallbacks
-
-	exprType := expr.ExpressionType()
-	if forceType != E_NONE {
-		exprType = forceType
-	}
 	switch exprType {
 	case E_CUSTOM:
 		et := expr.(CustomExpression)
@@ -91,7 +102,9 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		context := CustomExpressionEnv{
 			Env:                 infer.env,
 			InferencedType:      infer.t,
-			LookupEnv:           infer.lookup,
+			LookupEnv:           func(isLiteral bool, name string) error {
+				return infer.lookup(isLiteral, name, et)
+			},
 			GenerateConstraints: func(expr Expression) (e error, env Env, i Type, constraints Constraints) {
 				backupT := infer.t
 				backupEnv := infer.env
@@ -122,7 +135,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			return fmt.Errorf("Literal entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
 		name := et.Name().GetNames()[0]
-		return infer.lookup(true, name)
+		return infer.lookup(true, name, et)
 
 	case E_VAR:
 		et := expr.(Var)
@@ -130,7 +143,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			return fmt.Errorf("Var entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
 		name := et.Name().GetNames()[0]
-		if err = infer.lookup(false, name); err != nil {
+		if err = infer.lookup(false, name, et); err != nil {
 			infer.env.Add(name, &Scheme{t: et.Type()})
 			err = nil
 		}
@@ -140,7 +153,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		scheme := et.Type()
 		tempName := fmt.Sprintf("__embt_%s", string(rand.Int63()))
 		infer.env.Add(tempName, scheme)
-		err = infer.lookup(false, tempName)
+		err = infer.lookup(false, tempName, et)
 		infer.env.Remove(tempName)
 
 	case E_RETURN:
@@ -199,6 +212,9 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		}
 
 		if exprType == E_FUNCTION {
+			if err = infer.consGen(et.Body(), E_NONE, false, false); err != nil {
+				return errors.Wrapf(err, "Unable to infer body of %v. Body: %v", et, et.Body())
+			}
 			bodyType := infer.Fresh()
 			infer.t = bodyType
 		} else {
@@ -320,69 +336,106 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 
 
 	case E_LET_RECURSIVE, E_DECLARATION, E_FUNCTION_DECLARATION:
-		et := expr.(LetBase)
-		tv := infer.Fresh()
+
 		// env := infer.env // backup
 
-		if len(et.Var().GetNames()) != 1 {
-			return fmt.Errorf("LetRec entity cannot conntain other value than one variable name. You cannot use Names batch here.")
-		}
-		name := et.Var().GetNames()[0]
+		et := expr.(LetBase)
+		names := et.Var().GetNames()
 
-		infer.env = infer.env.Clone()
-		infer.env.Remove(name)
-		infer.env.Add(name, &Scheme{tvs: TypeVarSet{tv}, t: tv})
-
-		if exprType == E_FUNCTION_DECLARATION {
-			fn := expr.(Lambda)
-			if err = infer.consGen(fn, E_FUNCTION, false, false); err != nil {
-				return errors.Wrapf(err, "Unable to infer the definition of a letRec %v. Def: %v", et, fn)
+		definitions := []Expression{}
+		if len(names) == 1 {
+			if exprType == E_FUNCTION_DECLARATION {
+				definitions = append(definitions, et.(Lambda))
+			} else {
+				definitions = append(definitions, et.(Let).Def())
+			}
+		} else if len(names) > 1 {
+			if exprType == E_FUNCTION_DECLARATION {
+				for range names {
+					definitions = append(definitions, et.(Lambda))
+				}
+			} else {
+				for _, expr := range et.(Let).Def().(Batch).Expressions() {
+					definitions = append(definitions, expr)
+				}
 			}
 		} else {
-			def := expr.(Let).Def()
-			if err = infer.consGen(def, E_NONE, false, false); err != nil {
-				return errors.Wrapf(err, "Unable to infer the definition of a letRec %v. Def: %v", et, def)
-			}
-		}
-		defType, defCs := infer.t, infer.cs
-
-		s := newSolver()
-		s.solve(defCs)
-		if s.err != nil {
-			return errors.Wrapf(s.err, "Unable to solve constraints of def: %v", defCs)
+			panic("Invalid number of identifiers returned by Var() of the declaration/let: zero.")
 		}
 
-		sc := Generalize(infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
-
-		infer.env.Remove(name)
-		infer.env.Add(name, sc)
-
-		if exprType == E_DECLARATION || exprType == E_FUNCTION_DECLARATION {
+		for i, _ := range names {
+			name := names[i]
+			def := definitions[i]
+			body := expr.Body()
 			tv := infer.Fresh()
-			if defaultTyper, ok := et.(DefaultTyper); ok {
-				infer.cs = append(infer.cs, Constraint{
-					a:       tv,
-					b:       Instantiate(infer, defaultTyper.DefaultType()),
-					context: CreateCodeContext(expr),
-				})
-			} else if infer.config.CreateDefaultEmptyType() != nil {
-				infer.cs = append(infer.cs, Constraint{
-					a:       tv,
-					b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
-					context: CreateCodeContext(expr),
-				})
-			}
-			infer.t = tv
-		} else {
-			if err = infer.consGen(et.Body(), E_NONE, false, false); err != nil {
-				return errors.Wrapf(err, "Unable to infer body of letRec %v. Body: %v", et, et.Body())
-			}
-			infer.t = infer.t.Apply(s.sub).(Type)
-			infer.t = saveExprContext(infer.t, &expr)
-			infer.cs = infer.cs.Apply(s.sub).(Constraints)
-		}
 
-		infer.cs = append(infer.cs, defCs...)
+			//if exprType == E_FUNCTION_DECLARATION {
+			//	def = def.(Lambda)
+			//} else {
+			//	def = def.(Let).Def()
+			//}
+
+			//
+			//if len(et.Var().GetNames()) != 1 {
+			//	return fmt.Errorf("LetRec entity cannot conntain other value than one variable name. You cannot use Names batch here.")
+			//}
+			//name := et.Var().GetNames()[0]
+
+			infer.env = infer.env.Clone()
+			infer.env.Remove(name)
+			infer.env.Add(name, &Scheme{tvs: TypeVarSet{tv}, t: tv})
+
+			if exprType == E_FUNCTION_DECLARATION {
+				//fn := expr.(Lambda)
+				if err = infer.consGen(def, E_FUNCTION, false, false); err != nil {
+					return errors.Wrapf(err, "Unable to infer the definition of a letRec %v. Def: %v", et, def)
+				}
+			} else {
+				//def := expr.(Let).Def()
+				if err = infer.consGen(def, E_NONE, false, false); err != nil {
+					return errors.Wrapf(err, "Unable to infer the definition of a letRec %v. Def: %v", et, def)
+				}
+			}
+			defType, defCs := infer.t, infer.cs
+
+			s := newSolver()
+			s.solve(defCs)
+			if s.err != nil {
+				return errors.Wrapf(s.err, "Unable to solve constraints of def: %v", defCs)
+			}
+
+			sc := Generalize(infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
+
+			infer.env.Remove(name)
+			infer.env.Add(name, sc)
+
+			if exprType == E_DECLARATION || exprType == E_FUNCTION_DECLARATION {
+				tv := infer.Fresh()
+				if defaultTyper, ok := expr.(DefaultTyper); ok {
+					infer.cs = append(infer.cs, Constraint{
+						a:       tv,
+						b:       Instantiate(infer, defaultTyper.DefaultType()),
+						context: CreateCodeContext(expr),
+					})
+				} else if infer.config.CreateDefaultEmptyType() != nil {
+					infer.cs = append(infer.cs, Constraint{
+						a:       tv,
+						b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
+						context: CreateCodeContext(expr),
+					})
+				}
+				infer.t = tv
+			} else {
+				if err = infer.consGen(body, E_NONE, false, false); err != nil {
+					return errors.Wrapf(err, "Unable to infer body of letRec %v. Body: %v", et, body)
+				}
+				infer.t = infer.t.Apply(s.sub).(Type)
+				infer.t = saveExprContext(infer.t, &expr)
+				infer.cs = infer.cs.Apply(s.sub).(Constraints)
+			}
+
+			infer.cs = append(infer.cs, defCs...)
+		}
 
 	case E_LET:
 		et := expr.(Let)

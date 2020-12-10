@@ -4,6 +4,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 
@@ -86,4 +87,48 @@ func (ast *Primary) Print(c *context.ParsingContext) string {
 		return printNode(c, ast, "(%s)", ast.SubExpression.Print(c))
 	}
 	return "UNKNOWN"
+}
+
+////
+
+func (ast *Primary) Name() hindley_milner.NameGroup     {
+	if ast.IsVariable() {
+		return hindley_milner.Name(*ast.Variable)
+	}
+	panic("Cannot get name for Primary expression which is not a variable")
+}
+func (ast *Primary) Body() hindley_milner.Expression {
+	if ast.IsSubexpression() {
+		return ast.SubExpression
+	}
+	return ast
+}
+func (ast *Primary) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	// TODO
+	return ast
+}
+func (ast *Primary) Visit(mapper hindley_milner.ExpressionMapper) {
+	// TODO
+	mapper(ast)
+}
+func (ast *Primary) Type() hindley_milner.Type {
+	if ast.IsVariable() {
+		return nil
+	} else if ast.IsInt() {
+		return CreatePrimitive(T_INT)
+	} else if ast.IsString() {
+		return CreatePrimitive(T_STRING)
+	} else if ast.IsBool() {
+		return CreatePrimitive(T_BOOL)
+	} else if ast.IsSubexpression() {
+		return nil
+	}
+	panic("Unknown Primary type")
+}
+
+func  (ast *Primary)  ExpressionType() hindley_milner.ExpressionType {
+	if ast.IsSubexpression() {
+		return hindley_milner.E_PROXY
+	}
+	return hindley_milner.E_LITERAL
 }

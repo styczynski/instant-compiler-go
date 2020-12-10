@@ -137,16 +137,38 @@ func (ast *Statement) Print(c *context.ParsingContext) string {
 
 //////
 
-func (ast *Statement) Body() hindley_milner.Expression { return ast }
+func (ast *Statement) Body() hindley_milner.Expression {
+	if ast.IsEmpty() {
+		// ?
+	} else if ast.IsBlockStatement() {
+		return ast.BlockStatement
+	} else if ast.IsDeclaration() {
+		return ast.Declaration
+	}//} else if ast.IsAssignment() {
+	//	return ast.Assignment
+	//} else if ast.IsUnaryStatement() {
+	//	return ast.UnaryStatement
+	//} else if ast.IsReturn() {
+	//	return ast.Return
+	//} else if ast.IsIf() {
+	//	return ast.If
+	//} else if ast.IsWhile() {
+	//	return ast.While
+	//} else if ast.IsExpression() {
+	//	return ast.Expression
+	//}
+	panic("Invalid Statement type")
+}
+
 func (ast *Statement) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	// TODO: Fix that to feed mapper(ast.Body()) back into AST!
+	mapper(ast.Body())
 	return mapper(ast)
 }
+
 func (ast *Statement) Visit(mapper hindley_milner.ExpressionMapper) {
+	mapper(ast.Body())
 	mapper(ast)
 }
-func (ast *Statement) Type() hindley_milner.Type {
-	return PrimitiveType{
-		name:    "void",
-	}
-}
-func (ast *Statement) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_LITERAL }
+
+func (ast *Statement) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_PROXY }

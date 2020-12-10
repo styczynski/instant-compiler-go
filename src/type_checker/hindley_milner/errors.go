@@ -2,6 +2,8 @@ package hindley_milner
 
 import (
 	"fmt"
+
+	"github.com/alecthomas/repr"
 )
 
 type UnificationLengthError struct {
@@ -47,6 +49,7 @@ func (err UnificationRecurrentTypeError) Error() string {
 
 type UndefinedSymbol struct {
 	Name string
+	Source Expression
 	IsLiteral bool
 	IsVariable bool
 }
@@ -58,8 +61,9 @@ func (err UndefinedSymbol) Error() string {
 	} else if err.IsLiteral {
 		name = "literal"
 	}
-	return fmt.Sprintf("Unknown %s was used: %s",
+	return fmt.Sprintf("Unknown %s was used: \"%s\" in %s",
 		name,
 		err.Name,
+		repr.String(err.Source),
 	)
 }

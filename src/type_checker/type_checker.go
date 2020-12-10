@@ -22,7 +22,47 @@ func (tc *LatteTypeChecker) Test(c *context.ParsingContext) {
 }
 
 func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
-	return hindley_milner.CreateSimpleEnv(map[string]*hindley_milner.Scheme{})
+	return hindley_milner.CreateSimpleEnv(map[string]*hindley_milner.Scheme{
+		"||":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		"&&":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		"+":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		)),
+		"-":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		)),
+		"/":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		)),
+		"*":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		)),
+		"!":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		"<=":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		">=":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		"==":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		"!=":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		"<":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		">":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+	})
 }
 
 func (tc *LatteTypeChecker) Check(program *ast.LatteProgram, c *context.ParsingContext) {

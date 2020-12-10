@@ -4,6 +4,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Expression struct {
@@ -39,3 +40,24 @@ func (ast *Expression) Print(c *context.ParsingContext) string {
 	return ast.LogicalOperation.Print(c)
 }
 
+////
+
+func (ast *Expression) Body() hindley_milner.Expression {
+	return ast.LogicalOperation
+}
+
+func (ast *Expression) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(&Expression{
+		ComplexASTNode:   ast.ComplexASTNode,
+		LogicalOperation: mapper(ast.LogicalOperation).(*LogicalOperation),
+	})
+}
+
+func (ast *Expression) Visit(mapper hindley_milner.ExpressionMapper) {
+	mapper(ast.LogicalOperation)
+	mapper(ast)
+}
+
+func (ast *Expression) ExpressionType() hindley_milner.ExpressionType {
+	return hindley_milner.E_PROXY
+}

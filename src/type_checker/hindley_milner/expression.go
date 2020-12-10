@@ -80,6 +80,7 @@ const (
 	E_DECLARATION
 	E_FUNCTION_DECLARATION
 	E_CUSTOM
+	E_PROXY
 	E_NONE
 )
 
@@ -228,3 +229,7 @@ type CustomExpression interface {
 	Expression
 	GenerateConstraints(context CustomExpressionEnv) (error, Env, Type, Constraints)
 }
+
+//type ExpressionWithRequiredType interface {
+//	GetRequiredType() *Scheme
+//}
