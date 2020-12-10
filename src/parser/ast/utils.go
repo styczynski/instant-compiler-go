@@ -54,12 +54,19 @@ func (ast *BaseASTNode) Begin() lexer.Position {
 	return ast.Pos
 }
 
-type TraversableNode interface {
-	GetChildren() []TraversableNode
-	GetNode() interface{}
+type NodeWithPosition interface {
 	Begin() lexer.Position
 	End() lexer.Position
+}
+
+type PrintableNode interface {
 	Print(c *context.ParsingContext) string
+}
+
+type TraversableNode interface {
+	NodeWithPosition
+	GetChildren() []TraversableNode
+	GetNode() interface{}
 }
 
 type TraversableNodeToken struct {

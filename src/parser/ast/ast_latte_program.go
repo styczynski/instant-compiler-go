@@ -15,6 +15,17 @@ type LatteProgram struct {
 	Definitions []*TopDef `@@*`
 }
 
+func (ast *LatteProgram) GetIdentifierDeps() []string {
+	idents := []string{}
+	for _, def := range ast.Definitions {
+		names := def.GetDefinedIdentifier()
+		for _, name := range names {
+			idents = append(idents, name)
+		}
+	}
+	return idents
+}
+
 func (ast *LatteProgram) Begin() lexer.Position {
 	return ast.Pos
 }

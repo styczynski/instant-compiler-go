@@ -2,8 +2,6 @@ package hindley_milner
 
 import (
 	"fmt"
-
-	"github.com/alecthomas/repr"
 )
 
 type UnificationLengthError struct {
@@ -18,17 +16,40 @@ func (err UnificationLengthError) Error() string {
 		err.TypeB.String())
 }
 
+func (err UnificationLengthError) IsCausedByBuiltin() bool {
+	return err.Constraint.context.IsBuiltin()
+}
+
+func (err UnificationLengthError) GetCauseName() string {
+	return err.Constraint.context.Name
+}
+
+func (err UnificationLengthError) Source() Expression {
+	return *(err.Constraint.context.Source)
+}
+
 type UnificationWrongTypeError struct {
 	TypeA Type
 	TypeB Type
 	Constraint Constraint
 }
 
+func (err UnificationWrongTypeError) IsCausedByBuiltin() bool {
+	return err.Constraint.context.IsBuiltin()
+}
+
+func (err UnificationWrongTypeError) GetCauseName() string {
+	return err.Constraint.context.Name
+}
+
+func (err UnificationWrongTypeError) Source() Expression {
+	return *(err.Constraint.context.Source)
+}
+
 func (err UnificationWrongTypeError) Error() string {
-	return fmt.Sprintf("Failed to unify types %s and %s. Mismatched types. [%s]",
+	return fmt.Sprintf("Failed to unify types %s and %s. Mismatched types.",
 		err.TypeA.String(),
 		err.TypeB.String(),
-		err.Constraint.context.String(),
 	)
 }
 
@@ -61,9 +82,8 @@ func (err UndefinedSymbol) Error() string {
 	} else if err.IsLiteral {
 		name = "literal"
 	}
-	return fmt.Sprintf("Unknown %s was used: \"%s\" in %s",
+	return fmt.Sprintf("Unknown %s was used: \"%s\"",
 		name,
 		err.Name,
-		repr.String(err.Source),
 	)
 }

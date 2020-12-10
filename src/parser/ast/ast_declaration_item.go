@@ -46,6 +46,9 @@ func (ast *DeclarationItem) Print(c *context.ParsingContext) string {
 /////
 
 func (ast *DeclarationItem) Body() hindley_milner.Expression {
+	if !ast.HasInitializer() {
+		return hindley_milner.Batch{Exp: []hindley_milner.Expression{}}
+	}
 	return ast.Initializer
 }
 

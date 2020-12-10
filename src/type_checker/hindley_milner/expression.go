@@ -233,3 +233,7 @@ type CustomExpression interface {
 //type ExpressionWithRequiredType interface {
 //	GetRequiredType() *Scheme
 //}
+
+type ExpressionWithIdentifiersDeps interface {
+	GetIdentifierDeps() []string
+}

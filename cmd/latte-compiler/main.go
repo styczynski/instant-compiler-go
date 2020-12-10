@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"runtime/pprof"
 	"strings"
 
 	//"os"
@@ -23,14 +25,27 @@ func main() {
 		panic(fmt.Errorf("invalid application configuration: %s", err))
 	}
 
-	context := context2.NewParsingContext()
-	tc := type_checker.CreateLatteTypeChecker()
 	pr := printer.CreateLattePrinter()
-	p := parser.CreateLatteParser(pr)
+	context := context2.NewParsingContext(pr)
+	tc := type_checker.CreateLatteTypeChecker()
+	p := parser.CreateLatteParser()
 	ast, latteError := p.ParseInput(strings.NewReader(`
-int main (int a) {
- bool e = !(2<3);
+// iteracyjnie
+int fact (int n) {
+  int i,r ;
+  i = 2 ;
+  r = 1 ;
+  while (2) {
+    return r;
+  }
+  return r ;
 }
+int main (int x) {
+  int q = 1;
+  printInt(fact(2)) ;
+  return 0 ;
+}
+
 `), context)
 	if latteError != nil {
 		fmt.Print(latteError.CliMessage())
@@ -42,7 +57,19 @@ int main (int a) {
 	//	panic(err)
 	//}
 
-	tc.Check(ast, context)
+	fmt.Printf("PARSED\n")
+	f, err := os.Create("compiler.prof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	err = tc.Check(ast, context)
+	if err != nil {
+		fmt.Print(err.(*type_checker.TypeCheckingError).CliMessage())
+		os.Exit(1)
+	}
 
 	//tc.Test(context)
 

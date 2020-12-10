@@ -14,6 +14,12 @@ type TopDef struct {
 	Function *FnDef `@@`
 }
 
+func (ast *TopDef) GetDefinedIdentifier() []string {
+	return []string{
+		ast.Function.Name,
+	}
+}
+
 func (ast *TopDef) Begin() lexer.Position {
 	return ast.Pos
 }

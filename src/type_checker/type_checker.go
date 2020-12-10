@@ -2,9 +2,7 @@ package type_checker
 
 import (
 	"fmt"
-	"log"
-
-	"github.com/pkg/errors"
+	"runtime/debug"
 
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -23,6 +21,8 @@ func (tc *LatteTypeChecker) Test(c *context.ParsingContext) {
 
 func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 	return hindley_milner.CreateSimpleEnv(map[string]*hindley_milner.Scheme{
+		"true":      hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_BOOL)),
+		"false":      hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_BOOL)),
 		"||":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
 		)),
@@ -44,6 +44,12 @@ func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 		"!":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
 		)),
+		"--":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		)),
+		"++":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		)),
 		"<=":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
@@ -62,24 +68,126 @@ func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 		">":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
+		"printInt":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_VOID),
+		)),
+		"=":  hindley_milner.NewScheme(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
+			hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), ast.CreatePrimitive(ast.T_VOID))),
+		"if":  hindley_milner.NewScheme(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a'), hindley_milner.TVar('b')},
+			hindley_milner.NewFnType(ast.CreatePrimitive(ast.T_BOOL), hindley_milner.TVar('a'), hindley_milner.TVar('b'), ast.CreatePrimitive(ast.T_VOID))),
+		"while":  hindley_milner.NewScheme(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
+			hindley_milner.NewFnType(ast.CreatePrimitive(ast.T_BOOL), hindley_milner.TVar('a'), ast.CreatePrimitive(ast.T_VOID))),
 	})
 }
 
-func (tc *LatteTypeChecker) Check(program *ast.LatteProgram, c *context.ParsingContext) {
-	var scheme *hindley_milner.Scheme
+type TypeCheckingError struct {
+	message string
+	textMessage string
+}
+
+func (e TypeCheckingError) Error() string {
+    return e.message
+}
+
+func (e TypeCheckingError) CliMessage() string {
+	return e.textMessage
+}
+
+func wrapTypeCheckingError(err error, c *context.ParsingContext) error {
+	if undef, ok := err.(hindley_milner.UndefinedSymbol); ok {
+		src := undef.Source.(interface{}).(ast.NodeWithPosition)
+		message, textMessage := c.FormatParsingError(
+			"Unknown Symbol",
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			undef.Error(),
+			)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+		}
+	} else if wrongType, ok := err.(hindley_milner.UnificationWrongTypeError); ok {
+		src := wrongType.Source().(interface{}).(ast.NodeWithPosition)
+		causeInfo := ""
+
+		if wrongType.IsCausedByBuiltin() {
+			causeInfo = fmt.Sprintf("Caused by internal definition: %s", wrongType.GetCauseName())
+		} else {
+			//sourceA := (*wrongType.TypeA.GetContext().Source).(interface{}).(ast.PrintableNode)
+			//sourceB := (*wrongType.TypeB.GetContext().Source).(interface{}).(ast.PrintableNode)
+			//causeInfo = fmt.Sprintf("First type comes from: %s and the second one from: N/A.", sourceA.Print(c))
+		}
+
+		message, textMessage := c.FormatParsingError(
+			"Type Mismatch",
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			fmt.Sprintf("%s%s", wrongType.Error(), causeInfo),
+		)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+		}
+	} else if wrongTypeLen, ok := err.(hindley_milner.UnificationLengthError); ok {
+		src := wrongTypeLen.Source().(interface{}).(ast.NodeWithPosition)
+
+		causeInfo := ""
+
+		if wrongType.IsCausedByBuiltin() {
+		causeInfo = fmt.Sprintf("Caused by internal definition: %s", wrongType.GetCauseName())
+		} else {
+		//sourceA := (*wrongType.TypeA.GetContext().Source).(interface{}).(ast.PrintableNode)
+		//sourceB := (*wrongType.TypeB.GetContext().Source).(interface{}).(ast.PrintableNode)
+		//causeInfo = fmt.Sprintf("First type comes from: %s and the second one from: N/A.", sourceA.Print(c))
+		}
+
+		message, textMessage := c.FormatParsingError(
+			"Type Mismatch",
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			fmt.Sprintf("%s%s", wrongTypeLen.Error(), causeInfo),
+		)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+		}
+	}
+	panic(fmt.Sprintf("Unknown error: [%v]\n", err))
+	return TypeCheckingError{
+		message: "Unknown error\n",
+		textMessage: "Unknown error\n",
+	}
+}
+
+func (tc *LatteTypeChecker) Check(program *ast.LatteProgram, c *context.ParsingContext) error {
+	debug.SetGCPercent(-1)
+	//var scheme *hindley_milner.Scheme
 	var err error
-	var retEnv hindley_milner.Env
+	//var retEnv hindley_milner.Env
 
 	config := hindley_milner.NewInferConfiguration()
 	config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_VOID)) }
 
-	scheme, retEnv, err = hindley_milner.Infer(tc.GetEnv(), program, config)
+	_, _, err = hindley_milner.Infer(tc.GetEnv(), program, config)
 	if err != nil {
-		log.Printf("%+v", errors.Cause(err))
+		return wrapTypeCheckingError(err, c)
 	}
-	simpleType, ok := scheme.Type()
-	fmt.Printf("simple Type: %v | isMonoType: %v | err: %v\n", simpleType, ok, err)
-	hindley_milner.PrintEnv(retEnv)
+	return nil
+	//simpleType, ok := scheme.Type()
+	//fmt.Printf("simple Type: %v | isMonoType: %v | err: %v\n", simpleType, ok, err)
+	//hindley_milner.PrintEnv(retEnv)
 }
 
 

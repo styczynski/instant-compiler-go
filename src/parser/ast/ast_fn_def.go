@@ -75,6 +75,10 @@ func (ast *FnDef) Body() hindley_milner.Expression {
 
 func (ast *FnDef) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_FUNCTION_DECLARATION }
 
+func (ast *FnDef) DefaultType() *hindley_milner.Scheme {
+	return ast.ReturnType.GetType()
+}
+
 func (ast *FnDef) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	return mapper(&FnDef{
 		BaseASTNode:  ast.BaseASTNode,

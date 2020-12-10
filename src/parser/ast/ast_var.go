@@ -5,6 +5,7 @@ import (
 )
 
 type VarName struct {
+	BaseASTNode
 	name string
 }
 

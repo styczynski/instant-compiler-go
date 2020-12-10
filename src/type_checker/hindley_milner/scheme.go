@@ -83,7 +83,7 @@ func (s *Scheme) Normalize() (err error) {
 	ord := BorrowTypeVarSet(len(tfv))
 	for i := range tfv {
 		ord[i] = TypeVariable{
-			value: rune(letters[i]),
+			value: int16(i),
 		}
 	}
 

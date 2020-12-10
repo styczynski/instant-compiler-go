@@ -100,6 +100,7 @@ func (ast *UnaryApplication) Visit(mapper hindley_milner.ExpressionMapper) {
 
 func (ast *UnaryApplication) Fn() hindley_milner.Expression {
 	return &VarName{
+		BaseASTNode: ast.BaseASTNode,
 		name: *ast.Target,
 	}
 }

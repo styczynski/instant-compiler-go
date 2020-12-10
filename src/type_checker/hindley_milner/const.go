@@ -7,5 +7,3 @@
 // The key to the HM type inference system is in the Unify() function.
 
 package hindley_milner
-
-const letters = `abcdefghijklmnopqrstuvwxyz`
