@@ -66,12 +66,14 @@ func (ast *Declaration) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_DECLARATION
 }
 
-func (ast *Declaration) Var() hindley_milner.NameGroup           {
+func (ast *Declaration) Var() hindley_milner.NameGroup {
 	names := []string{}
+	types := map[string]*hindley_milner.Scheme{}
 	for _, item := range ast.Items {
 		names = append(names, item.Name)
+		types[item.Name] = ast.DeclarationType.GetType()
 	}
-	return hindley_milner.Names(names)
+	return hindley_milner.NamesWithTypes(names, types)
 }
 
 func (ast *Declaration) Def() hindley_milner.Expression {

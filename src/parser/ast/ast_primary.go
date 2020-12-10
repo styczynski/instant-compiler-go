@@ -13,7 +13,7 @@ type Primary struct {
 	Variable   *string   `@Ident`
 	Int        *int64    `| @Int`
 	String        *string     `| @String`
-	Bool          *bool       `| ( @"true" | "false" )`
+	Bool          *bool       `| @( "true" | "false" )`
 	SubExpression *Expression `| "(" @@ ")" `
 }
 

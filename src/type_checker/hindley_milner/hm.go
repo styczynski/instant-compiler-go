@@ -341,13 +341,21 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 
 		et := expr.(LetBase)
 		names := et.Var().GetNames()
+		types := []*Scheme{}
 
 		definitions := []Expression{}
 		if len(names) == 1 {
 			if exprType == E_FUNCTION_DECLARATION {
 				definitions = append(definitions, et.(Lambda))
 			} else {
-				definitions = append(definitions, et.(Let).Def())
+				if batch, ok := et.(Let).Def().(Batch); ok {
+					definitions = append(definitions, batch.Expressions()[0])
+				} else {
+					definitions = append(definitions, et.(Let).Def())
+				}
+				if et.Var().HasTypes() {
+					types = append(types, et.Var().GetTypeOf(names[0]))
+				}
 			}
 		} else if len(names) > 1 {
 			if exprType == E_FUNCTION_DECLARATION {
@@ -355,12 +363,19 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 					definitions = append(definitions, et.(Lambda))
 				}
 			} else {
-				for _, expr := range et.(Let).Def().(Batch).Expressions() {
+				for i, expr := range et.(Let).Def().(Batch).Expressions() {
 					definitions = append(definitions, expr)
+					if et.Var().HasTypes() {
+						types = append(types, et.Var().GetTypeOf(names[i]))
+					}
 				}
 			}
 		} else {
 			panic("Invalid number of identifiers returned by Var() of the declaration/let: zero.")
+		}
+
+		if len(types) != len(names) {
+			types = []*Scheme{}
 		}
 
 		for i, _ := range names {
@@ -368,6 +383,11 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			def := definitions[i]
 			body := expr.Body()
 			tv := infer.Fresh()
+
+			var defExpectedType *Scheme = nil
+			if len(types) > 0 {
+				defExpectedType = types[i]
+			}
 
 			//if exprType == E_FUNCTION_DECLARATION {
 			//	def = def.(Lambda)
@@ -410,21 +430,21 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			infer.env.Add(name, sc)
 
 			if exprType == E_DECLARATION || exprType == E_FUNCTION_DECLARATION {
-				tv := infer.Fresh()
+				retType := infer.Fresh()
 				if defaultTyper, ok := expr.(DefaultTyper); ok {
 					infer.cs = append(infer.cs, Constraint{
-						a:       tv,
+						a:       retType,
 						b:       Instantiate(infer, defaultTyper.DefaultType()),
 						context: CreateCodeContext(expr),
 					})
 				} else if infer.config.CreateDefaultEmptyType() != nil {
 					infer.cs = append(infer.cs, Constraint{
-						a:       tv,
+						a:       retType,
 						b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
 						context: CreateCodeContext(expr),
 					})
 				}
-				infer.t = tv
+				infer.t = retType
 			} else {
 				if err = infer.consGen(body, E_NONE, false, false); err != nil {
 					return errors.Wrapf(err, "Unable to infer body of letRec %v. Body: %v", et, body)
@@ -435,6 +455,17 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			}
 
 			infer.cs = append(infer.cs, defCs...)
+			// Add expected type
+			if defExpectedType != nil {
+				fmt.Printf("DEF: EXPECT TYPE OF %v TO BE %v\n", sc.t, Instantiate(infer, defExpectedType))
+				PrintEnv(infer.env)
+
+				infer.cs = append(infer.cs, Constraint{
+					a:       defType,
+					b:       Instantiate(infer, defExpectedType),
+					context: CreateCodeContext(expr),
+				})
+			}
 		}
 
 	case E_LET:

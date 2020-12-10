@@ -60,7 +60,7 @@ func (ast *FnDef) Print(c *context.ParsingContext) string {
 func (ast *FnDef) Args() hindley_milner.NameGroup {
 	argsTypes := map[string]*hindley_milner.Scheme{}
 	for _, arg := range ast.Arg {
-		argsTypes[arg.Name] = arg.GetType()
+		argsTypes[arg.Name] = arg.ArgumentType.GetType()
 	}
 	return hindley_milner.NamesWithTypesFromMap(argsTypes)
 }

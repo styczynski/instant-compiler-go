@@ -9,7 +9,7 @@ import (
 
 type Type struct {
 	BaseASTNode
-	Name string `(@ "int" | "void")`
+	Name string `@( "int" | "void" | "bool" )`
 }
 
 func (ast *Type) Begin() lexer.Position {
@@ -37,8 +37,8 @@ func (ast *Type) Print(c *context.ParsingContext) string {
 
 /////
 
-func (ast *Arg) GetType() *hindley_milner.Scheme {
+func (ast *Type) GetType() *hindley_milner.Scheme {
 	return hindley_milner.NewScheme(nil, PrimitiveType{
-		name:    ast.ArgumentType.Name,
+		name:    ast.Name,
 	})
 }

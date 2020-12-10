@@ -71,7 +71,7 @@ func (tc *LatteTypeChecker) Check(program *ast.LatteProgram, c *context.ParsingC
 	var retEnv hindley_milner.Env
 
 	config := hindley_milner.NewInferConfiguration()
-	config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, Prim(Void)) }
+	config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_VOID)) }
 
 	scheme, retEnv, err = hindley_milner.Infer(tc.GetEnv(), program, config)
 	if err != nil {
