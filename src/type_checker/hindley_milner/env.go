@@ -72,6 +72,7 @@ func (e SimpleEnv) VarsNames() []string {
 
 func (e SimpleEnv) Add(name string, s *Scheme) Env {
 	e[name] = s
+	fmt.Printf("%s => %v\n", name, s)
 	return e
 }
 

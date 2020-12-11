@@ -87,6 +87,12 @@ func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 				ast.CreatePrimitive(ast.T_INT),
 				hindley_milner.TVar('a'),
 			)),
+		"[_]": hindley_milner.NewScheme(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
+			hindley_milner.NewFnType(
+				hindley_milner.NewRecordType("array", hindley_milner.TVar('a')),
+				hindley_milner.TVar('a'),
+			)),
 	})
 }
 

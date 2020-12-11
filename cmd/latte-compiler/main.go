@@ -33,10 +33,11 @@ func main() {
 // iteracyjnie
 int fact (int n) {
   int i,r ;
-  int[] q;
-  q = new int[];
-  int ff;
+  int[] q = new int[2];
+  //q = (new int[]);
+  //int ff;
   ff = q[2];
+  for(int a: q) a = q[a] + 9;
   return r ;
 }
 

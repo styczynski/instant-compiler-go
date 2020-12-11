@@ -19,6 +19,7 @@ type Statement struct {
 	Return *Return `| @@`
 	If *If `| @@`
 	While *While `| @@`
+	For *For `| @@`
 	Expression *Expression `| @@ ";"`
 }
 
@@ -66,6 +67,10 @@ func (ast *Statement) IsWhile() bool {
 	return ast.While != nil
 }
 
+func (ast *Statement) IsFor() bool {
+	return ast.For != nil
+}
+
 func (ast *Statement) IsExpression() bool {
 	return ast.Expression != nil
 }
@@ -87,6 +92,8 @@ func (ast *Statement) GetChildren() []TraversableNode {
 		return []TraversableNode{ ast.If }
 	} else if ast.IsWhile() {
 		return []TraversableNode{ ast.While }
+	} else if ast.IsFor() {
+		return []TraversableNode{ ast.For }
 	} else if ast.IsExpression() {
 		return []TraversableNode{ ast.Expression }
 	}
@@ -123,6 +130,8 @@ func (ast *Statement) Print(c *context.ParsingContext) string {
 		ret =  ast.If.Print(c)
 	} else if ast.IsWhile() {
 		ret = ast.While.Print(c)
+	} else if ast.IsFor() {
+		ret = ast.For.Print(c)
 	} else if ast.IsExpression() {
 		ret = printNode(c, ast, "%s;", ast.Expression.Print(c))
 	}
@@ -154,6 +163,8 @@ func (ast *Statement) Body() hindley_milner.Expression {
 		return ast.If
 	} else if ast.IsWhile() {
 		return ast.While
+	} else if ast.IsFor() {
+		return ast.For
 	} else if ast.IsExpression() {
 		return ast.Expression
 	}

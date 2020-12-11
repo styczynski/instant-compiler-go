@@ -10,7 +10,8 @@ import (
 type Type struct {
 	BaseASTNode
 	Name string `@( "int" | "void" | "bool" | "string")`
-	Dimensions *string `(@( "[" "]" ))?`
+	Dimensions *string `(@( "["`
+	Size *Expression `@@? "]" ))?`
 }
 
 func (ast *Type) Begin() lexer.Position {

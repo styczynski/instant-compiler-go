@@ -2,7 +2,6 @@ package hindley_milner
 
 import (
 	"fmt"
-	"math/rand"
 
 	"github.com/pkg/errors"
 )
@@ -179,10 +178,11 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 	case E_TYPE:
 		et := expr.(EmbeddedType)
 		scheme := et.EmbeddedType()
-		tempName := fmt.Sprintf("__embt_%s", string(rand.Int63()))
-		infer.env.Add(tempName, scheme)
-		err = infer.lookup(false, tempName, et)
-		infer.env.Remove(tempName)
+		//tempName := fmt.Sprintf("__embt_%d", int(rand.Int63()))
+		//infer.env.Add(tempName, scheme)
+		//err = infer.lookup(false, tempName, et)
+		//infer.env.Remove(tempName)
+		infer.t = Instantiate(infer, scheme)
 
 	case E_RETURN:
 		et := expr.(Return)
@@ -500,8 +500,13 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			infer.cs = append(infer.cs, defCs...)
 			// Add expected type
 			if defExpectedType != nil {
+				actualType := defType
+				if exprType == E_LET_RECURSIVE {
+					actualType = sc.t
+				}
+				//fmt.Printf("Expect %v to be %v\n", sc.t, Instantiate(infer, defExpectedType))
 				infer.cs = append(infer.cs, Constraint{
-					a:       defType,
+					a:       actualType,
 					b:       Instantiate(infer, defExpectedType),
 					context: CreateCodeContext(expr),
 				})
