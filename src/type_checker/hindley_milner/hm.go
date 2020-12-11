@@ -30,6 +30,7 @@ type inferer struct {
 
 	count int
 	config *InferConfiguration
+	csflag int
 }
 
 func newInferer(env Env, config *InferConfiguration) *inferer {
@@ -77,6 +78,8 @@ func (infer *inferer) resolveProxy(expr Expression, exprType ExpressionType) (Ex
 }
 
 func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error) {
+
+	defer infer.cleanupConstraints()
 
 	if expr == nil {
 		tv := infer.Fresh()
@@ -175,7 +178,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 
 	case E_TYPE:
 		et := expr.(EmbeddedType)
-		scheme := et.Type()
+		scheme := et.EmbeddedType()
 		tempName := fmt.Sprintf("__embt_%s", string(rand.Int63()))
 		infer.env.Add(tempName, scheme)
 		err = infer.lookup(false, tempName, et)
@@ -546,6 +549,59 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 	return nil
 }
 
+func (infer *inferer) cleanupConstraints() {
+	if infer.csflag >= 1 {
+		infer.csflag = 0
+	} else {
+		infer.csflag = infer.csflag + 1
+		return
+	}
+	//prevLen := len(infer.cs)
+
+	cs := Constraints{}
+	freeVars := map[int16]map[Type]interface{}{}
+	contexts := map[int16]CodeContext{}
+	for _, cons := range infer.cs {
+		if !cons.a.Eq(cons.b) {
+			if tv, ok := cons.a.(TypeVariable); ok {
+				if _, has := freeVars[tv.value]; !has {
+					freeVars[tv.value] = map[Type]interface{}{}
+					contexts[tv.value] = tv.context
+				}
+				has := false
+				for q, _ := range freeVars[tv.value] {
+					if q.Eq(cons.b) {
+						has = true
+						break
+					}
+				}
+				if !has {
+					freeVars[tv.value][cons.b] = true
+				}
+			} else {
+				cs = append(cs, cons)
+			}
+		}
+	}
+	for id, context := range contexts {
+		cons := freeVars[id]
+		for b, _ := range cons {
+			cs = append(cs, Constraint{
+				a:       TypeVariable{
+					value:   id,
+					context: context,
+				},
+				b:       b,
+				context: context,
+			})
+		}
+	}
+
+	infer.cs = cs
+
+	//fmt.Printf("Cleanup %d => %d\n", prevLen, len(infer.cs))
+}
+
 // Instantiate takes a fresh name generator, an a polytype and makes a concrete type out of it.
 //
 // If ...
@@ -677,14 +733,6 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 	if err := infer.consGen(expr, E_NONE, true, true); err != nil {
 		return nil, nil, err
 	}
-
-	cs := Constraints{}
-	for _, cons := range infer.cs {
-		if !cons.a.Eq(cons.b) {
-			cs = append(cs, cons)
-		}
-	}
-	infer.cs = cs
 
 	s := newSolver()
 	s.solve(infer.cs)

@@ -14,7 +14,7 @@ type Primary struct {
 	Int        *int64    `| @Int`
 	String        *string     `| @String`
 	Bool          *bool       `| @( "true" | "false" )`
-	SubExpression *Expression `| "(" @@ ")" `
+	SubExpression *Expression `| ( "(" @@ ")" )`
 }
 
 func (ast *Primary) Begin() lexer.Position {

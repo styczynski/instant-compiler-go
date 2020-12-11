@@ -13,7 +13,7 @@ type UnaryApplication struct {
 	BaseASTNode
 	Target *string   `( @Ident`
 	Arguments []*Expression   `"(" (@@ ("," @@)*)? ")" )`
-	Primary *Primary `| @@`
+	Index *Index `| @@`
 }
 
 func (ast *UnaryApplication) Begin() lexer.Position {
@@ -36,9 +36,9 @@ func (ast *UnaryApplication) GetChildren() []TraversableNode {
 			nodes = append(nodes, child)
 		}
 		return nodes
-	} else if ast.IsPrimary() {
+	} else if ast.IsIndex() {
 		return []TraversableNode{
-			ast.Primary,
+			ast.Index,
 		}
 	}
 	return []TraversableNode{}
@@ -48,8 +48,8 @@ func (ast *UnaryApplication) IsApplication() bool {
 	return ast.Target != nil
 }
 
-func (ast *UnaryApplication) IsPrimary() bool {
-	return ast.Primary != nil
+func (ast *UnaryApplication) IsIndex() bool {
+	return ast.Index != nil
 }
 
 func (ast *UnaryApplication) Print(c *context.ParsingContext) string {
@@ -59,8 +59,8 @@ func (ast *UnaryApplication) Print(c *context.ParsingContext) string {
 			args = append(args, argument.Print(c))
 		}
 		return printNode(c, ast, "%s(%s)", *ast.Target, strings.Join(args, ", "))
-	} else if ast.IsPrimary() {
-		return ast.Primary.Print(c)
+	} else if ast.IsIndex() {
+		return ast.Index.Print(c)
 	}
 	return "UNKNOWN"
 }
@@ -68,7 +68,7 @@ func (ast *UnaryApplication) Print(c *context.ParsingContext) string {
 ////
 
 func (ast *UnaryApplication) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	if ast.IsPrimary() {
+	if ast.IsIndex() {
 		args := []*Expression{}
 		for _, arg := range ast.Arguments {
 			args = append(args, mapper(arg).(*Expression))
@@ -81,15 +81,15 @@ func (ast *UnaryApplication) Map(mapper hindley_milner.ExpressionMapper) hindley
 	} else if ast.IsApplication() {
 		return mapper(&UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
-			Primary: mapper(ast.Primary).(*Primary),
+			Index: mapper(ast.Index).(*Index),
 		})
 	}
 	panic("Invalid UnaryApplication operation type")
 }
 
 func (ast *UnaryApplication) Visit(mapper hindley_milner.ExpressionMapper) {
-	if ast.IsPrimary() {
-		mapper(ast.Primary)
+	if ast.IsIndex() {
+		mapper(ast.Index)
 	} else if ast.IsApplication() {
 		for _, arg := range ast.Arguments {
 			mapper(arg)
@@ -106,8 +106,8 @@ func (ast *UnaryApplication) Fn() hindley_milner.Expression {
 }
 
 func (ast *UnaryApplication) Body() hindley_milner.Expression {
-	if ast.IsPrimary() {
-		return ast.Primary
+	if ast.IsIndex() {
+		return ast.Index
 	}
 	args := []hindley_milner.Expression{}
 	for _, arg := range ast.Arguments {
@@ -119,7 +119,7 @@ func (ast *UnaryApplication) Body() hindley_milner.Expression {
 }
 
 func (ast *UnaryApplication) ExpressionType() hindley_milner.ExpressionType {
-	if ast.IsPrimary() {
+	if ast.IsIndex() {
 		return hindley_milner.E_PROXY
 	}
 	return hindley_milner.E_APPLICATION

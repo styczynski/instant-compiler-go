@@ -33,19 +33,17 @@ func main() {
 // iteracyjnie
 int fact (int n) {
   int i,r ;
-  i = 2 ;
-  r = 1 ;
-  while (2) {
-    return r;
-  }
+  int[] q;
+  q = new int[];
+  int ff;
+  ff = q[2];
   return r ;
 }
-int main (int x) {
-  int q = 1;
-  printInt(fact(2)) ;
+
+int main (int r) {
+  printInt(fact(7)) ;
   return 0 ;
 }
-
 `), context)
 	if latteError != nil {
 		fmt.Print(latteError.CliMessage())

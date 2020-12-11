@@ -9,7 +9,8 @@ import (
 
 type Type struct {
 	BaseASTNode
-	Name string `@( "int" | "void" | "bool" )`
+	Name string `@( "int" | "void" | "bool" | "string")`
+	Dimensions *string `(@( "[" "]" ))?`
 }
 
 func (ast *Type) Begin() lexer.Position {
@@ -38,6 +39,11 @@ func (ast *Type) Print(c *context.ParsingContext) string {
 /////
 
 func (ast *Type) GetType() *hindley_milner.Scheme {
+	if ast.Dimensions != nil {
+		return hindley_milner.NewScheme(nil, hindley_milner.NewRecordType("array", PrimitiveType{
+			name:    ast.Name,
+		}))
+	}
 	return hindley_milner.NewScheme(nil, PrimitiveType{
 		name:    ast.Name,
 	})

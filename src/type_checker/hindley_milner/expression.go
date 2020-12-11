@@ -199,7 +199,7 @@ type Lambda interface {
 // EmbeddedType is a type directly embedded into the code
 type EmbeddedType interface {
 	Expression
-	Type() *Scheme
+	EmbeddedType() *Scheme
 }
 
 // Block is an imperative block of code
