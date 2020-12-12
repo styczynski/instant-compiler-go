@@ -52,6 +52,7 @@ func (ast *Assignment) Visit(mapper hindley_milner.ExpressionMapper) {
 
 func (ast *Assignment) Fn() hindley_milner.Expression {
 	return &BuiltinFunction{
+		BaseASTNode: ast.BaseASTNode,
 		name: "=",
 	}
 }

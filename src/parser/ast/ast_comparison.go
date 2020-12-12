@@ -71,6 +71,7 @@ func (ast *Comparison) Visit(mapper hindley_milner.ExpressionMapper) {
 
 func (ast *Comparison) Fn() hindley_milner.Expression {
 	return &BuiltinFunction{
+		BaseASTNode: ast.BaseASTNode,
 		name: ast.Op,
 	}
 }

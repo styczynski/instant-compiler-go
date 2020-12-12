@@ -109,6 +109,13 @@ func (ast *UnaryApplication) Body() hindley_milner.Expression {
 	if ast.IsIndex() {
 		return ast.Index
 	}
+	if len(ast.Arguments) == 0 {
+		return hindley_milner.Batch{
+			Exp: []hindley_milner.Expression{
+				hindley_milner.Batch{Exp: []hindley_milner.Expression{}},
+			},
+		}
+	}
 	args := []hindley_milner.Expression{}
 	for _, arg := range ast.Arguments {
 		args = append(args, arg)

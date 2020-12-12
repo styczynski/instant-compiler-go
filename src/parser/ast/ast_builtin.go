@@ -1,11 +1,26 @@
 package ast
 
 import (
+	"github.com/alecthomas/participle/v2/lexer"
+
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type BuiltinFunction struct {
+	BaseASTNode
 	name string
+}
+
+func (ast *BuiltinFunction) Begin() lexer.Position {
+	return ast.Pos
+}
+
+func (ast *BuiltinFunction) End() lexer.Position {
+	return ast.EndPos
+}
+
+func (ast *BuiltinFunction) GetNode() interface{} {
+	return ast
 }
 
 func (ast *BuiltinFunction) Name() hindley_milner.NameGroup     { return hindley_milner.Name(ast.name) }

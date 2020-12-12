@@ -87,6 +87,7 @@ func (ast *Unary) Visit(mapper hindley_milner.ExpressionMapper) {
 
 func (ast *Unary) Fn() hindley_milner.Expression {
 	return &BuiltinFunction{
+		BaseASTNode: ast.BaseASTNode,
 		name: ast.Op,
 	}
 }

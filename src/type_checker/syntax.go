@@ -366,12 +366,12 @@ func Example_greenspun() {
 		},
 	}}
 
-	env := hindley_milner.CreateSimpleEnv(map[string]*hindley_milner.Scheme{
-		"--":     hindley_milner.NewScheme(hindley_milner.TypeVarSet{hindley_milner.TVar('a')}, hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'))),
-		"if":     hindley_milner.NewScheme(hindley_milner.TypeVarSet{hindley_milner.TVar('a')}, hindley_milner.NewFnType(Prim(Bool), hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a'))),
-		"isZero": hindley_milner.NewScheme(nil, hindley_milner.NewFnType(Prim(Float), Prim(Bool))),
-		"mul":    hindley_milner.NewScheme(nil, hindley_milner.NewFnType(Prim(Float), Prim(Float), Prim(Float))),
-		"+":      hindley_milner.NewScheme(hindley_milner.TypeVarSet{hindley_milner.TVar('a')}, hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a'))),
+	env := hindley_milner.CreateSimpleEnv(map[string][]*hindley_milner.Scheme{
+		"--":     hindley_milner.SingleDef(hindley_milner.TypeVarSet{hindley_milner.TVar('a')}, hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'))),
+		"if":     hindley_milner.SingleDef(hindley_milner.TypeVarSet{hindley_milner.TVar('a')}, hindley_milner.NewFnType(Prim(Bool), hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a'))),
+		"isZero": hindley_milner.SingleDef(nil, hindley_milner.NewFnType(Prim(Float), Prim(Bool))),
+		"mul":    hindley_milner.SingleDef(nil, hindley_milner.NewFnType(Prim(Float), Prim(Float), Prim(Float))),
+		"+":      hindley_milner.SingleDef(hindley_milner.TypeVarSet{hindley_milner.TVar('a')}, hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a'))),
 	})
 
 	var scheme *hindley_milner.Scheme

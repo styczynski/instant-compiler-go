@@ -2,6 +2,7 @@ package hindley_milner
 
 import (
 	"fmt"
+	"strings"
 )
 
 type UnificationLengthError struct {
@@ -86,4 +87,25 @@ func (err UndefinedSymbol) Error() string {
 		name,
 		err.Name,
 	)
+}
+
+type InvalidOverloadCandidatesError struct {
+	Name string
+	Candidates []*Scheme
+	Context CodeContext
+}
+
+func (err InvalidOverloadCandidatesError) Error() string {
+	candidatesDescriptions := []string{}
+	for i, cand := range err.Candidates {
+		candidatesDescriptions = append(candidatesDescriptions, fmt.Sprintf("    %d: %v", i+1, cand))
+	}
+	return fmt.Sprintf("Failed to find matching definition for %s among all overloaded candidates:\n%s",
+		err.Name,
+		strings.Join(candidatesDescriptions, "\n"),
+	)
+}
+
+func (err InvalidOverloadCandidatesError) Source() Expression {
+	return *(err.Context.Source)
 }

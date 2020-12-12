@@ -20,74 +20,82 @@ func (tc *LatteTypeChecker) Test(c *context.ParsingContext) {
 }
 
 func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
-	return hindley_milner.CreateSimpleEnv(map[string]*hindley_milner.Scheme{
-		"true":      hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_BOOL)),
-		"false":      hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_BOOL)),
-		"||":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+	return hindley_milner.CreateSimpleEnv(map[string][]*hindley_milner.Scheme{
+		"+":  []*hindley_milner.Scheme{
+			hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+				ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+			)),
+			hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+				ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING),
+			)),
+		},
+		"true":      hindley_milner.SingleDef(nil, ast.CreatePrimitive(ast.T_BOOL)),
+		"false":      hindley_milner.SingleDef(nil, ast.CreatePrimitive(ast.T_BOOL)),
+		"||":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		"&&":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"&&":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		"+":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		//"+":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+		//	ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		//)),
+		"-":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
 		)),
-		"-":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"/":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
 		)),
-		"/":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"*":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
 		)),
-		"*":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
-			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
-		)),
-		"!":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"!":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		"--":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"--":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
 		)),
-		"++":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"++":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
 		)),
-		"<=":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"<=":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		">=":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		">=":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		"==":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"==":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		"!=":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"!=":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		"<":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"<":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		">":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		">":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		"printInt":      hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"printInt":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_VOID),
 		)),
-		"=":  hindley_milner.NewScheme(
+		"=":  hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), ast.CreatePrimitive(ast.T_VOID))),
-		"if":  hindley_milner.NewScheme(
+		"if":  hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a'), hindley_milner.TVar('b')},
 			hindley_milner.NewFnType(ast.CreatePrimitive(ast.T_BOOL), hindley_milner.TVar('a'), hindley_milner.TVar('b'), ast.CreatePrimitive(ast.T_VOID))),
-		"while":  hindley_milner.NewScheme(
+		"while":  hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(ast.CreatePrimitive(ast.T_BOOL), hindley_milner.TVar('a'), ast.CreatePrimitive(ast.T_VOID))),
-		"[]":  hindley_milner.NewScheme(
+		"[]":  hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(
 				hindley_milner.NewRecordType("array", hindley_milner.TVar('a')),
 				ast.CreatePrimitive(ast.T_INT),
 				hindley_milner.TVar('a'),
 			)),
-		"[_]": hindley_milner.NewScheme(
+		"[_]": hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(
 				hindley_milner.NewRecordType("array", hindley_milner.TVar('a')),
@@ -171,6 +179,24 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) error {
 			src.Begin().Filename,
 			"",
 			fmt.Sprintf("%s%s", wrongTypeLen.Error(), causeInfo),
+		)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+		}
+	} else if noOverloadCandidates, ok := err.(hindley_milner.InvalidOverloadCandidatesError); ok {
+		src := noOverloadCandidates.Source().(interface{}).(ast.NodeWithPosition)
+
+		causeInfo := ""
+
+		message, textMessage := c.FormatParsingError(
+			"No overload candidates",
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			fmt.Sprintf("%s%s", noOverloadCandidates.Error(), causeInfo),
 		)
 		return &TypeCheckingError{
 			message:     message,

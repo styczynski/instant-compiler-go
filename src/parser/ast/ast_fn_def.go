@@ -58,6 +58,11 @@ func (ast *FnDef) Print(c *context.ParsingContext) string {
 //////
 
 func (ast *FnDef) Args() hindley_milner.NameGroup {
+	if len(ast.Arg) == 0 {
+		return hindley_milner.NamesWithTypesFromMap(map[string]*hindley_milner.Scheme{
+			"void": hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID)),
+		})
+	}
 	argsTypes := map[string]*hindley_milner.Scheme{}
 	for _, arg := range ast.Arg {
 		argsTypes[arg.Name] = arg.ArgumentType.GetType()

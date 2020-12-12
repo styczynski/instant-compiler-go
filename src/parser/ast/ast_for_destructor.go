@@ -57,6 +57,7 @@ func (ast *ForDestructor) Visit(mapper hindley_milner.ExpressionMapper) {
 
 func (ast *ForDestructor) Fn() hindley_milner.Expression {
 	return &BuiltinFunction{
+		BaseASTNode: ast.BaseASTNode,
 		name: "[_]",
 	}
 }

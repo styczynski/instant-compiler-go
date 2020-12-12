@@ -30,20 +30,33 @@ func main() {
 	tc := type_checker.CreateLatteTypeChecker()
 	p := parser.CreateLatteParser()
 	ast, latteError := p.ParseInput(strings.NewReader(`
-// iteracyjnie
-int fact (int n) {
-  int i,r ;
-  int[] q = new int[2];
-  //q = (new int[]);
-  //int ff;
-  ff = q[2];
-  for(int a: q) a = q[a] + 9;
-  return r ;
+//// iteracyjnie
+//int fact (int n) {
+//  int i,r;
+//  int[] q = new int[2];
+//  //q = (new int[]);
+//  int ff;
+//  ff = 2 + 2;
+//  //for(int c: q) a = q[a] + 9;
+//  return r;
+//}
+//
+//int main (int r) {
+//  printInt(fact(7));
+//  return 0;
+//}
+
+// rekurencyjnie
+int factr (int n) {
+  if (n < 2)
+    return 1 ;
+  else
+    return (n * factr(n-1)) ;
 }
 
-int main (int r) {
-  printInt(fact(7)) ;
-  return 0 ;
+int main() {
+	string a = "a";
+    a = a + "b";
 }
 `), context)
 	if latteError != nil {

@@ -20,11 +20,19 @@ func saveExprContext(t Type, source *Expression) Type {
 	return t.WithContext(CreateCodeContext(*source))
 }
 
+type OverloadConstraint struct {
+	tv TypeVariable
+	name string
+	alternatives []*Scheme
+	context CodeContext
+}
+
 type inferer struct {
 	env Env
 	retEnv Env
 	cs  Constraints
 	t   Type
+	ocs []OverloadConstraint
 	returns []Type
 
 	count int
@@ -162,6 +170,17 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			return fmt.Errorf("Literal entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
 		name := et.Name().GetNames()[0]
+		if infer.env.IsOverloaded(name) {
+			tv := infer.Fresh()
+			infer.t = tv
+			infer.ocs = append(infer.ocs, OverloadConstraint{
+				name: name,
+				tv:           tv,
+				alternatives: infer.env.OverloadedAlternatives(name),
+				context: CreateCodeContext(expr),
+			})
+			return nil
+		}
 		return infer.lookup(true, name, et)
 
 	case E_VAR:
@@ -741,6 +760,42 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 
 	s := newSolver()
 	s.solve(infer.cs)
+
+	//fmt.Printf("SOLVED NOW OCS ARE:\n%#v\n%#v", infer.ocs, infer.cs)
+	cleanCS := infer.cs
+	for _, ocs := range infer.ocs {
+		hasCleanRun := false
+		cs := Constraints{}
+		for _, alt := range ocs.alternatives {
+			cs = Constraints{}
+			//copy(cs, cleanCS)
+			for _, c := range cleanCS {
+				cs = append(cs, c)
+			}
+			cs = append(cs, Constraint{
+				a:       ocs.tv,
+				b:       Instantiate(infer, alt),
+				context: ocs.tv.context,
+			})
+			s2 := newSolver()
+			s2.solve(cs)
+			if s2.err == nil {
+				//fmt.Printf("\n\nOLDS CS: %#v\nNEW CS: %#v\n\n", cleanCS, cs)
+				hasCleanRun = true
+				break
+			}
+		}
+		if hasCleanRun {
+			cleanCS = cs
+		} else {
+			return nil, nil, InvalidOverloadCandidatesError{
+				Name:       ocs.name,
+				Candidates: ocs.alternatives,
+				Context: ocs.context,
+			}
+		}
+	}
+	infer.cs = cleanCS
 
 	if s.err != nil {
 		return nil, nil, s.err

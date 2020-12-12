@@ -70,6 +70,7 @@ func (ast *LogicalOperation) Visit(mapper hindley_milner.ExpressionMapper) {
 
 func (ast *LogicalOperation) Fn() hindley_milner.Expression {
 	return &BuiltinFunction{
+		BaseASTNode: ast.BaseASTNode,
 		name: ast.Op,
 	}
 }

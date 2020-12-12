@@ -67,6 +67,7 @@ func (ast *If) Visit(mapper hindley_milner.ExpressionMapper) {
 
 func (ast *If) Fn() hindley_milner.Expression {
 	return &BuiltinFunction{
+		BaseASTNode: ast.BaseASTNode,
 		name: "if",
 	}
 }
