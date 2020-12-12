@@ -15,6 +15,15 @@ type FnDef struct {
 	Name string `@Ident`
 	Arg []*Arg `"(" (@@ ( "," @@ )*)? ")"`
 	FunctionBody *Block `@@`
+	ParentNode TraversableNode
+}
+
+func (ast *FnDef) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *FnDef) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *FnDef) Begin() lexer.Position {
@@ -32,7 +41,7 @@ func (ast *FnDef) GetNode() interface{} {
 func (ast *FnDef) GetChildren() []TraversableNode {
 	nodes := make([]TraversableNode, len(ast.Arg) + 3)
 	nodes = append(nodes, &ast.ReturnType)
-	nodes = append(nodes, MakeTraversableNodeToken(ast.Name, ast.Pos, ast.EndPos))
+	nodes = append(nodes, MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos))
 
 	for _, child := range ast.Arg {
 		nodes = append(nodes, child)
@@ -84,16 +93,17 @@ func (ast *FnDef) DefaultType() *hindley_milner.Scheme {
 	return ast.ReturnType.GetType()
 }
 
-func (ast *FnDef) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(&FnDef{
+func (ast *FnDef) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(parent, &FnDef{
 		BaseASTNode:  ast.BaseASTNode,
 		ReturnType:   ast.ReturnType,
 		Name:         ast.Name,
 		Arg:          ast.Arg,
-		FunctionBody: mapper(ast.FunctionBody).(*Block),
+		FunctionBody: mapper(ast, ast.FunctionBody).(*Block),
+		ParentNode: parent.(TraversableNode),
 	})
 }
-func (ast *FnDef) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.FunctionBody)
-	mapper(ast)
+func (ast *FnDef) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.FunctionBody)
+	mapper(parent, ast)
 }

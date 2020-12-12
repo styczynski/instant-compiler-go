@@ -12,6 +12,15 @@ type For struct {
 	ElementType *Type `"for" "(" @@`
 	Destructor *ForDestructor `@@ ")"`
 	Do *Statement `@@`
+	ParentNode TraversableNode
+}
+
+func (ast *For) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *For) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *For) Begin() lexer.Position {
@@ -43,14 +52,14 @@ func (ast *For) Print(c *context.ParsingContext) string {
 
 ///
 
-func (ast *For) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *For) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	// TODO
 	return ast
 }
-func (ast *For) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Destructor)
-	mapper(ast.Do)
-	mapper(ast)
+func (ast *For) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Destructor)
+	mapper(ast, ast.Do)
+	mapper(parent, ast)
 }
 
 func (ast *For) Var() hindley_milner.NameGroup {

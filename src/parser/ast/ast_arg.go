@@ -10,6 +10,15 @@ type Arg struct {
 	BaseASTNode
 	ArgumentType Type `@@`
 	Name string `@Ident`
+	ParentNode TraversableNode
+}
+
+func (ast *Arg) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Arg) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Arg) Begin() lexer.Position {
@@ -27,7 +36,7 @@ func (ast *Arg) GetNode() interface{} {
 func (ast *Arg) GetChildren() []TraversableNode {
 	return []TraversableNode{
 		&ast.ArgumentType,
-		MakeTraversableNodeToken(ast.Name, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
 	}
 }
 

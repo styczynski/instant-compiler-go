@@ -11,6 +11,15 @@ type DeclarationItem struct {
 	BaseASTNode
 	Name string `@Ident`
 	Initializer *Expression `( "=" @@ )?`
+	ParentNode TraversableNode
+}
+
+func (ast *DeclarationItem) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *DeclarationItem) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *DeclarationItem) Begin() lexer.Position {
@@ -27,7 +36,7 @@ func (ast *DeclarationItem) GetNode() interface{} {
 
 func (ast *DeclarationItem) GetChildren() []TraversableNode {
 	return []TraversableNode{
-		MakeTraversableNodeToken(ast.Name, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
 		ast.Initializer,
 	}
 }
@@ -52,17 +61,18 @@ func (ast *DeclarationItem) Body() hindley_milner.Expression {
 	return ast.Initializer
 }
 
-func (ast *DeclarationItem) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(&DeclarationItem{
+func (ast *DeclarationItem) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(parent, &DeclarationItem{
 		BaseASTNode: ast.BaseASTNode,
 		Name:        ast.Name,
-		Initializer: mapper(ast.Initializer).(*Expression),
+		Initializer: mapper(ast, ast.Initializer).(*Expression),
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *DeclarationItem) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Initializer)
-	mapper(ast)
+func (ast *DeclarationItem) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Initializer)
+	mapper(parent, ast)
 }
 
 func (ast *DeclarationItem) ExpressionType() hindley_milner.ExpressionType {

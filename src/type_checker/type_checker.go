@@ -16,7 +16,7 @@ func CreateLatteTypeChecker() *LatteTypeChecker {
 }
 
 func (tc *LatteTypeChecker) Test(c *context.ParsingContext) {
-	Example_greenspun()
+	// Nothing
 }
 
 func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {

@@ -13,6 +13,15 @@ type TopDef struct {
 	BaseASTNode
 	Class *Class `@@`
 	Function *FnDef `| @@`
+	ParentNode TraversableNode
+}
+
+func (ast *TopDef) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *TopDef) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *TopDef) GetDefinedIdentifier() []string {
@@ -47,7 +56,12 @@ func (ast *TopDef) GetChildren() []TraversableNode {
 }
 
 func (ast *TopDef) Print(c *context.ParsingContext) string {
-	return printNode(c, ast, "%s", ast.Function.Print(c))
+	if ast.IsFunction() {
+		return printNode(c, ast, "%s", ast.Function.Print(c))
+	} else if ast.IsClass() {
+		return printNode(c, ast, "%s", ast.Class.Print(c))
+	}
+	panic("Invalid TopDef type.")
 }
 
 func (ast *TopDef) IsClass() bool {
@@ -66,31 +80,33 @@ func (ast *TopDef) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_OPAQUE_BLOCK
 }
 
-func (ast *TopDef) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *TopDef) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	if ast.IsFunction() {
-		return mapper(&TopDef{
+		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
-			Function:    mapper(ast.Function).(*FnDef),
+			Function:    mapper(ast, ast.Function).(*FnDef),
+			ParentNode: parent.(TraversableNode),
 		})
 	} else if ast.IsClass() {
-		return mapper(&TopDef{
+		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
-			Class:    mapper(ast.Class).(*Class),
+			Class:    mapper(ast, ast.Class).(*Class),
+			ParentNode: parent.(TraversableNode),
 		})
 	} else {
 		panic("Invalid TopDef type.")
 	}
 }
 
-func (ast *TopDef) Visit(mapper hindley_milner.ExpressionMapper) {
+func (ast *TopDef) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
 	if ast.IsFunction() {
-		mapper(ast.Function)
+		mapper(ast, ast.Function)
 	} else if ast.IsClass() {
-		mapper(ast.Class)
+		mapper(ast, ast.Class)
 	} else {
 		panic("Invalid TopDef type.")
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *TopDef) GetContents() hindley_milner.Batch {

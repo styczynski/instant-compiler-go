@@ -10,6 +10,15 @@ import (
 type Return struct {
 	BaseASTNode
 	Expression *Expression `"return" (@@)? ";"`
+	ParentNode TraversableNode
+}
+
+func (ast *Return) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Return) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Return) Begin() lexer.Position {
@@ -40,16 +49,17 @@ func (ast *Return) Body() hindley_milner.Expression {
 	return ast.Expression
 }
 
-func (ast *Return) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(&Return{
+func (ast *Return) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(parent, &Return{
 		BaseASTNode: ast.BaseASTNode,
-		Expression:  mapper(ast.Expression).(*Expression),
+		Expression:  mapper(ast, ast.Expression).(*Expression),
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *Return) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Expression)
-	mapper(ast)
+func (ast *Return) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Expression)
+	mapper(parent, ast)
 }
 
 func (ast *Return) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_RETURN }

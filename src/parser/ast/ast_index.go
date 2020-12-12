@@ -13,6 +13,15 @@ type Index struct {
 	BaseASTNode
 	Primary   *Primary   ` @@ `
 	IndexingExpr *Expression `( "[" @@ "]" )?`
+	ParentNode TraversableNode
+}
+
+func (ast *Index) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Index) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Index) Begin() lexer.Position {
@@ -54,27 +63,29 @@ func (ast *Index) Print(c *context.ParsingContext) string {
 ////
 
 
-func (ast *Index) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Index) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	if ast.HasIndexingExpr() {
-		return mapper(&Index{
+		return mapper(parent, &Index{
 			BaseASTNode:      ast.BaseASTNode,
-			Primary: mapper(ast.Primary).(*Primary),
-			IndexingExpr: mapper(ast.IndexingExpr).(*Expression),
+			Primary: mapper(ast, ast.Primary).(*Primary),
+			IndexingExpr: mapper(ast, ast.IndexingExpr).(*Expression),
+			ParentNode: parent.(TraversableNode),
 		})
 	} else {
-		return mapper(&Index{
+		return mapper(parent, &Index{
 			BaseASTNode:      ast.BaseASTNode,
-			Primary: mapper(ast.Primary).(*Primary),
+			Primary: mapper(ast, ast.Primary).(*Primary),
+			ParentNode: parent.(TraversableNode),
 		})
 	}
 }
 
-func (ast *Index) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Primary)
+func (ast *Index) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Primary)
 	if ast.HasIndexingExpr() {
-		mapper(ast.IndexingExpr)
+		mapper(ast, ast.IndexingExpr)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *Index) Fn() hindley_milner.Expression {

@@ -11,6 +11,15 @@ type UnaryStatement struct {
 	BaseASTNode
 	TargetName *string `@Ident`
 	Operation string `@( "+" "+" | "-" "-" ) ";"`
+	ParentNode TraversableNode
+}
+
+func (ast *UnaryStatement) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *UnaryStatement) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *UnaryStatement) Begin() lexer.Position {
@@ -27,8 +36,8 @@ func (ast *UnaryStatement) GetNode() interface{} {
 
 func (ast *UnaryStatement) GetChildren() []TraversableNode {
 	return []TraversableNode{
-		MakeTraversableNodeToken(*ast.TargetName, ast.Pos, ast.EndPos),
-		MakeTraversableNodeToken(ast.Operation, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, *ast.TargetName, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Operation, ast.Pos, ast.EndPos),
 	}
 }
 
@@ -38,16 +47,17 @@ func (ast *UnaryStatement) Print(c *context.ParsingContext) string {
 
 ///
 
-func (ast *UnaryStatement) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(&UnaryStatement{
+func (ast *UnaryStatement) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(parent, &UnaryStatement{
 		BaseASTNode: ast.BaseASTNode,
 		TargetName: ast.TargetName,
 		Operation: ast.Operation,
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *UnaryStatement) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast)
+func (ast *UnaryStatement) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(parent, ast)
 }
 
 func (ast *UnaryStatement) Fn() hindley_milner.Expression {

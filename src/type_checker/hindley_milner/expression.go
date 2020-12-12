@@ -61,7 +61,7 @@ type Inferer interface {
 	Infer(Env, Fresher) (Type, error)
 }
 
-type ExpressionMapper = func (e Expression) Expression
+type ExpressionMapper = func (parent Expression, e Expression) Expression
 
 type ExpressionType int
 
@@ -82,13 +82,14 @@ const (
 	E_CUSTOM
 	E_PROXY
 	E_NONE
+	E_INTROSPECTION
 )
 
 // An Expression is basically an AST node. In its simplest form, it's lambda calculus
 type Expression interface {
 	Body() Expression
-	Map(mapper ExpressionMapper) Expression
-	Visit(mapper ExpressionMapper)
+	Map(parent Expression, mapper ExpressionMapper) Expression
+	Visit(parent Expression, mapper ExpressionMapper)
 	ExpressionType() ExpressionType
 }
 
@@ -100,21 +101,21 @@ func (b Batch) ExpressionType() ExpressionType {
 	return E_BLOCK
 }
 
-func (b Batch) Map(mapper ExpressionMapper) Expression {
+func (b Batch) Map(parent Expression, mapper ExpressionMapper) Expression {
 	mappedExp := []Expression{}
 	for _, exp := range b.Exp {
-		mappedExp = append(mappedExp, mapper(exp))
+		mappedExp = append(mappedExp, mapper(b, exp))
 	}
-	return mapper(Batch{
+	return mapper(parent, Batch{
 		Exp: mappedExp,
 	})
 }
 
-func (b Batch) Visit(mapper ExpressionMapper) {
+func (b Batch) Visit(parent Expression, mapper ExpressionMapper) {
 	for _, exp := range b.Exp {
-		mapper(exp)
+		mapper(b, exp)
 	}
-	mapper(b)
+	mapper(parent, b)
 }
 
 func (b Batch) GetContents() Batch {
@@ -236,4 +237,9 @@ type CustomExpression interface {
 
 type ExpressionWithIdentifiersDeps interface {
 	GetIdentifierDeps() []string
+}
+
+type IntrospectionExpression interface {
+	Expression
+	OnTypeReturned(t Type)
 }

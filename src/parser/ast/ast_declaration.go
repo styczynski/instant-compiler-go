@@ -13,6 +13,15 @@ type Declaration struct {
 	BaseASTNode
 	DeclarationType Type `@@`
 	Items []*DeclarationItem `( @@ ( "," @@ )* ) ";"`
+	ParentNode TraversableNode
+}
+
+func (ast *Declaration) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Declaration) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Declaration) Begin() lexer.Position {
@@ -50,16 +59,17 @@ func (ast *Declaration) Body() hindley_milner.Expression {
 	return ast
 }
 
-func (ast *Declaration) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(&Declaration{
+func (ast *Declaration) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(parent, &Declaration{
 		BaseASTNode: ast.BaseASTNode,
 		DeclarationType: ast.DeclarationType,
 		Items: ast.Items,
+		ParentNode: parent.(TraversableNode),
 	}).(*Declaration)
 }
 
-func (ast *Declaration) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast)
+func (ast *Declaration) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(parent, ast)
 }
 
 func (ast *Declaration) ExpressionType() hindley_milner.ExpressionType {

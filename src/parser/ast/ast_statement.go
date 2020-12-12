@@ -21,6 +21,15 @@ type Statement struct {
 	While *While `| @@`
 	For *For `| @@`
 	Expression *Expression `| @@ ";"`
+	ParentNode TraversableNode
+}
+
+func (ast *Statement) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Statement) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Statement) Begin() lexer.Position {
@@ -77,7 +86,7 @@ func (ast *Statement) IsExpression() bool {
 
 func (ast *Statement) GetChildren() []TraversableNode {
 	if ast.IsEmpty() {
-		return []TraversableNode{ MakeTraversableNodeToken(*ast.Empty, ast.Pos, ast.EndPos) }
+		return []TraversableNode{ MakeTraversableNodeToken(ast, *ast.Empty, ast.Pos, ast.EndPos) }
 	} else if ast.IsBlockStatement() {
 		return []TraversableNode{ ast.BlockStatement }
 	} else if ast.IsDeclaration() {
@@ -171,15 +180,15 @@ func (ast *Statement) Body() hindley_milner.Expression {
 	panic("Invalid Statement type")
 }
 
-func (ast *Statement) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Statement) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	// TODO: Fix that to feed mapper(ast.Body()) back into AST!
-	mapper(ast.Body())
-	return mapper(ast)
+	mapper(ast, ast.Body())
+	return mapper(parent, ast)
 }
 
-func (ast *Statement) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Body())
-	mapper(ast)
+func (ast *Statement) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Body())
+	mapper(parent, ast)
 }
 
 func (ast *Statement) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_PROXY }

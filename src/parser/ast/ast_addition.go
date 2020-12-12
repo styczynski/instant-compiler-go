@@ -12,6 +12,15 @@ type Addition struct {
 	Multiplication *Multiplication `@@`
 	Op             string          `[ @( "-" | "+" )`
 	Next           *Addition       `  @@ ]`
+	ParentNode TraversableNode
+}
+
+func (ast *Addition) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Addition) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Addition) Begin() lexer.Position {
@@ -29,7 +38,7 @@ func (ast *Addition) GetNode() interface{} {
 func (ast *Addition) GetChildren() []TraversableNode {
 	return []TraversableNode{
 		ast.Multiplication,
-		MakeTraversableNodeToken(ast.Op, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -48,26 +57,26 @@ func (ast *Addition) Print(c *context.ParsingContext) string {
 ///
 
 
-
-func (ast *Addition) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Addition) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	next := ast.Next
 	if ast.HasNext() {
-		next = mapper(ast.Next).(*Addition)
+		next = mapper(ast, ast.Next).(*Addition)
 	}
-	return mapper(&Addition{
+	return mapper(parent, &Addition{
 		BaseASTNode: ast.BaseASTNode,
-		Multiplication:    mapper(ast.Multiplication).(*Multiplication),
+		Multiplication:    mapper(ast, ast.Multiplication).(*Multiplication),
 		Op:          ast.Op,
 		Next:        next,
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *Addition) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Multiplication)
+func (ast *Addition) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Multiplication)
 	if ast.HasNext() {
-		mapper(ast.Next)
+		mapper(ast, ast.Next)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *Addition) Fn() hindley_milner.Expression {

@@ -12,6 +12,15 @@ type Multiplication struct {
 	Unary *Unary          `@@`
 	Op    string          `[ @( "/" | "*" )`
 	Next  *Multiplication `  @@ ]`
+	ParentNode TraversableNode
+}
+
+func (ast *Multiplication) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Multiplication) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Multiplication) Begin() lexer.Position {
@@ -29,7 +38,7 @@ func (ast *Multiplication) GetNode() interface{} {
 func (ast *Multiplication) GetChildren() []TraversableNode {
 	return []TraversableNode{
 		ast.Unary,
-		MakeTraversableNodeToken(ast.Op, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -49,25 +58,26 @@ func (ast *Multiplication) Print(c *context.ParsingContext) string {
 ////
 
 
-func (ast *Multiplication) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Multiplication) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	next := ast.Next
 	if ast.HasNext() {
-		next = mapper(ast.Next).(*Multiplication)
+		next = mapper(ast, ast.Next).(*Multiplication)
 	}
-	return mapper(&Multiplication{
+	return mapper(parent, &Multiplication{
 		BaseASTNode: ast.BaseASTNode,
-		Unary:    mapper(ast.Unary).(*Unary),
+		Unary:    mapper(ast, ast.Unary).(*Unary),
 		Op:          ast.Op,
 		Next:        next,
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *Multiplication) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Unary)
+func (ast *Multiplication) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Unary)
 	if ast.HasNext() {
-		mapper(ast.Next)
+		mapper(ast, ast.Next)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *Multiplication) Fn() hindley_milner.Expression {

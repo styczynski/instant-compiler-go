@@ -10,6 +10,15 @@ type ClassField struct {
 	BaseASTNode
 	ClassFieldType Type `@@`
 	Name string `@Ident`
+	ParentNode TraversableNode
+}
+
+func (ast *ClassField) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *ClassField) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *ClassField) Begin() lexer.Position {
@@ -27,7 +36,7 @@ func (ast *ClassField) GetNode() interface{} {
 func (ast *ClassField) GetChildren() []TraversableNode {
 	return []TraversableNode{
 		&ast.ClassFieldType,
-		MakeTraversableNodeToken(ast.Name, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
 	}
 }
 

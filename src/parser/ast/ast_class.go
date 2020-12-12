@@ -14,6 +14,15 @@ type Class struct {
 	BaseASTNode
 	Name string `"class" @Ident "{"`
 	Fields []*ClassField `(@@ ";")* "}"`
+	ParentNode TraversableNode
+}
+
+func (ast *Class) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Class) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Class) Begin() lexer.Position {
@@ -30,7 +39,7 @@ func (ast *Class) GetNode() interface{} {
 
 func (ast *Class) GetChildren() []TraversableNode {
 	ret := []TraversableNode{
-		MakeTraversableNodeToken(ast.Name, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
 	}
 	for _, field := range ast.Fields {
 		ret = append(ret, field)
@@ -43,7 +52,7 @@ func (ast *Class) Print(c *context.ParsingContext) string {
 	for _, field := range ast.Fields {
 		classContents = append(classContents, fmt.Sprintf("%s;", field.Print(c)))
 	}
-	return printNode(c, ast, "class %s\n{\n    %s\n}\n", ast.Name,strings.Join(classContents, "\n    "))
+	return printNode(c, ast, "class %s\n{\n    %s\n}\n", ast.Name, strings.Join(classContents, "\n    "))
 }
 
 ////
@@ -52,16 +61,17 @@ func (ast *Class) Body() hindley_milner.Expression {
 	return ast
 }
 
-func (ast *Class) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(&Class{
+func (ast *Class) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(parent, &Class{
 		BaseASTNode: ast.BaseASTNode,
 		Name: ast.Name,
 		Fields: ast.Fields,
+		ParentNode: parent.(TraversableNode),
 	}).(*Class)
 }
 
-func (ast *Class) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast)
+func (ast *Class) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(parent, ast)
 }
 
 func (ast *Class) ExpressionType() hindley_milner.ExpressionType {

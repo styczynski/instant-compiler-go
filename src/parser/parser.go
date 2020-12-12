@@ -12,6 +12,7 @@ import (
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type LatteParser struct {
@@ -111,5 +112,26 @@ func (p *LatteParser) ParseInput(input io.Reader, c *context.ParsingContext) (*a
 			textMessage: textMessage,
 		}
 	}
+
+	var parentSetterVisitor hindley_milner.ExpressionMapper
+	parentSetterVisitor = func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
+		node := e.(ast.TraversableNode)
+		//fmt.Printf("CUR PAR %v\n", node.Parent())
+		if parent == e {
+			return e
+		}
+		if node.Parent() != nil {
+			// Prevent infinite loop
+			return e
+		}
+		//fmt.Printf(" VISIT => %v FROM %v\n", c, parent)
+		//fmt.Printf(" VISIT => %s FROM %s\n", node.(ast.PrintableNode).Print(c), parent.(ast.PrintableNode).Print(c))
+		node.OverrideParent(parent.(interface{}).(ast.TraversableNode))
+		e.Visit(parent, parentSetterVisitor)
+		return e
+	}
+
+	output.Visit(output, parentSetterVisitor)
+
 	return output, nil
 }

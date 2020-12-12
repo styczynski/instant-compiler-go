@@ -149,13 +149,13 @@ func ExpressionSignedTupleGet(name string, len int, index int, expr Expression) 
 	}
 }
 
-func (ast *SignedTupleUnwrapExpr) Map(mapper ExpressionMapper) Expression {
+func (ast *SignedTupleUnwrapExpr) Map(parent Expression, mapper ExpressionMapper) Expression {
 	// TODO
-	return ast
+	return mapper(parent, ast)
 }
 
-func (ast *SignedTupleUnwrapExpr) Visit(mapper ExpressionMapper) {
-	// TODO
+func (ast *SignedTupleUnwrapExpr) Visit(parent Expression, mapper ExpressionMapper) {
+	mapper(parent, ast)
 }
 
 func (ast *SignedTupleUnwrapExpr) ExpressionType() ExpressionType {

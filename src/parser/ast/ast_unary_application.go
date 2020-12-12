@@ -14,6 +14,15 @@ type UnaryApplication struct {
 	Target *string   `( @Ident`
 	Arguments []*Expression   `"(" (@@ ("," @@)*)? ")" )`
 	Index *Index `| @@`
+	ParentNode TraversableNode
+}
+
+func (ast *UnaryApplication) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *UnaryApplication) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *UnaryApplication) Begin() lexer.Position {
@@ -31,7 +40,7 @@ func (ast *UnaryApplication) GetNode() interface{} {
 func (ast *UnaryApplication) GetChildren() []TraversableNode {
 	if ast.IsApplication() {
 		nodes := make([]TraversableNode, len(ast.Arguments) + 1)
-		nodes = append(nodes, MakeTraversableNodeToken(*ast.Target, ast.Pos, ast.EndPos))
+		nodes = append(nodes, MakeTraversableNodeToken(ast, *ast.Target, ast.Pos, ast.EndPos))
 		for _, child := range ast.Arguments {
 			nodes = append(nodes, child)
 		}
@@ -67,35 +76,37 @@ func (ast *UnaryApplication) Print(c *context.ParsingContext) string {
 
 ////
 
-func (ast *UnaryApplication) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *UnaryApplication) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	if ast.IsIndex() {
 		args := []*Expression{}
 		for _, arg := range ast.Arguments {
-			args = append(args, mapper(arg).(*Expression))
+			args = append(args, mapper(ast, arg).(*Expression))
 		}
-		return mapper(&UnaryApplication{
+		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
 			Target:      ast.Target,
 			Arguments:   args,
+			ParentNode: parent.(TraversableNode),
 		})
 	} else if ast.IsApplication() {
-		return mapper(&UnaryApplication{
+		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
-			Index: mapper(ast.Index).(*Index),
+			Index: mapper(ast, ast.Index).(*Index),
+			ParentNode: parent.(TraversableNode),
 		})
 	}
 	panic("Invalid UnaryApplication operation type")
 }
 
-func (ast *UnaryApplication) Visit(mapper hindley_milner.ExpressionMapper) {
+func (ast *UnaryApplication) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
 	if ast.IsIndex() {
-		mapper(ast.Index)
+		mapper(ast, ast.Index)
 	} else if ast.IsApplication() {
 		for _, arg := range ast.Arguments {
-			mapper(arg)
+			mapper(ast, arg)
 		}
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *UnaryApplication) Fn() hindley_milner.Expression {

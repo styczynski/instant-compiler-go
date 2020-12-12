@@ -12,6 +12,15 @@ type LogicalOperation struct {
 	Equality *Equality `@@`
 	Op         string      `[ @( "|" "|" | "&" "&" )`
 	Next       *LogicalOperation   `  @@ ]`
+	ParentNode TraversableNode
+}
+
+func (ast *LogicalOperation) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *LogicalOperation) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *LogicalOperation) Begin() lexer.Position {
@@ -29,7 +38,7 @@ func (ast *LogicalOperation) GetNode() interface{} {
 func (ast *LogicalOperation) GetChildren() []TraversableNode {
 	return []TraversableNode{
 		ast.Equality,
-		MakeTraversableNodeToken(ast.Op, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -47,25 +56,26 @@ func (ast *LogicalOperation) Print(c *context.ParsingContext) string {
 
 /////
 
-func (ast *LogicalOperation) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *LogicalOperation) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	next := ast.Next
 	if ast.HasNext() {
-		next = mapper(ast.Next).(*LogicalOperation)
+		next = mapper(ast, ast.Next).(*LogicalOperation)
 	}
-	return mapper(&LogicalOperation{
+	return mapper(parent, &LogicalOperation{
 		BaseASTNode: ast.BaseASTNode,
-		Equality:    mapper(ast.Equality).(*Equality),
+		Equality:    mapper(ast, ast.Equality).(*Equality),
 		Op:          ast.Op,
 		Next:        next,
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *LogicalOperation) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Equality)
+func (ast *LogicalOperation) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Equality)
 	if ast.HasNext() {
-		mapper(ast.Next)
+		mapper(ast, ast.Next)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *LogicalOperation) Fn() hindley_milner.Expression {

@@ -20,6 +20,12 @@ func saveExprContext(t Type, source *Expression) Type {
 	return t.WithContext(CreateCodeContext(*source))
 }
 
+type IntrospectionConstraint struct {
+	tv TypeVariable
+	argTV Type
+	context CodeContext
+}
+
 type OverloadConstraint struct {
 	tv TypeVariable
 	name string
@@ -33,6 +39,7 @@ type inferer struct {
 	cs  Constraints
 	t   Type
 	ocs []OverloadConstraint
+	ics []IntrospectionConstraint
 	returns []Type
 
 	count int
@@ -163,6 +170,31 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		infer.env = newEnv
 		infer.t = newType
 		infer.cs = newCS
+
+	case E_INTROSPECTION:
+		et := expr.(IntrospectionExpression)
+
+		if err = infer.consGen(et.Body(), E_NONE, false, false); err != nil {
+			return err
+		}
+		bodyType := infer.t
+
+		tvArg := infer.Fresh()
+		tvRet := infer.Fresh()
+
+		infer.t = tvRet
+		infer.ics = append(infer.ics, IntrospectionConstraint{
+			tv:      tvArg,
+			argTV: bodyType,
+			context: CreateCodeContext(expr),
+		})
+		//infer.cs = append(infer.cs, Constraint{
+		//	a:       tvArg,
+		//	b:       bodyType,
+		//	context: CodeContext{},
+		//})
+
+		return nil
 
 	case E_LITERAL:
 		et := expr.(Literal)
@@ -574,6 +606,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 }
 
 func (infer *inferer) cleanupConstraints() {
+
 	if infer.csflag >= 1 {
 		infer.csflag = 0
 	} else {
@@ -705,45 +738,6 @@ func NewInferConfiguration() *InferConfiguration {
 }
 
 // Infer takes an env, and an expression, and returns a scheme.
-//
-// The Infer function is the core of the HM type inference system. This is a reference implementation and is completely servicable, but not quite performant.
-// You should use this as a reference and write your own infer function.
-//
-// Very briefly, these rules are implemented:
-//
-// Var
-//
-// If x is of type T, in a collection of statements Γ, then we can infer that x has type T when we come to a new instance of x
-//		 x: T ∈ Γ
-//		-----------
-//		 Γ ⊢ x: T
-//
-// Apply
-//
-// If f is a function that takes T1 and returns T2; and if x is of type T1;
-// then we can infer that the result of applying f on x will yield a result has type T2
-//		 Γ ⊢ f: T1→T2  Γ ⊢ x: T1
-//		-------------------------
-//		     Γ ⊢ f(x): T2
-//
-//
-// Lambda Abstraction
-//
-// If we assume x has type T1, and because of that we were able to infer e has type T2
-// then we can infer that the lambda abstraction of e with respect to the variable x,  λx.e,
-// will be a function with type T1→T2
-//		  Γ, x: T1 ⊢ e: T2
-//		-------------------
-//		  Γ ⊢ λx.e: T1→T2
-//
-// Let
-//
-// If we can infer that e1 has type T1 and if we take x to have type T1 such that we could infer that e2 has type T2,
-// then we can infer that the result of letting x = e1 and substituting it into e2 has type T2
-//		  Γ, e1: T1  Γ, x: T1 ⊢ e2: T2
-//		--------------------------------
-//		     Γ ⊢ let x = e1 in e2: T2
-//
 func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, error) {
 	if expr == nil {
 		return nil, nil, errors.Errorf("Cannot infer a nil expression")
@@ -800,6 +794,13 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 	}
 	infer.cs = cleanCS
 
+	fmt.Printf("CONSTRAINTS: %v\n", infer.cs)
+	for _, ics := range infer.ics {
+		fmt.Printf("GOT INTRO: %v => %v\n", ics.tv, ics.argTV)
+		introExpr := (*ics.context.Source).(IntrospectionExpression)
+		introExpr.OnTypeReturned(ics.argTV)
+	}
+
 	if s.err != nil {
 		return nil, nil, s.err
 	}
@@ -825,25 +826,6 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 }
 
 // Unify unifies the two types and returns a list of substitutions.
-// These are the rules:
-//
-// Type Constants and Type Constants
-//
-// Type constants (atomic types) have no substitution
-//		c ~ c : []
-//
-// Type Variables and Type Variables
-//
-// Type variables have no substitutions if there are no instances:
-// 		a ~ a : []
-//
-// Default Unification
-//
-// if type variable 'a' is not in 'T', then unification is simple: replace all instances of 'a' with 'T'
-// 		     a ∉ T
-//		---------------
-//		 a ~ T : [a/T]
-//
 func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 	//logf("%v ~ %v", a, b)
 	//enterLoggingContext()

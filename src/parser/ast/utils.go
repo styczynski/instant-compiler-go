@@ -67,12 +67,15 @@ type TraversableNode interface {
 	NodeWithPosition
 	GetChildren() []TraversableNode
 	GetNode() interface{}
+	Parent() TraversableNode
+	OverrideParent(node TraversableNode)
 }
 
 type TraversableNodeToken struct {
 	Token string
 	BeginPos lexer.Position
 	EndPos lexer.Position
+	ParentNode TraversableNode
 }
 
 type TraversableNodeValue struct {
@@ -80,22 +83,25 @@ type TraversableNodeValue struct {
 	Type string
 	BeginPos lexer.Position
 	EndPos lexer.Position
+	ParentNode TraversableNode
 }
 
-func MakeTraversableNodeValue(value interface{}, typeName string, begin lexer.Position, end lexer.Position) TraversableNode {
+func MakeTraversableNodeValue(parent TraversableNode, value interface{}, typeName string, begin lexer.Position, end lexer.Position) TraversableNode {
 	return &TraversableNodeValue{
 		Value: value,
 		Type: typeName,
 		BeginPos: begin,
 		EndPos: end,
+		ParentNode: parent,
 	}
 }
 
-func MakeTraversableNodeToken(value string, begin lexer.Position, end lexer.Position) TraversableNode {
+func MakeTraversableNodeToken(parent TraversableNode, value string, begin lexer.Position, end lexer.Position) TraversableNode {
 	return &TraversableNodeToken{
 		Token: value,
 		BeginPos: begin,
 		EndPos: end,
+		ParentNode: parent,
 	}
 }
 
@@ -105,6 +111,22 @@ func (*TraversableNodeValue) GetChildren() []TraversableNode {
 
 func (*TraversableNodeToken) GetChildren() []TraversableNode {
 	return []TraversableNode{}
+}
+
+func (ast *TraversableNodeValue) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
+}
+
+func (ast *TraversableNodeToken) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
+}
+
+func (ast *TraversableNodeValue) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *TraversableNodeToken) Parent() TraversableNode {
+	return ast.ParentNode
 }
 
 func (ast *TraversableNodeValue) GetNode() interface{} {

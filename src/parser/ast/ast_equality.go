@@ -12,6 +12,15 @@ type Equality struct {
 	Comparison *Comparison `@@`
 	Op         string      `[ @( "!" "=" | "=" "=" )`
 	Next       *Equality   `  @@ ]`
+	ParentNode TraversableNode
+}
+
+func (ast *Equality) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Equality) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Equality) Begin() lexer.Position {
@@ -29,7 +38,7 @@ func (ast *Equality) GetNode() interface{} {
 func (ast *Equality) GetChildren() []TraversableNode {
 	return []TraversableNode{
 		ast.Comparison,
-		MakeTraversableNodeToken(ast.Op, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -49,25 +58,26 @@ func (ast *Equality) Print(c *context.ParsingContext) string {
 
 /////
 
-func (ast *Equality) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Equality) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	next := ast.Next
 	if ast.HasNext() {
-		next = mapper(ast.Next).(*Equality)
+		next = mapper(ast, ast.Next).(*Equality)
 	}
-	return mapper(&Equality{
+	return mapper(parent, &Equality{
 		BaseASTNode: ast.BaseASTNode,
-		Comparison:    mapper(ast.Comparison).(*Comparison),
+		Comparison:    mapper(ast, ast.Comparison).(*Comparison),
 		Op:          ast.Op,
 		Next:        next,
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *Equality) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Comparison)
+func (ast *Equality) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Comparison)
 	if ast.HasNext() {
-		mapper(ast.Next)
+		mapper(ast, ast.Next)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *Equality) Fn() hindley_milner.Expression {

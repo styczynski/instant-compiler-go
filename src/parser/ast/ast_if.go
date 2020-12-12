@@ -12,6 +12,15 @@ type If struct {
 	Condition *Expression `"if" "(" @@ ")"`
 	Then *Statement `@@`
 	Else *Statement `( "else" @@ )?`
+	ParentNode TraversableNode
+}
+
+func (ast *If) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *If) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *If) Begin() lexer.Position {
@@ -47,22 +56,23 @@ func (ast *If) Print(c *context.ParsingContext) string {
 
 ///
 
-func (ast *If) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(&If{
+func (ast *If) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(parent, &If{
 		BaseASTNode: ast.BaseASTNode,
-		Condition: mapper(ast.Condition).(*Expression),
-		Then: mapper(ast.Then).(*Statement),
-		Else: mapper(ast.Else).(*Statement),
+		Condition: mapper(ast, ast.Condition).(*Expression),
+		Then: mapper(ast, ast.Then).(*Statement),
+		Else: mapper(ast, ast.Else).(*Statement),
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *If) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Condition)
-	mapper(ast.Then)
+func (ast *If) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Condition)
+	mapper(ast, ast.Then)
 	if ast.HasElseBlock() {
-		mapper(ast.Else)
+		mapper(ast, ast.Else)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *If) Fn() hindley_milner.Expression {

@@ -13,6 +13,15 @@ import (
 type Block struct {
 	BaseASTNode
 	Statements []*Statement `"{" @@* "}"`
+	ParentNode TraversableNode
+}
+
+func (ast *Block) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Block) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Block) Begin() lexer.Position {
@@ -54,22 +63,23 @@ func (ast *Block) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_BLOCK
 }
 
-func (ast *Block) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Block) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	mappedStmts := []*Statement{}
 	for _, stmt := range ast.Statements {
-		mappedStmts = append(mappedStmts, mapper(stmt).(*Statement))
+		mappedStmts = append(mappedStmts, mapper(ast, stmt).(*Statement))
 	}
-	return mapper(&Block{
+	return mapper(parent, &Block{
 		BaseASTNode: ast.BaseASTNode,
 		Statements:  mappedStmts,
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *Block) Visit(mapper hindley_milner.ExpressionMapper) {
+func (ast *Block) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
 	for _, stmt := range ast.Statements {
-		mapper(stmt)
+		mapper(ast, stmt)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *Block) GetContents() hindley_milner.Batch {

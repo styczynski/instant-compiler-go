@@ -8,12 +8,12 @@ func (n EmbeddedTypeExpr) Body() Expression {
 	return n
 }
 
-func (n EmbeddedTypeExpr) Map(mapper ExpressionMapper) Expression {
-	return mapper(n)
+func (n EmbeddedTypeExpr) Map(parent Expression, mapper ExpressionMapper) Expression {
+	return mapper(parent, n)
 }
 
-func (n EmbeddedTypeExpr) Visit(mapper ExpressionMapper) {
-	mapper(n)
+func (n EmbeddedTypeExpr) Visit(parent Expression, mapper ExpressionMapper) {
+	mapper(parent, n)
 }
 
 func (n EmbeddedTypeExpr) ExpressionType() ExpressionType {

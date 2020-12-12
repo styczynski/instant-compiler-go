@@ -15,6 +15,15 @@ type Primary struct {
 	String        *string     `| @String`
 	Bool          *bool       `| @( "true" | "false" )`
 	SubExpression *Expression `| ( "(" @@ ")" )`
+	ParentNode TraversableNode
+}
+
+func (ast *Primary) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Primary) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Primary) Begin() lexer.Position {
@@ -32,19 +41,19 @@ func (ast *Primary) GetNode() interface{} {
 func (ast *Primary) GetChildren() []TraversableNode {
 	if ast.IsVariable() {
 		return []TraversableNode{
-			MakeTraversableNodeValue(*ast.Variable, "ident", ast.Pos, ast.EndPos),
+			MakeTraversableNodeValue(ast, *ast.Variable, "ident", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsInt() {
 		return []TraversableNode{
-			MakeTraversableNodeValue(*ast.Int, "int", ast.Pos, ast.EndPos),
+			MakeTraversableNodeValue(ast, *ast.Int, "int", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsString() {
 		return []TraversableNode{
-			MakeTraversableNodeValue(*ast.String, "string", ast.Pos, ast.EndPos),
+			MakeTraversableNodeValue(ast, *ast.String, "string", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsBool() {
 		return []TraversableNode{
-			MakeTraversableNodeValue(*ast.Bool, "bool", ast.Pos, ast.EndPos),
+			MakeTraversableNodeValue(ast, *ast.Bool, "bool", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsSubexpression() {
 		return []TraversableNode{
@@ -103,13 +112,13 @@ func (ast *Primary) Body() hindley_milner.Expression {
 	}
 	return ast
 }
-func (ast *Primary) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Primary) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	// TODO
 	return ast
 }
-func (ast *Primary) Visit(mapper hindley_milner.ExpressionMapper) {
+func (ast *Primary) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
 	// TODO
-	mapper(ast)
+	mapper(parent, ast)
 }
 func (ast *Primary) Type() hindley_milner.Type {
 	if ast.IsVariable() {

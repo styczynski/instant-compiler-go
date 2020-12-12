@@ -11,6 +11,15 @@ type New struct {
 	BaseASTNode
 	Type       *Type       `"new" ( @@`
 	Class      *string       `| @Ident )`
+	ParentNode TraversableNode
+}
+
+func (ast *New) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *New) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *New) Begin() lexer.Position {
@@ -37,7 +46,7 @@ func (ast *New) GetTraversableNode() TraversableNode {
 	if ast.IsTypeConstructor() {
 		return ast.Type
 	} else if ast.IsClassConstructor() {
-		return MakeTraversableNodeValue(*ast.Class, "ident", ast.Pos, ast.EndPos)
+		return MakeTraversableNodeValue(ast.GetTraversableNode(), *ast.Class, "ident", ast.Pos, ast.EndPos)
 	}
 	panic("Invalid New type")
 }
@@ -51,14 +60,25 @@ func (ast *New) Print(c *context.ParsingContext) string {
 	panic("Invalid New type")
 }
 
+func (ast *New) GetChildren() []TraversableNode {
+	if ast.IsTypeConstructor() {
+		return []TraversableNode{
+			ast.Type,
+		}
+	} else if ast.IsClassConstructor() {
+		return []TraversableNode{}
+	}
+	return []TraversableNode{}
+}
+
 ////
 
-func (ast *New) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *New) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	// TODO
 	return ast
 }
 
-func (ast *New) Visit(mapper hindley_milner.ExpressionMapper) {
+func (ast *New) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
 	// TODO
 }
 

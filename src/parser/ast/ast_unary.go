@@ -12,6 +12,15 @@ type Unary struct {
 	Op      string   `  ( @( "!" | "-" )`
 	Unary   *Unary   `    @@ )`
 	UnaryApplication *UnaryApplication `| @@`
+	ParentNode TraversableNode
+}
+
+func (ast *Unary) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Unary) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Unary) Begin() lexer.Position {
@@ -29,7 +38,7 @@ func (ast *Unary) GetNode() interface{} {
 func (ast *Unary) GetChildren() []TraversableNode {
 	if ast.IsOperation() {
 		return []TraversableNode{
-			MakeTraversableNodeToken(ast.Op, ast.Pos, ast.EndPos),
+			MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 			ast.Unary,
 		}
 	} else if ast.IsUnaryApplication() {
@@ -60,29 +69,31 @@ func (ast *Unary) Print(c *context.ParsingContext) string {
 ////
 
 
-func (ast *Unary) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Unary) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	if ast.IsOperation() {
-		return mapper(&Unary{
+		return mapper(parent, &Unary{
 			BaseASTNode:      ast.BaseASTNode,
 			Op:               ast.Op,
-			Unary:            mapper(ast.Unary).(*Unary),
+			Unary:            mapper(ast, ast.Unary).(*Unary),
+			ParentNode: parent.(TraversableNode),
 		})
 	} else if ast.IsUnaryApplication() {
-		return mapper(&Unary{
+		return mapper(parent, &Unary{
 			BaseASTNode:      ast.BaseASTNode,
-			UnaryApplication: mapper(ast.UnaryApplication).(*UnaryApplication),
+			UnaryApplication: mapper(ast, ast.UnaryApplication).(*UnaryApplication),
+			ParentNode: parent.(TraversableNode),
 		})
 	}
 	panic("Invalid Unary operation type")
 }
 
-func (ast *Unary) Visit(mapper hindley_milner.ExpressionMapper) {
+func (ast *Unary) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
 	if ast.IsOperation() {
-		mapper(ast.Unary)
+		mapper(ast, ast.Unary)
 	} else if ast.IsUnaryApplication() {
-		mapper(ast.UnaryApplication)
+		mapper(ast, ast.UnaryApplication)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *Unary) Fn() hindley_milner.Expression {

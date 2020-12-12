@@ -13,6 +13,15 @@ import (
 type LatteProgram struct {
 	BaseASTNode
 	Definitions []*TopDef `@@*`
+	ParentNode TraversableNode
+}
+
+func (ast *LatteProgram) Parent() TraversableNode {
+	return nil
+}
+
+func (ast *LatteProgram) OverrideParent(node TraversableNode) {
+	// No-op
 }
 
 func (ast *LatteProgram) GetIdentifierDeps() []string {
@@ -60,22 +69,23 @@ func (ast *LatteProgram) Body() hindley_milner.Expression {
 
 /////
 
-func (ast *LatteProgram) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *LatteProgram) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	mappedDef := []*TopDef{}
 	for _, def := range ast.Definitions {
-		mappedDef = append(mappedDef, mapper(def).(*TopDef))
+		mappedDef = append(mappedDef, mapper(ast, def).(*TopDef))
 	}
-	return mapper(&LatteProgram{
+	return mapper(parent, &LatteProgram{
 		BaseASTNode: ast.BaseASTNode,
 		Definitions: mappedDef,
+		ParentNode: parent.(TraversableNode),
 	}).(*LatteProgram)
 }
 
-func (ast *LatteProgram) Visit(mapper hindley_milner.ExpressionMapper) {
+func (ast *LatteProgram) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
 	for _, def := range ast.Definitions {
-		mapper(def)
+		mapper(ast, def)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *LatteProgram) ExpressionType() hindley_milner.ExpressionType {

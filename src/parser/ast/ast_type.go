@@ -12,6 +12,15 @@ type Type struct {
 	Name *string `@Ident`
 	Dimensions *string `(@( "["`
 	Size *Expression `@@? "]" ))?`
+	ParentNode TraversableNode
+}
+
+func (ast *Type) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Type) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Type) Begin() lexer.Position {
@@ -28,12 +37,12 @@ func (ast *Type) GetNode() interface{} {
 
 func (ast *Type) GetChildren() []TraversableNode {
 	return []TraversableNode{
-		MakeTraversableNodeToken(*ast.Name, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(ast, *ast.Name, ast.Pos, ast.EndPos),
 	}
 }
 
 func (ast *Type) Print(c *context.ParsingContext) string {
-	return printNode(c, ast, "%s", ast.Name)
+	return printNode(c, ast, "%s", *ast.Name)
 }
 
 

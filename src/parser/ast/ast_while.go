@@ -11,6 +11,15 @@ type While struct {
 	BaseASTNode
 	Condition *Expression `"while" "(" @@ ")"`
 	Do *Statement `@@`
+	ParentNode TraversableNode
+}
+
+func (ast *While) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *While) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *While) Begin() lexer.Position {
@@ -40,18 +49,19 @@ func (ast *While) GetChildren() []TraversableNode {
 
 ///
 
-func (ast *While) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(&While{
+func (ast *While) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	return mapper(parent, &While{
 		BaseASTNode: ast.BaseASTNode,
-		Condition: mapper(ast.Condition).(*Expression),
-		Do: mapper(ast.Do).(*Statement),
+		Condition: mapper(ast, ast.Condition).(*Expression),
+		Do: mapper(ast, ast.Do).(*Statement),
+		ParentNode: parent.(TraversableNode),
 	})
 }
 
-func (ast *While) Visit(mapper hindley_milner.ExpressionMapper) {
-	mapper(ast.Condition)
-	mapper(ast.Do)
-	mapper(ast)
+func (ast *While) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+	mapper(ast, ast.Condition)
+	mapper(ast, ast.Do)
+	mapper(parent, ast)
 }
 
 func (ast *While) Fn() hindley_milner.Expression {

@@ -10,7 +10,17 @@ import (
 type Expression struct {
 	ComplexASTNode
 	NewType       *New      `@@`
+	Typename *Typename `| @@`
 	LogicalOperation *LogicalOperation `| @@`
+	ParentNode TraversableNode
+}
+
+func (ast *Expression) Parent() TraversableNode {
+	return ast.ParentNode
+}
+
+func (ast *Expression) OverrideParent(node TraversableNode) {
+	ast.ParentNode = node
 }
 
 func (ast *Expression) Begin() lexer.Position {
@@ -33,11 +43,17 @@ func (ast *Expression) IsNewType() bool {
 	return ast.NewType != nil
 }
 
+func (ast *Expression) IsTypename() bool {
+	return ast.Typename != nil
+}
+
 func (ast *Expression) GetChildren() []TraversableNode {
 	if ast.IsLogicalOperation() {
 		return []TraversableNode{ast.LogicalOperation,}
 	} else if ast.IsNewType() {
 		return []TraversableNode{ ast.NewType.GetTraversableNode(), }
+	} else if ast.IsTypename() {
+		return []TraversableNode{ ast.Typename.GetTraversableNode(), }
 	}
 	panic("Invalid Expression type")
 }
@@ -55,6 +71,8 @@ func (ast *Expression) Print(c *context.ParsingContext) string {
 		return ast.LogicalOperation.Print(c)
 	} else if ast.IsNewType() {
 		return ast.NewType.Print(c)
+	} else if ast.IsTypename() {
+		return ast.Typename.Print(c)
 	}
 	panic("Invalid Expression type")
 }
@@ -66,30 +84,44 @@ func (ast *Expression) Body() hindley_milner.Expression {
 		return ast.LogicalOperation
 	} else if ast.IsNewType() {
 		return ast.NewType
+	} else if ast.IsTypename() {
+		return ast.Typename
 	}
 	panic("Invalid Expression type")
 }
 
-func (ast *Expression) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Expression) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
 	if ast.IsLogicalOperation() {
-		return mapper(&Expression{
+		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
-			LogicalOperation: mapper(ast.LogicalOperation).(*LogicalOperation),
+			LogicalOperation: mapper(ast, ast.LogicalOperation).(*LogicalOperation),
+			ParentNode: parent.(TraversableNode),
 		})
 	} else if ast.IsNewType() {
-		return mapper(&Expression{
+		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			NewType: ast.NewType,
+			ParentNode: parent.(TraversableNode),
+		})
+	} else if ast.IsTypename() {
+		return mapper(parent, &Expression{
+			ComplexASTNode:   ast.ComplexASTNode,
+			Typename: ast.Typename,
+			ParentNode: parent.(TraversableNode),
 		})
 	}
 	panic("Invalid Expression type")
 }
 
-func (ast *Expression) Visit(mapper hindley_milner.ExpressionMapper) {
+func (ast *Expression) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
 	if ast.IsLogicalOperation() {
-		mapper(ast.LogicalOperation)
+		mapper(ast, ast.LogicalOperation)
+	} else if ast.IsNewType() {
+		mapper(ast, ast.NewType)
+	} else if ast.IsTypename() {
+		mapper(ast, ast.Typename)
 	}
-	mapper(ast)
+	mapper(parent, ast)
 }
 
 func (ast *Expression) ExpressionType() hindley_milner.ExpressionType {

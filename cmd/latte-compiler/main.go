@@ -69,7 +69,7 @@ int main() {
     int a;
 	string b;
 	a = 2;
-	b = "2";
+	b = typename main;
     inst = new x;
 }
 `), context)
@@ -96,6 +96,8 @@ int main() {
 		fmt.Print(err.(*type_checker.TypeCheckingError).CliMessage())
 		os.Exit(1)
 	}
+
+	fmt.Printf("PROGRAM:\n%s\n", ast.Print(context))
 
 	//tc.Test(context)
 
