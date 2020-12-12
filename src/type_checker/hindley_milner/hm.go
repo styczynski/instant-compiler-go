@@ -749,6 +749,12 @@ ret:
 
 type InferConfiguration struct {
 	CreateDefaultEmptyType func() *Scheme
+	OnConstrintGenerationStarted *func()
+	OnConstrintGenerationFinished *func()
+	OnSolvingStarted *func()
+	OnSolvingFinished *func()
+	OnPostprocessingStarted *func()
+	OnPostprocessingFinished *func()
 }
 
 func NewInferConfiguration() *InferConfiguration {
@@ -768,17 +774,33 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 	}
 
 	infer := newInferer(env, config)
-	if err := infer.consGen(expr, E_NONE, true, true); err != nil {
+	if config.OnConstrintGenerationStarted != nil {
+		(*config.OnConstrintGenerationStarted)()
+	}
+	err := infer.consGen(expr, E_NONE, true, true)
+	if config.OnConstrintGenerationFinished != nil {
+		(*config.OnConstrintGenerationFinished)()
+	}
+	if err != nil {
 		return nil, nil, err
 	}
 
 	s := newSolver()
+	if config.OnSolvingStarted != nil {
+		(*config.OnSolvingStarted)()
+	}
 	s.solve(infer.cs)
+	if config.OnSolvingFinished != nil {
+		(*config.OnSolvingFinished)()
+	}
 	if s.err != nil {
 		return nil, nil, s.err
 	}
 
 	//fmt.Printf("SOLVED NOW OCS ARE:\n%#v\n%#v", infer.ocs, infer.cs)
+	if config.OnPostprocessingStarted != nil {
+		(*config.OnPostprocessingStarted)()
+	}
 	cleanCS := infer.cs
 	for _, ocs := range infer.ocs {
 		hasCleanRun := false
@@ -805,12 +827,18 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 		if hasCleanRun {
 			cleanCS = cs
 		} else {
+			if config.OnPostprocessingFinished != nil {
+				(*config.OnPostprocessingFinished)()
+			}
 			return nil, nil, InvalidOverloadCandidatesError{
 				Name:       ocs.name,
 				Candidates: ocs.alternatives,
 				Context: ocs.context,
 			}
 		}
+	}
+	if config.OnPostprocessingFinished != nil {
+		defer (*config.OnPostprocessingFinished)()
 	}
 	infer.cs = cleanCS
 

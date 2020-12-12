@@ -3,19 +3,11 @@ package context
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"github.com/fatih/color"
 )
-
-
-var formatStageTitleFg = color.New(color.FgMagenta).SprintFunc()
-
-var formatOkMessageFg = color.New(color.FgHiWhite).SprintFunc()
-var formatOkMessageBg = color.New(color.BgGreen).SprintFunc()
 
 type TraversableNode interface {
 	GetChildren() []TraversableNode
@@ -57,14 +49,23 @@ func (stage *ProcessingStage) Copy() *ProcessingStage {
 	}
 }
 
+type EventCollectorMessageInput interface {
+	Filename() string
+}
+
+type EventsCollectorStream interface {
+	Start(processName string, c *ParsingContext, input EventCollectorMessageInput)
+	End(processName string, c *ParsingContext, input EventCollectorMessageInput)
+}
+
 type ParsingContext struct {
 	BlockDepth int
 	PrinterConfiguration PrinterConfiguration
 	ParserInput []byte
 	Printer CodeFormatter
-	Stages map[string]*ProcessingStage
 	Start *time.Time
 	End *time.Time
+	EventsCollectorStream EventsCollectorStream
 }
 
 func copyTimePtr(val *time.Time) *time.Time {
@@ -77,18 +78,14 @@ func copyTimePtr(val *time.Time) *time.Time {
 
 func (c *ParsingContext) Copy() *ParsingContext {
 	input := c.ParserInput
-	stages := map[string]*ProcessingStage{}
-	for name, stage := range c.Stages {
-		stages[name] = stage.Copy()
-	}
 	return &ParsingContext{
 		BlockDepth:           c.BlockDepth,
 		PrinterConfiguration: c.PrinterConfiguration.Copy(),
 		ParserInput:          input,
 		Printer:              c.Printer,
-		Stages:               stages,
 		Start:                copyTimePtr(c.Start),
 		End:                  copyTimePtr(c.End),
+		EventsCollectorStream: c.EventsCollectorStream,
 	}
 }
 
@@ -112,34 +109,6 @@ func TraverseAST(node TraversableNode, visitor func(ast TraversableNode)) {
 		visitor(child)
 		TraverseAST(child, visitor)
 	}
-}
-
-func (c *ParsingContext) ProcessingStageStart(name string) {
-	start := time.Now()
-	c.Stages[name] = &ProcessingStage{
-		Start: &start,
-	}
-}
-
-func (c *ParsingContext) ProcessingStageEnd(name string) {
-	end := time.Now()
-	c.Stages[name].End = &end
-}
-
-func (c *ParsingContext) PrintProcessingInfo() string {
-	timingsDetails := []string{}
-
-	for name, stage := range c.Stages {
-		timingsDetails = append(timingsDetails, fmt.Sprintf("%s: Took %s",
-			formatStageTitleFg(name),
-			stage.End.Sub(*stage.Start),
-			))
-	}
-
-	return fmt.Sprintf("%s: Processed everything in %s:\n   | %s\n",
-		formatOkMessageBg(formatOkMessageFg("Done")),
-		c.End.Sub(*c.Start),
-		strings.Join(timingsDetails, "\n   | "))
 }
 
 
@@ -208,7 +177,7 @@ func (c *ParsingContext) Close() {
 	c.End = &end
 }
 
-func NewParsingContext(printer CodeFormatter) *ParsingContext {
+func NewParsingContext(printer CodeFormatter, eventsColelctorStream EventsCollectorStream) *ParsingContext {
 	start := time.Now()
 	return &ParsingContext{
 		Printer: printer,
@@ -217,6 +186,6 @@ func NewParsingContext(printer CodeFormatter) *ParsingContext {
 			SkipStatementIdent: false,
 		},
 		Start: &start,
-		Stages: map[string]*ProcessingStage{},
+		EventsCollectorStream: eventsColelctorStream,
 	}
 }

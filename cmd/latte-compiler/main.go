@@ -9,7 +9,7 @@ import (
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/compiler"
-	"github.com/styczynski/latte-compiler/src/error_collector"
+	"github.com/styczynski/latte-compiler/src/events_collector"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser"
 	context2 "github.com/styczynski/latte-compiler/src/parser/context"
@@ -66,24 +66,22 @@ int main() {
 
 func ActionCompile(c *cli.Context) error {
 	pr := printer.CreateLattePrinter()
-	context := context2.NewParsingContext(pr)
-	defer func() {
-		context.Close()
-		fmt.Printf(context.PrintProcessingInfo())
-	}()
+	eventsCollector := events_collector.StartEventsCollector()
+	context := context2.NewParsingContext(pr, eventsCollector)
 
 	tc := type_checker.CreateLatteTypeChecker()
 	p := parser.CreateLatteParser()
-	errorCollector := error_collector.CreateErrorCollector()
 	reader := input_reader.CreateLatteInputReader(c.String("input"))
 	comp := compiler.CreateLatteCompiler()
 	ast := p.ParseInput(reader, context)
 
 	checkedProgram := tc.Check(ast, context)
 	compiledProgram := comp.Compile(checkedProgram, context)
-
-	errors := errorCollector.HandleCompilation(compiledProgram, context)
-	error_collector.DumpCliMessageAndExit(errors, -1)
+	message, ok := eventsCollector.SummarizeCompilation(events_collector.CreateCliSummaryShortStatus(), compiledProgram, context)
+	fmt.Print(message)
+	if !ok {
+		os.Exit(1)
+	}
 
 	//f, err := os.Create("compiler.prof")
 	//if err != nil {

@@ -6,8 +6,6 @@ int main() {
 
 }
 
-pizda
-
 void foo() {
    printString("foo");
    return;

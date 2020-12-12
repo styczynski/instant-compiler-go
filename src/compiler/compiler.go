@@ -10,6 +10,10 @@ type CompilationError struct {
 	textMessage string
 }
 
+func  (e CompilationError) ErrorName() string {
+	return "Code Generation Error"
+}
+
 func (e CompilationError) Error() string {
 	return e.message
 }
@@ -29,6 +33,10 @@ type LatteCompiledProgramPromise interface {
 	Resolve() LatteCompiledProgram
 }
 
+func (p LatteCompiledProgram) Filename() string {
+	return p.TypecheckedProgram.Filename()
+}
+
 type LatteCompiledProgramPromiseChan <-chan LatteCompiledProgram
 
 func (p LatteCompiledProgramPromiseChan) Resolve() LatteCompiledProgram {
@@ -45,6 +53,9 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 	go func() {
 		defer close(ret)
 		program := programPromise.Resolve()
+		c.EventsCollectorStream.Start("Generate compiled code", c, program)
+		defer c.EventsCollectorStream.End("Generate compiled code", c, program)
+
 		ret <- LatteCompiledProgram{
 			TypecheckedProgram: program,
 			CompilationError:   nil,
@@ -54,9 +65,6 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 }
 
 func (compiler *LatteCompiler) Compile(programs []type_checker.LatteTypecheckedProgramPromise, c *context.ParsingContext) []LatteCompiledProgramPromise {
-	c.ProcessingStageStart("Generate compiled code")
-	defer c.ProcessingStageEnd("Generate compiled code")
-
 	ret := []LatteCompiledProgramPromise{}
 	for _, program := range programs {
 		ret = append(ret, compiler.compileAsync(program, c))

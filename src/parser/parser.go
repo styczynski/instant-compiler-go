@@ -83,6 +83,10 @@ type ParsingError struct {
 	textMessage string
 }
 
+func (e *ParsingError) ErrorName() string {
+	return "Parsing error"
+}
+
 func (e *ParsingError) Error() string {
 	return e.message
 }
@@ -140,6 +144,9 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 	ret := make(chan LatteParsedProgram)
 	ctx := c.Copy()
 	go func() {
+		c.EventsCollectorStream.Start("Parse input", c, input)
+		defer c.EventsCollectorStream.End("Parse input", c, input)
+
 		defer close(ret)
 		var err error = nil
 		reader := input.Read()
@@ -148,7 +155,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 		if err != nil {
 			ret <- &LatteParsedProgramImpl{
 				ast:      nil,
-				filename: "",
+				filename: input.Filename(),
 				error:      &ParsingError{
 					message:     err.Error(),
 					textMessage: err.Error(),
@@ -162,7 +169,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 			parserError := err.(participle.Error)
 			bracket := tryInsertingBrackets(p.parserInstance, ctx.ParserInput, parserError.Position().Line, parserError.Position().Column)
 			message, textMessage := ctx.FormatParsingError(
-				"Parsing Error",
+				(&ParsingError{}).ErrorName(),
 				parserError.Error(),
 				parserError.Position().Line,
 				parserError.Position().Column,
@@ -171,7 +178,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 				examineParsingErrorMessage(parserError.Message(), bracket))
 			ret <- &LatteParsedProgramImpl{
 				ast:      nil,
-				filename: "",
+				filename: input.Filename(),
 				error:      &ParsingError{
 					message:     message,
 					textMessage: textMessage,
@@ -206,16 +213,13 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 }
 
 func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *context.ParsingContext) []LatteParsedProgramPromise {
-	c.ProcessingStageStart("Parse input")
-	defer c.ProcessingStageEnd("Parse input")
-
 	var err error
 	inputs, err := reader.Read(c)
 	if err != nil {
 		return []LatteParsedProgramPromise{
 			&LatteParsedProgramImpl{
 				ast:      nil,
-				filename: "",
+				filename: "<unknown input>",
 				error:    &ParsingError{
 					message:     err.Error(),
 					textMessage: err.Error(),

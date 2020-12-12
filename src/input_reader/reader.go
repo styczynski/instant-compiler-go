@@ -2,11 +2,11 @@ package input_reader
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/styczynski/latte-compiler/src/events_utils"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
@@ -44,8 +44,8 @@ func CreateLatteInputReader(input string) *LatteInputReader {
 }
 
 func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, error) {
-	c.ProcessingStageStart("Read input")
-	defer c.ProcessingStageEnd("Read input")
+	c.EventsCollectorStream.Start("Read input", c, events_utils.GeneralEventSource{})
+	defer c.EventsCollectorStream.End("Read input", c, events_utils.GeneralEventSource{})
 
 	if fileExists(reader.input) {
 		f, err := os.Open(reader.input)
@@ -67,7 +67,6 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 		}, nil
 	} else {
 		// Use glob
-		fmt.Printf("GLOB DETECTED\n")
 		matches, err := filepath.Glob(reader.input)
 		if err != nil {
 			return nil, err
@@ -84,7 +83,6 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 			}
 			ret = append(ret, subinputs...)
 		}
-		fmt.Printf("RETURNED READS %d\n", len(ret))
 		return ret, nil
 	}
 

@@ -115,6 +115,11 @@ func (tc *LatteTypeChecker) GetEnv() *hindley_milner.SimpleEnv {
 type TypeCheckingError struct {
 	message string
 	textMessage string
+	errorName string
+}
+
+func (e TypeCheckingError) ErrorName() string {
+	return e.errorName
 }
 
 func (e TypeCheckingError) Error() string {
@@ -128,8 +133,9 @@ func (e TypeCheckingError) CliMessage() string {
 func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingError {
 	if undef, ok := err.(hindley_milner.UndefinedSymbol); ok {
 		src := undef.Source.(interface{}).(ast.NodeWithPosition)
+		errorName := "Unknown symbol"
 		message, textMessage := c.FormatParsingError(
-			"Unknown Symbol",
+			errorName,
 			undef.Error(),
 			src.Begin().Line,
 			src.Begin().Column,
@@ -140,6 +146,7 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 		return &TypeCheckingError{
 			message:     message,
 			textMessage: textMessage,
+			errorName: errorName,
 		}
 	} else if wrongType, ok := err.(hindley_milner.UnificationWrongTypeError); ok {
 		src := wrongType.Source().(interface{}).(ast.NodeWithPosition)
@@ -153,8 +160,9 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			//causeInfo = fmt.Sprintf("First type comes from: %s and the second one from: N/A.", sourceA.Print(c))
 		}
 
+		errorName := "Type Mismatch"
 		message, textMessage := c.FormatParsingError(
-			"Type Mismatch",
+			errorName,
 			undef.Error(),
 			src.Begin().Line,
 			src.Begin().Column,
@@ -165,6 +173,7 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 		return &TypeCheckingError{
 			message:     message,
 			textMessage: textMessage,
+			errorName: errorName,
 		}
 	} else if wrongTypeLen, ok := err.(hindley_milner.UnificationLengthError); ok {
 		src := wrongTypeLen.Source().(interface{}).(ast.NodeWithPosition)
@@ -179,8 +188,9 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 		//causeInfo = fmt.Sprintf("First type comes from: %s and the second one from: N/A.", sourceA.Print(c))
 		}
 
+		errorName := "Type Mismatch"
 		message, textMessage := c.FormatParsingError(
-			"Type Mismatch",
+			errorName,
 			undef.Error(),
 			src.Begin().Line,
 			src.Begin().Column,
@@ -191,14 +201,16 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 		return &TypeCheckingError{
 			message:     message,
 			textMessage: textMessage,
+			errorName: errorName,
 		}
 	} else if noOverloadCandidates, ok := err.(hindley_milner.InvalidOverloadCandidatesError); ok {
 		src := noOverloadCandidates.Source().(interface{}).(ast.NodeWithPosition)
 
 		causeInfo := ""
 
+		errorName := "No overload candidates"
 		message, textMessage := c.FormatParsingError(
-			"No overload candidates",
+			errorName,
 			undef.Error(),
 			src.Begin().Line,
 			src.Begin().Column,
@@ -209,13 +221,15 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 		return &TypeCheckingError{
 			message:     message,
 			textMessage: textMessage,
+			errorName: errorName,
 		}
 	} else if reccurentTypeError, ok := err.(hindley_milner.UnificationRecurrentTypeError); ok {
 		src := reccurentTypeError.Source().(interface{}).(ast.NodeWithPosition)
 
 		causeInfo := ""
+		errorName := "Recurrent type"
 		message, textMessage := c.FormatParsingError(
-			"Recurrent type",
+			errorName,
 			undef.Error(),
 			src.Begin().Line,
 			src.Begin().Column,
@@ -226,18 +240,25 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 		return &TypeCheckingError{
 			message:     message,
 			textMessage: textMessage,
+			errorName: errorName,
 		}
 	}
 	panic(fmt.Sprintf("Unknown error: [%v]\n", err))
 	return &TypeCheckingError{
 		message: "Unknown error\n",
 		textMessage: "Unknown error\n",
+		errorName: "Unknown error",
 	}
 }
 
 type LatteTypecheckedProgram struct {
 	Program parser.LatteParsedProgram
 	TypeCheckingError *TypeCheckingError
+	filename string
+}
+
+func (p LatteTypecheckedProgram) Filename() string {
+	return p.filename
 }
 
 func (p LatteTypecheckedProgram) Resolve() LatteTypecheckedProgram {
@@ -260,25 +281,57 @@ func (tc *LatteTypeChecker) checkAsync(programPromise parser.LatteParsedProgramP
 	go func() {
 		defer close(r)
 		program := programPromise.Resolve()
+		c.EventsCollectorStream.Start("Typechecking", c, program)
+		defer c.EventsCollectorStream.End("Typechecking", c, program)
+
+		OnConstrintGenerationStarted := func() {
+			c.EventsCollectorStream.Start("Generating constraints", c, program)
+		}
+		OnConstrintGenerationFinished := func() {
+			c.EventsCollectorStream.End("Generating constraints", c, program)
+		}
+		OnSolvingStarted := func() {
+			c.EventsCollectorStream.Start("Solving constraints", c, program)
+		}
+		OnSolvingFinished := func() {
+			c.EventsCollectorStream.End("Solving constraints", c, program)
+		}
+		OnPostprocessingStarted := func() {
+			c.EventsCollectorStream.Start("Postprocessing", c, program)
+		}
+		OnPostprocessingFinished := func() {
+			c.EventsCollectorStream.End("Postprocessing", c, program)
+		}
+
 		if program.ParsingError() != nil {
 			r <- LatteTypecheckedProgram{
 				Program: program,
+				filename: program.Filename(),
 			}
 			return
 		}
 		config := hindley_milner.NewInferConfiguration()
 		config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_VOID)) }
 
+		config.OnConstrintGenerationStarted = &OnConstrintGenerationStarted
+		config.OnConstrintGenerationFinished = &OnConstrintGenerationFinished
+		config.OnSolvingStarted = &OnSolvingStarted
+		config.OnSolvingFinished = &OnSolvingFinished
+		config.OnPostprocessingStarted = &OnPostprocessingStarted
+		config.OnPostprocessingFinished = &OnPostprocessingFinished
+
 		_, _, err := hindley_milner.Infer(tc.GetEnv(), program.AST(), config)
 		if err != nil {
 			r <- LatteTypecheckedProgram{
 				Program: program,
 				TypeCheckingError: wrapTypeCheckingError(err, ctx),
+				filename: program.Filename(),
 			}
 			return
 		}
 		r <- LatteTypecheckedProgram{
 			Program: program,
+			filename: program.Filename(),
 		}
 	}()
 
@@ -286,9 +339,6 @@ func (tc *LatteTypeChecker) checkAsync(programPromise parser.LatteParsedProgramP
 }
 
 func (tc *LatteTypeChecker) Check(programs []parser.LatteParsedProgramPromise, c *context.ParsingContext) []LatteTypecheckedProgramPromise {
-	c.ProcessingStageStart("Typechecking")
-	defer c.ProcessingStageEnd("Typechecking")
-
 	ret := []LatteTypecheckedProgramPromise{}
 	for _, programPromise := range programs {
 		ret = append(ret, tc.checkAsync(programPromise, c))
