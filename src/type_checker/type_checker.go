@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -210,26 +211,23 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) error {
 	}
 }
 
-func (tc *LatteTypeChecker) Check(program *ast.LatteProgram, c *context.ParsingContext) error {
+func (tc *LatteTypeChecker) Check(programs parser.LatteParsedProgramCollection, c *context.ParsingContext) error {
 	c.ProcessingStageStart("Typechecking")
 	defer c.ProcessingStageEnd("Typechecking")
 
 	debug.SetGCPercent(-1)
-	//var scheme *hindley_milner.Scheme
 	var err error
-	//var retEnv hindley_milner.Env
 
-	config := hindley_milner.NewInferConfiguration()
-	config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_VOID)) }
+	for _, program := range programs.GetAll() {
+		config := hindley_milner.NewInferConfiguration()
+		config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_VOID)) }
 
-	_, _, err = hindley_milner.Infer(tc.GetEnv(), program, config)
-	if err != nil {
-		return wrapTypeCheckingError(err, c)
+		_, _, err = hindley_milner.Infer(tc.GetEnv(), program.AST(), config)
+		if err != nil {
+			return wrapTypeCheckingError(err, c)
+		}
 	}
 	return nil
-	//simpleType, ok := scheme.Type()
-	//fmt.Printf("simple Type: %v | isMonoType: %v | err: %v\n", simpleType, ok, err)
-	//hindley_milner.PrintEnv(retEnv)
 }
 
 

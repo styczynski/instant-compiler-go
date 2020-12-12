@@ -6,8 +6,7 @@ import (
 	"os"
 	"runtime/pprof"
 
-	//"os"
-	//"strings"
+	"github.com/urfave/cli/v2"
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/compiler"
@@ -15,8 +14,6 @@ import (
 	"github.com/styczynski/latte-compiler/src/parser"
 	context2 "github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/printer"
-
-	//"github.com/styczynski/latte-compiler/src/printer"
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
@@ -67,12 +64,7 @@ int main() {
 `
  */
 
-func main() {
-	// load application configurations
-	if err := config.LoadConfig("./config"); err != nil {
-		panic(fmt.Errorf("invalid application configuration: %s", err))
-	}
-
+func ActionCompile(c *cli.Context) error {
 	pr := printer.CreateLattePrinter()
 	context := context2.NewParsingContext(pr)
 	defer func() {
@@ -82,7 +74,7 @@ func main() {
 
 	tc := type_checker.CreateLatteTypeChecker()
 	p := parser.CreateLatteParser()
-	reader := input_reader.CreateLatteInputReader()
+	reader := input_reader.CreateLatteInputReader(c.String("input"))
 	comp := compiler.CreateLatteCompiler()
 	ast, latteError := p.ParseInput(reader, context)
 	if latteError != nil {
@@ -106,5 +98,40 @@ func main() {
 	_, err = comp.Compile(ast, context)
 	if err != nil {
 		panic(err)
+	}
+
+	return nil
+}
+
+func main() {
+	// load application configurations
+	if err := config.LoadConfig("./config"); err != nil {
+		panic(fmt.Errorf("invalid application configuration: %s", err))
+	}
+
+	app := &cli.App{
+		Flags: []cli.Flag{
+		},
+		Commands: []*cli.Command{
+			{
+				Name:    "compile",
+				Aliases: []string{"c"},
+				Usage:   "Compile file",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "input",
+						Value:    "",
+						Usage:    "Input file",
+						Required: true,
+					},
+				},
+				Action: ActionCompile,
+			},
+		},
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
 	}
 }

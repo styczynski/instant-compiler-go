@@ -19,6 +19,34 @@ type LatteParser struct {
 	parserInstance *participle.Parser
 }
 
+type LatteParsedProgram interface {
+	AST() *ast.LatteProgram
+	Filename() string
+}
+
+type LatteParsedProgramImpl struct {
+	ast *ast.LatteProgram
+	filename string
+}
+
+func (prog *LatteParsedProgramImpl) AST() *ast.LatteProgram {
+	return prog.ast
+}
+
+func (prog *LatteParsedProgramImpl) Filename() string {
+	return prog.filename
+}
+
+type LatteParsedProgramCollection interface {
+	GetAll() []LatteParsedProgram
+}
+
+type LatteParsedPrograms []LatteParsedProgram
+
+func (p LatteParsedPrograms) GetAll() []LatteParsedProgram {
+	return p
+}
+
 func CreateLatteParser() *LatteParser {
 	paserInstance := participle.MustBuild(&ast.LatteProgram{},
 		//participle.Lexer(iniLexer),
@@ -87,59 +115,68 @@ func examineParsingErrorMessage(message string, recommendedBracket string) strin
 	return message
 }
 
-func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *context.ParsingContext) (*ast.LatteProgram, errors.LatteError) {
+func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *context.ParsingContext) (LatteParsedProgramCollection, errors.LatteError) {
 	c.ProcessingStageStart("Parse input")
 	defer c.ProcessingStageEnd("Parse input")
 
 	var err error
-	input, err := reader.Read(c)
+	inputs, err := reader.Read(c)
 	if err != nil {
 		return nil, errors.NewLatteSimpleError(err)
 	}
 
-	output := &ast.LatteProgram{}
-	c.ParserInput, err = ioutil.ReadAll(input)
-	if err != nil {
-		return nil, errors.NewLatteSimpleError(err)
-	}
-
-	err = p.parserInstance.ParseBytes("<input>", c.ParserInput, output)
-	if err != nil {
-		parserError := err.(participle.Error)
-		bracket := tryInsertingBrackets(p.parserInstance, c.ParserInput, parserError.Position().Line, parserError.Position().Column)
-		message, textMessage := c.FormatParsingError(
-			"Parsing Error",
-			parserError.Error(),
-			parserError.Position().Line,
-			parserError.Position().Column,
-			parserError.Position().Filename,
-			bracket,
-			examineParsingErrorMessage(parserError.Message(), bracket))
-		return nil, &ParsingError{
-			message:     message,
-			textMessage: textMessage,
+	programs := LatteParsedPrograms{}
+	for _, input := range inputs {
+		reader := input.Read()
+		output := &ast.LatteProgram{}
+		c.ParserInput, err = ioutil.ReadAll(reader)
+		if err != nil {
+			return nil, errors.NewLatteSimpleError(err)
 		}
-	}
 
-	var parentSetterVisitor hindley_milner.ExpressionMapper
-	parentSetterVisitor = func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
-		node := e.(ast.TraversableNode)
-		//fmt.Printf("CUR PAR %v\n", node.Parent())
-		if parent == e {
+		err = p.parserInstance.ParseBytes("<input>", c.ParserInput, output)
+		if err != nil {
+			parserError := err.(participle.Error)
+			bracket := tryInsertingBrackets(p.parserInstance, c.ParserInput, parserError.Position().Line, parserError.Position().Column)
+			message, textMessage := c.FormatParsingError(
+				"Parsing Error",
+				parserError.Error(),
+				parserError.Position().Line,
+				parserError.Position().Column,
+				parserError.Position().Filename,
+				bracket,
+				examineParsingErrorMessage(parserError.Message(), bracket))
+			return nil, &ParsingError{
+				message:     message,
+				textMessage: textMessage,
+			}
+		}
+
+		var parentSetterVisitor hindley_milner.ExpressionMapper
+		parentSetterVisitor = func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
+			node := e.(ast.TraversableNode)
+			//fmt.Printf("CUR PAR %v\n", node.Parent())
+			if parent == e {
+				return e
+			}
+			if node.Parent() != nil {
+				// Prevent infinite loop
+				return e
+			}
+			//fmt.Printf(" VISIT => %v FROM %v\n", c, parent)
+			//fmt.Printf(" VISIT => %s FROM %s\n", node.(ast.PrintableNode).Print(c), parent.(ast.PrintableNode).Print(c))
+			node.OverrideParent(parent.(interface{}).(ast.TraversableNode))
+			e.Visit(parent, parentSetterVisitor)
 			return e
 		}
-		if node.Parent() != nil {
-			// Prevent infinite loop
-			return e
-		}
-		//fmt.Printf(" VISIT => %v FROM %v\n", c, parent)
-		//fmt.Printf(" VISIT => %s FROM %s\n", node.(ast.PrintableNode).Print(c), parent.(ast.PrintableNode).Print(c))
-		node.OverrideParent(parent.(interface{}).(ast.TraversableNode))
-		e.Visit(parent, parentSetterVisitor)
-		return e
+
+		output.Visit(output, parentSetterVisitor)
+		programs = append(programs, &LatteParsedProgramImpl{
+			ast:      output,
+			filename: input.Filename(),
+		})
 	}
 
-	output.Visit(output, parentSetterVisitor)
 
-	return output, nil
+	return programs, nil
 }

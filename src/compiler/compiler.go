@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	"github.com/styczynski/latte-compiler/src/parser/ast"
+	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
@@ -11,7 +11,7 @@ func CreateLatteCompiler() *LatteCompiler {
 	return &LatteCompiler{}
 }
 
-func (compiler *LatteCompiler) Compile(ast *ast.LatteProgram, c *context.ParsingContext) (CompiledProgram, error) {
+func (compiler *LatteCompiler) Compile(programs parser.LatteParsedProgramCollection, c *context.ParsingContext) (CompiledProgram, error) {
 	c.ProcessingStageStart("Generate compiled code")
 	defer c.ProcessingStageEnd("Generate compiled code")
 

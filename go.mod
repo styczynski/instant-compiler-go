@@ -8,13 +8,16 @@ require (
 	github.com/alecthomas/kong v0.2.4
 	github.com/alecthomas/participle/v2 v2.0.0-alpha3
 	github.com/alecthomas/repr v0.0.0-20201120212035-bb82daffcca2
+	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/dlclark/regexp2 v1.2.0
 	github.com/fatih/color v1.10.0
 	github.com/mattn/go-colorable v0.1.8
 	github.com/mattn/go-isatty v0.0.12
 	github.com/pkg/errors v0.9.1
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
+	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/xtgo/set v1.0.0
 )
