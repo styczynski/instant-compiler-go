@@ -76,10 +76,15 @@ func (ast *If) Visit(parent hindley_milner.Expression, mapper hindley_milner.Exp
 }
 
 func (ast *If) Fn() hindley_milner.Expression {
-	return &BuiltinFunction{
-		BaseASTNode: ast.BaseASTNode,
-		name: "if",
-	}
+	//return &BuiltinFunction{
+	//	BaseASTNode: ast.BaseASTNode,
+	//	name: "if",
+	//}
+	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
+		return hindley_milner.NewScheme(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a'), hindley_milner.TVar('b')},
+			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), hindley_milner.TVar('a'), hindley_milner.TVar('b'), CreatePrimitive(T_VOID)))
+	}}
 }
 
 func (ast *If) Body() hindley_milner.Expression {

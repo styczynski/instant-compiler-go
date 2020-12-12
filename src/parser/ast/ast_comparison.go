@@ -10,7 +10,7 @@ import (
 type Comparison struct {
 	BaseASTNode
 	Addition *Addition   `@@`
-	Op       string      `[ @( ">" | ">" "=" | "<" | "<" "=" )`
+	Op       string      `[ @( ">" "=" | "<" "=" | "=" "=" | ">" | "<" )`
 	Next     *Comparison `  @@ ]`
 	ParentNode TraversableNode
 }

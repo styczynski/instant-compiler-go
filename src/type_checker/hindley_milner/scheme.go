@@ -40,6 +40,21 @@ func (s *Scheme) FreeTypeVar() TypeVarSet {
 	return ftvs.Difference(tvs)
 }
 
+func (s *Scheme) DeepClone() *Scheme {
+	tvs := make(TypeVarSet, len(s.tvs))
+	for i, v := range s.tvs {
+		tvs[i] = v
+	}
+	newType := s.t
+	if newTypeCloner, ok := newType.(Cloner); ok {
+		newType = newTypeCloner.Clone().(Type)
+	}
+	return &Scheme{
+		tvs: tvs,
+		t:   newType,
+	}
+}
+
 func (s *Scheme) Clone() *Scheme {
 	tvs := make(TypeVarSet, len(s.tvs))
 	for i, v := range s.tvs {

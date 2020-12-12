@@ -2,6 +2,7 @@ package input_reader
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -61,11 +62,12 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 		return []LatteInput{
 			&LatteInputImpl{
 				read:     func() io.Reader { return bufio.NewReader(os.Stdin) },
-				filename: func() string { return reader.input },
+				filename: func() string { return "<standard input>" },
 			},
 		}, nil
 	} else {
 		// Use glob
+		fmt.Printf("GLOB DETECTED\n")
 		matches, err := filepath.Glob(reader.input)
 		if err != nil {
 			return nil, err
@@ -82,6 +84,7 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 			}
 			ret = append(ret, subinputs...)
 		}
+		fmt.Printf("RETURNED READS %d\n", len(ret))
 		return ret, nil
 	}
 

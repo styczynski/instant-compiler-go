@@ -99,7 +99,7 @@ func (ast *Unary) Visit(parent hindley_milner.Expression, mapper hindley_milner.
 func (ast *Unary) Fn() hindley_milner.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: ast.Op,
+		name: "unary_"+ast.Op,
 	}
 }
 

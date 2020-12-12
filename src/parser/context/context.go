@@ -34,9 +34,27 @@ type PrinterConfiguration struct {
 	MaxPrintPosition *lexer.Position
 }
 
+func (p PrinterConfiguration) Copy() PrinterConfiguration {
+	var pos *lexer.Position = nil
+	if p.MaxPrintPosition != nil {
+		pos = &(*p.MaxPrintPosition)
+	}
+	return PrinterConfiguration{
+		SkipStatementIdent: p.SkipStatementIdent,
+		MaxPrintPosition:   pos,
+	}
+}
+
 type ProcessingStage struct {
 	Start *time.Time
 	End *time.Time
+}
+
+func (stage *ProcessingStage) Copy() *ProcessingStage {
+	return &ProcessingStage{
+		Start: copyTimePtr(stage.Start),
+		End:   copyTimePtr(stage.End),
+	}
 }
 
 type ParsingContext struct {
@@ -47,6 +65,31 @@ type ParsingContext struct {
 	Stages map[string]*ProcessingStage
 	Start *time.Time
 	End *time.Time
+}
+
+func copyTimePtr(val *time.Time) *time.Time {
+	if val == nil {
+		return nil
+	}
+	newVal := *val
+	return &newVal
+}
+
+func (c *ParsingContext) Copy() *ParsingContext {
+	input := c.ParserInput
+	stages := map[string]*ProcessingStage{}
+	for name, stage := range c.Stages {
+		stages[name] = stage.Copy()
+	}
+	return &ParsingContext{
+		BlockDepth:           c.BlockDepth,
+		PrinterConfiguration: c.PrinterConfiguration.Copy(),
+		ParserInput:          input,
+		Printer:              c.Printer,
+		Stages:               stages,
+		Start:                copyTimePtr(c.Start),
+		End:                  copyTimePtr(c.End),
+	}
 }
 
 func Abs(x int) int {

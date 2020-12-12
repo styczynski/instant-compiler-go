@@ -2,7 +2,6 @@ package type_checker
 
 import (
 	"fmt"
-	"runtime/debug"
 
 	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
@@ -20,7 +19,7 @@ func (tc *LatteTypeChecker) Test(c *context.ParsingContext) {
 	// Nothing
 }
 
-func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
+func (tc *LatteTypeChecker) GetEnv() *hindley_milner.SimpleEnv {
 	return hindley_milner.CreateSimpleEnv(map[string][]*hindley_milner.Scheme{
 		"+":  []*hindley_milner.Scheme{
 			hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
@@ -50,8 +49,14 @@ func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 		"*":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
 		)),
-		"!":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+		"%":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		)),
+		"unary_!":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
+		)),
+		"unary_-":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
 		)),
 		"--":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
@@ -65,8 +70,10 @@ func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 		">=":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
-		"==":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
-			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
+		"==":      hindley_milner.SingleDef(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
+			hindley_milner.NewFnType(
+			hindley_milner.TVar('a'), hindley_milner.TVar('a'), ast.CreatePrimitive(ast.T_BOOL),
 		)),
 		"!=":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
@@ -77,18 +84,18 @@ func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 		">":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
+		"readInt":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_VOID), ast.CreatePrimitive(ast.T_INT),
+		)),
+		"readString":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_VOID), ast.CreatePrimitive(ast.T_STRING),
+		)),
 		"printInt":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_VOID),
 		)),
-		"=":  hindley_milner.SingleDef(
-			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
-			hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a'))),
-		"if":  hindley_milner.SingleDef(
-			hindley_milner.TypeVarSet{hindley_milner.TVar('a'), hindley_milner.TVar('b')},
-			hindley_milner.NewFnType(ast.CreatePrimitive(ast.T_BOOL), hindley_milner.TVar('a'), hindley_milner.TVar('b'), ast.CreatePrimitive(ast.T_VOID))),
-		"while":  hindley_milner.SingleDef(
-			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
-			hindley_milner.NewFnType(ast.CreatePrimitive(ast.T_BOOL), hindley_milner.TVar('a'), ast.CreatePrimitive(ast.T_VOID))),
+		"printString":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_VOID),
+		)),
 		"[]":  hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(
@@ -118,7 +125,7 @@ func (e TypeCheckingError) CliMessage() string {
 	return e.textMessage
 }
 
-func wrapTypeCheckingError(err error, c *context.ParsingContext) error {
+func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingError {
 	if undef, ok := err.(hindley_milner.UndefinedSymbol); ok {
 		src := undef.Source.(interface{}).(ast.NodeWithPosition)
 		message, textMessage := c.FormatParsingError(
@@ -203,31 +210,90 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) error {
 			message:     message,
 			textMessage: textMessage,
 		}
+	} else if reccurentTypeError, ok := err.(hindley_milner.UnificationRecurrentTypeError); ok {
+		src := reccurentTypeError.Source().(interface{}).(ast.NodeWithPosition)
+
+		causeInfo := ""
+		message, textMessage := c.FormatParsingError(
+			"Recurrent type",
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			fmt.Sprintf("%s%s", reccurentTypeError.Error(), causeInfo),
+		)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+		}
 	}
 	panic(fmt.Sprintf("Unknown error: [%v]\n", err))
-	return TypeCheckingError{
+	return &TypeCheckingError{
 		message: "Unknown error\n",
 		textMessage: "Unknown error\n",
 	}
 }
 
-func (tc *LatteTypeChecker) Check(programs parser.LatteParsedProgramCollection, c *context.ParsingContext) error {
-	c.ProcessingStageStart("Typechecking")
-	defer c.ProcessingStageEnd("Typechecking")
+type LatteTypecheckedProgram struct {
+	Program parser.LatteParsedProgram
+	TypeCheckingError *TypeCheckingError
+}
 
-	debug.SetGCPercent(-1)
-	var err error
+func (p LatteTypecheckedProgram) Resolve() LatteTypecheckedProgram {
+	return p
+}
 
-	for _, program := range programs.GetAll() {
+type LatteTypecheckedProgramPromise interface {
+	Resolve() LatteTypecheckedProgram
+}
+
+type LatteTypecheckedProgramPromiseChan <-chan LatteTypecheckedProgram
+
+func (p LatteTypecheckedProgramPromiseChan) Resolve() LatteTypecheckedProgram {
+	return <-p
+}
+
+func (tc *LatteTypeChecker) checkAsync(programPromise parser.LatteParsedProgramPromise, c *context.ParsingContext) LatteTypecheckedProgramPromise {
+	r := make(chan LatteTypecheckedProgram)
+	ctx := c.Copy()
+	go func() {
+		defer close(r)
+		program := programPromise.Resolve()
+		if program.ParsingError() != nil {
+			r <- LatteTypecheckedProgram{
+				Program: program,
+			}
+			return
+		}
 		config := hindley_milner.NewInferConfiguration()
 		config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_VOID)) }
 
-		_, _, err = hindley_milner.Infer(tc.GetEnv(), program.AST(), config)
+		_, _, err := hindley_milner.Infer(tc.GetEnv(), program.AST(), config)
 		if err != nil {
-			return wrapTypeCheckingError(err, c)
+			r <- LatteTypecheckedProgram{
+				Program: program,
+				TypeCheckingError: wrapTypeCheckingError(err, ctx),
+			}
+			return
 		}
+		r <- LatteTypecheckedProgram{
+			Program: program,
+		}
+	}()
+
+	return LatteTypecheckedProgramPromiseChan(r)
+}
+
+func (tc *LatteTypeChecker) Check(programs []parser.LatteParsedProgramPromise, c *context.ParsingContext) []LatteTypecheckedProgramPromise {
+	c.ProcessingStageStart("Typechecking")
+	defer c.ProcessingStageEnd("Typechecking")
+
+	ret := []LatteTypecheckedProgramPromise{}
+	for _, programPromise := range programs {
+		ret = append(ret, tc.checkAsync(programPromise, c))
 	}
-	return nil
+	return ret
 }
 
 

@@ -20,7 +20,7 @@ func CreatePrimitive(p Primitive) PrimitiveType {
 	if p == T_STRING {
 		name = "string"
 	} else if p == T_BOOL {
-		name = "bool"
+		name = "boolean"
 	} else if p == T_INT {
 		name = "int"
 	} else if p == T_VOID {

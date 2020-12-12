@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime/pprof"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/compiler"
+	"github.com/styczynski/latte-compiler/src/error_collector"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser"
 	context2 "github.com/styczynski/latte-compiler/src/parser/context"
@@ -74,31 +74,23 @@ func ActionCompile(c *cli.Context) error {
 
 	tc := type_checker.CreateLatteTypeChecker()
 	p := parser.CreateLatteParser()
+	errorCollector := error_collector.CreateErrorCollector()
 	reader := input_reader.CreateLatteInputReader(c.String("input"))
 	comp := compiler.CreateLatteCompiler()
-	ast, latteError := p.ParseInput(reader, context)
-	if latteError != nil {
-		fmt.Print(latteError.CliMessage())
-		os.Exit(1)
-	}
+	ast := p.ParseInput(reader, context)
 
-	f, err := os.Create("compiler.prof")
-	if err != nil {
-		log.Fatal(err)
-	}
-	pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
+	checkedProgram := tc.Check(ast, context)
+	compiledProgram := comp.Compile(checkedProgram, context)
 
-	err = tc.Check(ast, context)
-	if err != nil {
-		fmt.Print(err.(*type_checker.TypeCheckingError).CliMessage())
-		os.Exit(1)
-	}
+	errors := errorCollector.HandleCompilation(compiledProgram, context)
+	error_collector.DumpCliMessageAndExit(errors, -1)
 
-	_, err = comp.Compile(ast, context)
-	if err != nil {
-		panic(err)
-	}
+	//f, err := os.Create("compiler.prof")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//pprof.StartCPUProfile(f)
+	//defer pprof.StopCPUProfile()
 
 	return nil
 }

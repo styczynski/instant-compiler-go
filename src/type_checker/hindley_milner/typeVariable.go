@@ -18,6 +18,13 @@ func TVar(name int16) TypeVariable {
 	}
 }
 
+func (t TypeVariable) Clone() interface{} {
+	return TypeVariable{
+		value:   t.value,
+		context: t.context,
+	}
+}
+
 func (t TypeVariable) Name() string { return string(t.value) }
 func (t TypeVariable) Apply(sub Subs) Substitutable {
 	if sub == nil {

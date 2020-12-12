@@ -65,10 +65,11 @@ func (ast *While) Visit(parent hindley_milner.Expression, mapper hindley_milner.
 }
 
 func (ast *While) Fn() hindley_milner.Expression {
-	return &BuiltinFunction{
-		BaseASTNode: ast.BaseASTNode,
-		name: "while",
-	}
+	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
+		return hindley_milner.NewScheme(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
+			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), hindley_milner.TVar('a'), CreatePrimitive(T_VOID)))
+	}}
 }
 
 func (ast *While) Body() hindley_milner.Expression {

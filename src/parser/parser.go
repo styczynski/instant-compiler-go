@@ -8,7 +8,6 @@ import (
 
 	"github.com/alecthomas/participle/v2"
 
-	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -22,15 +21,26 @@ type LatteParser struct {
 type LatteParsedProgram interface {
 	AST() *ast.LatteProgram
 	Filename() string
+	ParsingError() *ParsingError
+	Resolve() LatteParsedProgram
 }
 
 type LatteParsedProgramImpl struct {
 	ast *ast.LatteProgram
 	filename string
+	error *ParsingError
+}
+
+func (prog *LatteParsedProgramImpl) Resolve() LatteParsedProgram {
+	return prog
 }
 
 func (prog *LatteParsedProgramImpl) AST() *ast.LatteProgram {
 	return prog.ast
+}
+
+func (prog *LatteParsedProgramImpl) ParsingError() *ParsingError {
+	return prog.error
 }
 
 func (prog *LatteParsedProgramImpl) Filename() string {
@@ -45,6 +55,16 @@ type LatteParsedPrograms []LatteParsedProgram
 
 func (p LatteParsedPrograms) GetAll() []LatteParsedProgram {
 	return p
+}
+
+type LatteParsedProgramPromise interface {
+	Resolve() LatteParsedProgram
+}
+
+type LatteParsedProgramPromiseChanel <-chan LatteParsedProgram
+
+func (p LatteParsedProgramPromiseChanel) Resolve() LatteParsedProgram {
+	return <- p
 }
 
 func CreateLatteParser() *LatteParser {
@@ -115,30 +135,33 @@ func examineParsingErrorMessage(message string, recommendedBracket string) strin
 	return message
 }
 
-func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *context.ParsingContext) (LatteParsedProgramCollection, errors.LatteError) {
-	c.ProcessingStageStart("Parse input")
-	defer c.ProcessingStageEnd("Parse input")
+func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.LatteInput) LatteParsedProgramPromise {
 
-	var err error
-	inputs, err := reader.Read(c)
-	if err != nil {
-		return nil, errors.NewLatteSimpleError(err)
-	}
-
-	programs := LatteParsedPrograms{}
-	for _, input := range inputs {
+	ret := make(chan LatteParsedProgram)
+	ctx := c.Copy()
+	go func() {
+		defer close(ret)
+		var err error = nil
 		reader := input.Read()
 		output := &ast.LatteProgram{}
-		c.ParserInput, err = ioutil.ReadAll(reader)
+		ctx.ParserInput, err = ioutil.ReadAll(reader)
 		if err != nil {
-			return nil, errors.NewLatteSimpleError(err)
+			ret <- &LatteParsedProgramImpl{
+				ast:      nil,
+				filename: "",
+				error:      &ParsingError{
+					message:     err.Error(),
+					textMessage: err.Error(),
+				},
+			}
+			return
 		}
 
-		err = p.parserInstance.ParseBytes("<input>", c.ParserInput, output)
+		err = p.parserInstance.ParseBytes(input.Filename(), ctx.ParserInput, output)
 		if err != nil {
 			parserError := err.(participle.Error)
-			bracket := tryInsertingBrackets(p.parserInstance, c.ParserInput, parserError.Position().Line, parserError.Position().Column)
-			message, textMessage := c.FormatParsingError(
+			bracket := tryInsertingBrackets(p.parserInstance, ctx.ParserInput, parserError.Position().Line, parserError.Position().Column)
+			message, textMessage := ctx.FormatParsingError(
 				"Parsing Error",
 				parserError.Error(),
 				parserError.Position().Line,
@@ -146,16 +169,20 @@ func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *conte
 				parserError.Position().Filename,
 				bracket,
 				examineParsingErrorMessage(parserError.Message(), bracket))
-			return nil, &ParsingError{
-				message:     message,
-				textMessage: textMessage,
+			ret <- &LatteParsedProgramImpl{
+				ast:      nil,
+				filename: "",
+				error:      &ParsingError{
+					message:     message,
+					textMessage: textMessage,
+				},
 			}
+			return
 		}
 
 		var parentSetterVisitor hindley_milner.ExpressionMapper
 		parentSetterVisitor = func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
 			node := e.(ast.TraversableNode)
-			//fmt.Printf("CUR PAR %v\n", node.Parent())
 			if parent == e {
 				return e
 			}
@@ -163,20 +190,44 @@ func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *conte
 				// Prevent infinite loop
 				return e
 			}
-			//fmt.Printf(" VISIT => %v FROM %v\n", c, parent)
-			//fmt.Printf(" VISIT => %s FROM %s\n", node.(ast.PrintableNode).Print(c), parent.(ast.PrintableNode).Print(c))
 			node.OverrideParent(parent.(interface{}).(ast.TraversableNode))
 			e.Visit(parent, parentSetterVisitor)
 			return e
 		}
 
 		output.Visit(output, parentSetterVisitor)
-		programs = append(programs, &LatteParsedProgramImpl{
+		ret <- &LatteParsedProgramImpl{
 			ast:      output,
 			filename: input.Filename(),
-		})
+		}
+	}()
+
+	return LatteParsedProgramPromiseChanel(ret)
+}
+
+func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *context.ParsingContext) []LatteParsedProgramPromise {
+	c.ProcessingStageStart("Parse input")
+	defer c.ProcessingStageEnd("Parse input")
+
+	var err error
+	inputs, err := reader.Read(c)
+	if err != nil {
+		return []LatteParsedProgramPromise{
+			&LatteParsedProgramImpl{
+				ast:      nil,
+				filename: "",
+				error:    &ParsingError{
+					message:     err.Error(),
+					textMessage: err.Error(),
+				},
+			},
+		}
 	}
 
+	programs := []LatteParsedProgramPromise{}
+	for _, input := range inputs {
+		programs = append(programs, p.parseAsync(c, input))
+	}
 
-	return programs, nil
+	return programs
 }

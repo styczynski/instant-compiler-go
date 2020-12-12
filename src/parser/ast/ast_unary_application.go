@@ -123,7 +123,11 @@ func (ast *UnaryApplication) Body() hindley_milner.Expression {
 	if len(ast.Arguments) == 0 {
 		return hindley_milner.Batch{
 			Exp: []hindley_milner.Expression{
-				hindley_milner.Batch{Exp: []hindley_milner.Expression{}},
+				hindley_milner.EmbeddedTypeExpr{
+					GetType: func() *hindley_milner.Scheme {
+						return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
+					},
+				},
 			},
 		}
 	}

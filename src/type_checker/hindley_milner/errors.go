@@ -61,6 +61,10 @@ type UnificationRecurrentTypeError struct {
 	Constraint Constraint
 }
 
+func (err UnificationRecurrentTypeError) Source() Expression {
+	return *(err.Constraint.context.Source)
+}
+
 func (err UnificationRecurrentTypeError) Error() string {
 	return fmt.Sprintf("Failed to bind type variable %s from type %s to type %s. The type is recurent.",
 		err.VariableTypeSource.String(),

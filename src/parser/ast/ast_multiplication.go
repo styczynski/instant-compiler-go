@@ -10,7 +10,7 @@ import (
 type Multiplication struct {
 	BaseASTNode
 	Unary *Unary          `@@`
-	Op    string          `[ @( "/" | "*" )`
+	Op    string          `[ @( "/" | "*" | "%" )`
 	Next  *Multiplication `  @@ ]`
 	ParentNode TraversableNode
 }

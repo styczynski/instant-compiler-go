@@ -63,6 +63,13 @@ func (infer *inferer) Fresh() TypeVariable {
 }
 
 func (infer *inferer) lookup(isLiteral bool, name string, source Expression) error {
+	if infer.env.IsBuiltin(name) {
+		//fmt.Printf("%s IS BUILTIN\n", name)
+		scheme, _ := infer.env.SchemeOf(name)
+		//fmt.Printf("SO TYPE IS %v\n", scheme)
+		infer.t = Instantiate(infer, scheme.Clone())
+		return nil
+	}
 	s, ok := infer.env.SchemeOf(name)
 	if !ok {
 		return UndefinedSymbol{
@@ -202,6 +209,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			return fmt.Errorf("Literal entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
 		name := et.Name().GetNames()[0]
+		//fmt.Printf("GOT %s\n", name)
 		if infer.env.IsOverloaded(name) {
 			tv := infer.Fresh()
 			infer.t = tv
@@ -605,7 +613,19 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 	return nil
 }
 
+func (inferer *inferer) cleanupConstraintsRemoveDuplicates() {
+	hashtable := map[string]Constraint{}
+	for _, cs := range inferer.cs {
+		hashtable[fmt.Sprintf("%v", cs)] = cs
+	}
+	inferer.cs = []Constraint{}
+	for _, v := range hashtable {
+		inferer.cs = append(inferer.cs, v)
+	}
+}
+
 func (infer *inferer) cleanupConstraints() {
+	infer.cleanupConstraintsRemoveDuplicates()
 
 	if infer.csflag >= 1 {
 		infer.csflag = 0
@@ -744,7 +764,7 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 	}
 
 	if env == nil {
-		env = make(SimpleEnv)
+		env = CreateSimpleEnv(map[string][]*Scheme{})
 	}
 
 	infer := newInferer(env, config)

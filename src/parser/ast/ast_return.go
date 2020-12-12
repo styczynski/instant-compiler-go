@@ -29,36 +29,57 @@ func (ast *Return) End() lexer.Position {
 	return ast.EndPos
 }
 
+func (ast *Return) HasExpression() bool {
+	return ast.Expression != nil
+}
+
 func (ast *Return) GetNode() interface{} {
 	return ast
 }
 
 func (ast *Return) GetChildren() []TraversableNode {
-	return []TraversableNode{
-		ast.Expression,
+	if ast.HasExpression() {
+		return []TraversableNode{
+			ast.Expression,
+		}
 	}
+	return []TraversableNode{}
 }
 
 func (ast *Return) Print(c *context.ParsingContext) string {
-	return printNode(c, ast, "return %s;", ast.Expression.Print(c))
+	if ast.HasExpression() {
+		return printNode(c, ast, "return %s;", ast.Expression.Print(c))
+	}
+	return printNode(c, ast, "return;")
 }
 
 ///
 
 func (ast *Return) Body() hindley_milner.Expression {
-	return ast.Expression
+	if ast.HasExpression() {
+		return ast.Expression
+	}
+	return hindley_milner.Batch{Exp: []hindley_milner.Expression{}}
 }
 
 func (ast *Return) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+	if ast.HasExpression() {
+		return mapper(parent, &Return{
+			BaseASTNode: ast.BaseASTNode,
+			Expression:  mapper(ast, ast.Expression).(*Expression),
+			ParentNode:  parent.(TraversableNode),
+		})
+	}
 	return mapper(parent, &Return{
 		BaseASTNode: ast.BaseASTNode,
-		Expression:  mapper(ast, ast.Expression).(*Expression),
-		ParentNode: parent.(TraversableNode),
+		ParentNode:  parent.(TraversableNode),
 	})
 }
 
 func (ast *Return) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Expression)
+	if ast.HasExpression() {
+		mapper(ast, ast.Expression)
+	}
 	mapper(parent, ast)
 }
 
