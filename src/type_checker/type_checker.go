@@ -211,6 +211,9 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) error {
 }
 
 func (tc *LatteTypeChecker) Check(program *ast.LatteProgram, c *context.ParsingContext) error {
+	c.ProcessingStageStart("Typechecking")
+	defer c.ProcessingStageEnd("Typechecking")
+
 	debug.SetGCPercent(-1)
 	//var scheme *hindley_milner.Scheme
 	var err error

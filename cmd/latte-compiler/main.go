@@ -5,12 +5,13 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
-	"strings"
 
 	//"os"
 	//"strings"
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
+	"github.com/styczynski/latte-compiler/src/compiler"
+	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser"
 	context2 "github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/printer"
@@ -19,17 +20,8 @@ import (
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
-func main() {
-	// load application configurations
-	if err := config.LoadConfig("./config"); err != nil {
-		panic(fmt.Errorf("invalid application configuration: %s", err))
-	}
-
-	pr := printer.CreateLattePrinter()
-	context := context2.NewParsingContext(pr)
-	tc := type_checker.CreateLatteTypeChecker()
-	p := parser.CreateLatteParser()
-	ast, latteError := p.ParseInput(strings.NewReader(`
+/**
+`
 
 class x {
 	int a;
@@ -72,18 +64,32 @@ int main() {
 	b = typename main;
     inst = new x;
 }
-`), context)
+`
+ */
+
+func main() {
+	// load application configurations
+	if err := config.LoadConfig("./config"); err != nil {
+		panic(fmt.Errorf("invalid application configuration: %s", err))
+	}
+
+	pr := printer.CreateLattePrinter()
+	context := context2.NewParsingContext(pr)
+	defer func() {
+		context.Close()
+		fmt.Printf(context.PrintProcessingInfo())
+	}()
+
+	tc := type_checker.CreateLatteTypeChecker()
+	p := parser.CreateLatteParser()
+	reader := input_reader.CreateLatteInputReader()
+	comp := compiler.CreateLatteCompiler()
+	ast, latteError := p.ParseInput(reader, context)
 	if latteError != nil {
 		fmt.Print(latteError.CliMessage())
 		os.Exit(1)
 	}
 
-	//content, err := pr.Format(ast, context)
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	fmt.Printf("PARSED\n")
 	f, err := os.Create("compiler.prof")
 	if err != nil {
 		log.Fatal(err)
@@ -97,9 +103,8 @@ int main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("PROGRAM:\n%s\n", ast.Print(context))
-
-	//tc.Test(context)
-
-	//fmt.Printf("%s", content)
+	_, err = comp.Compile(ast, context)
+	if err != nil {
+		panic(err)
+	}
 }

@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"regexp"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"github.com/alecthomas/participle/v2"
 
 	"github.com/styczynski/latte-compiler/src/errors"
+	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -87,9 +87,17 @@ func examineParsingErrorMessage(message string, recommendedBracket string) strin
 	return message
 }
 
-func (p *LatteParser) ParseInput(input io.Reader, c *context.ParsingContext) (*ast.LatteProgram, errors.LatteError) {
-	output := &ast.LatteProgram{}
+func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *context.ParsingContext) (*ast.LatteProgram, errors.LatteError) {
+	c.ProcessingStageStart("Parse input")
+	defer c.ProcessingStageEnd("Parse input")
+
 	var err error
+	input, err := reader.Read(c)
+	if err != nil {
+		return nil, errors.NewLatteSimpleError(err)
+	}
+
+	output := &ast.LatteProgram{}
 	c.ParserInput, err = ioutil.ReadAll(input)
 	if err != nil {
 		return nil, errors.NewLatteSimpleError(err)

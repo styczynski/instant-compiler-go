@@ -794,9 +794,9 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 	}
 	infer.cs = cleanCS
 
-	fmt.Printf("CONSTRAINTS: %v\n", infer.cs)
+	//fmt.Printf("CONSTRAINTS: %v\n", infer.cs)
 	for _, ics := range infer.ics {
-		fmt.Printf("GOT INTRO: %v => %v\n", ics.tv, ics.argTV)
+		//fmt.Printf("GOT INTRO: %v => %v\n", ics.tv, ics.argTV)
 		introExpr := (*ics.context.Source).(IntrospectionExpression)
 		introExpr.OnTypeReturned(ics.argTV)
 	}

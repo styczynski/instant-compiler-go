@@ -78,7 +78,7 @@ func (ast *Typename) OnTypeReturned(t hindley_milner.Type) {
 	expr.NewType = nil
 
 	val := fmt.Sprintf("%v", t)
-	fmt.Printf("TYPENAME: %s\n", val)
+	//fmt.Printf("TYPENAME: %s\n", val)
 
 	newAST := &LogicalOperation{
 		BaseASTNode: ast.BaseASTNode,

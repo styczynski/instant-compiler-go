@@ -3,9 +3,19 @@ package context
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"strings"
+	"time"
+
 	"github.com/alecthomas/participle/v2/lexer"
+	"github.com/fatih/color"
 )
+
+
+var formatStageTitleFg = color.New(color.FgMagenta).SprintFunc()
+
+var formatOkMessageFg = color.New(color.FgHiWhite).SprintFunc()
+var formatOkMessageBg = color.New(color.BgGreen).SprintFunc()
 
 type TraversableNode interface {
 	GetChildren() []TraversableNode
@@ -24,11 +34,19 @@ type PrinterConfiguration struct {
 	MaxPrintPosition *lexer.Position
 }
 
+type ProcessingStage struct {
+	Start *time.Time
+	End *time.Time
+}
+
 type ParsingContext struct {
 	BlockDepth int
 	PrinterConfiguration PrinterConfiguration
 	ParserInput []byte
 	Printer CodeFormatter
+	Stages map[string]*ProcessingStage
+	Start *time.Time
+	End *time.Time
 }
 
 func Abs(x int) int {
@@ -52,6 +70,35 @@ func TraverseAST(node TraversableNode, visitor func(ast TraversableNode)) {
 		TraverseAST(child, visitor)
 	}
 }
+
+func (c *ParsingContext) ProcessingStageStart(name string) {
+	start := time.Now()
+	c.Stages[name] = &ProcessingStage{
+		Start: &start,
+	}
+}
+
+func (c *ParsingContext) ProcessingStageEnd(name string) {
+	end := time.Now()
+	c.Stages[name].End = &end
+}
+
+func (c *ParsingContext) PrintProcessingInfo() string {
+	timingsDetails := []string{}
+
+	for name, stage := range c.Stages {
+		timingsDetails = append(timingsDetails, fmt.Sprintf("%s: Took %s",
+			formatStageTitleFg(name),
+			stage.End.Sub(*stage.Start),
+			))
+	}
+
+	return fmt.Sprintf("%s: Processed everything in %s:\n   | %s\n",
+		formatOkMessageBg(formatOkMessageFg("Done")),
+		c.End.Sub(*c.Start),
+		strings.Join(timingsDetails, "\n   | "))
+}
+
 
 func (c *ParsingContext) GetFileContext(program TraversableNode, line int, column int) (string, int, int) {
 	lineOffset := 3
@@ -113,12 +160,20 @@ func (c *ParsingContext) BlockPop() {
 	c.BlockDepth -= 1
 }
 
+func (c *ParsingContext) Close() {
+	end := time.Now()
+	c.End = &end
+}
+
 func NewParsingContext(printer CodeFormatter) *ParsingContext {
+	start := time.Now()
 	return &ParsingContext{
 		Printer: printer,
 		BlockDepth: 0,
 		PrinterConfiguration: PrinterConfiguration{
 			SkipStatementIdent: false,
 		},
+		Start: &start,
+		Stages: map[string]*ProcessingStage{},
 	}
 }
