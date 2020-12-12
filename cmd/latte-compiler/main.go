@@ -30,6 +30,16 @@ func main() {
 	tc := type_checker.CreateLatteTypeChecker()
 	p := parser.CreateLatteParser()
 	ast, latteError := p.ParseInput(strings.NewReader(`
+
+class x {
+	int a;
+	int b;
+}
+
+class y {
+	int c;
+}
+
 //// iteracyjnie
 //int fact (int n) {
 //  int i,r;
@@ -55,8 +65,12 @@ int factr (int n) {
 }
 
 int main() {
-	string a = "a";
-    a = a + "b";
+	x inst;
+    int a;
+	string b;
+	a = 2;
+	b = "2";
+    inst = new x;
 }
 `), context)
 	if latteError != nil {

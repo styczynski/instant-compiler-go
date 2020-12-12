@@ -9,7 +9,7 @@ import (
 
 type Type struct {
 	BaseASTNode
-	Name string `@( "int" | "void" | "bool" | "string")`
+	Name *string `@Ident`
 	Dimensions *string `(@( "["`
 	Size *Expression `@@? "]" ))?`
 }
@@ -28,7 +28,7 @@ func (ast *Type) GetNode() interface{} {
 
 func (ast *Type) GetChildren() []TraversableNode {
 	return []TraversableNode{
-		MakeTraversableNodeToken(ast.Name, ast.Pos, ast.EndPos),
+		MakeTraversableNodeToken(*ast.Name, ast.Pos, ast.EndPos),
 	}
 }
 
@@ -41,11 +41,11 @@ func (ast *Type) Print(c *context.ParsingContext) string {
 
 func (ast *Type) GetType() *hindley_milner.Scheme {
 	if ast.Dimensions != nil {
-		return hindley_milner.NewScheme(nil, hindley_milner.NewRecordType("array", PrimitiveType{
-			name:    ast.Name,
+		return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("array", PrimitiveType{
+			name:    *ast.Name,
 		}))
 	}
 	return hindley_milner.NewScheme(nil, PrimitiveType{
-		name:    ast.Name,
+		name:    *ast.Name,
 	})
 }

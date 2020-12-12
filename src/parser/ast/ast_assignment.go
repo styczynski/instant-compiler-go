@@ -51,10 +51,15 @@ func (ast *Assignment) Visit(mapper hindley_milner.ExpressionMapper) {
 }
 
 func (ast *Assignment) Fn() hindley_milner.Expression {
-	return &BuiltinFunction{
-		BaseASTNode: ast.BaseASTNode,
-		name: "=",
-	}
+	//return &BuiltinFunction{
+	//	BaseASTNode: ast.BaseASTNode,
+	//	name: "=",
+	//}
+	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
+		return hindley_milner.NewScheme(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
+			hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a')))
+	}}
 }
 
 func (ast *Assignment) Body() hindley_milner.Expression {

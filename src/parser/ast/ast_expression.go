@@ -9,7 +9,7 @@ import (
 
 type Expression struct {
 	ComplexASTNode
-	NewType       *Type       `( "new" @@ )`
+	NewType       *New      `@@`
 	LogicalOperation *LogicalOperation `| @@`
 }
 
@@ -37,7 +37,7 @@ func (ast *Expression) GetChildren() []TraversableNode {
 	if ast.IsLogicalOperation() {
 		return []TraversableNode{ast.LogicalOperation,}
 	} else if ast.IsNewType() {
-		return []TraversableNode{ast.NewType,}
+		return []TraversableNode{ ast.NewType.GetTraversableNode(), }
 	}
 	panic("Invalid Expression type")
 }
@@ -54,7 +54,7 @@ func (ast *Expression) Print(c *context.ParsingContext) string {
 	if ast.IsLogicalOperation() {
 		return ast.LogicalOperation.Print(c)
 	} else if ast.IsNewType() {
-		return printNode(c, ast, "new %s", ast.NewType.Print(c))
+		return ast.NewType.Print(c)
 	}
 	panic("Invalid Expression type")
 }
@@ -62,7 +62,12 @@ func (ast *Expression) Print(c *context.ParsingContext) string {
 ////
 
 func (ast *Expression) Body() hindley_milner.Expression {
-	return ast.LogicalOperation
+	if ast.IsLogicalOperation() {
+		return ast.LogicalOperation
+	} else if ast.IsNewType() {
+		return ast.NewType
+	}
+	panic("Invalid Expression type")
 }
 
 func (ast *Expression) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
@@ -87,13 +92,6 @@ func (ast *Expression) Visit(mapper hindley_milner.ExpressionMapper) {
 	mapper(ast)
 }
 
-func (ast *Expression) EmbeddedType() *hindley_milner.Scheme {
-	return ast.NewType.GetType()
-}
-
 func (ast *Expression) ExpressionType() hindley_milner.ExpressionType {
-	if ast.IsNewType() {
-		return hindley_milner.E_TYPE
-	}
 	return hindley_milner.E_PROXY
 }

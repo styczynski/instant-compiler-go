@@ -81,7 +81,7 @@ func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 		)),
 		"=":  hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
-			hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), ast.CreatePrimitive(ast.T_VOID))),
+			hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a'))),
 		"if":  hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a'), hindley_milner.TVar('b')},
 			hindley_milner.NewFnType(ast.CreatePrimitive(ast.T_BOOL), hindley_milner.TVar('a'), hindley_milner.TVar('b'), ast.CreatePrimitive(ast.T_VOID))),
@@ -91,14 +91,14 @@ func (tc *LatteTypeChecker) GetEnv() hindley_milner.SimpleEnv {
 		"[]":  hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(
-				hindley_milner.NewRecordType("array", hindley_milner.TVar('a')),
+				hindley_milner.NewSignedTupleType("array", hindley_milner.TVar('a')),
 				ast.CreatePrimitive(ast.T_INT),
 				hindley_milner.TVar('a'),
 			)),
 		"[_]": hindley_milner.SingleDef(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(
-				hindley_milner.NewRecordType("array", hindley_milner.TVar('a')),
+				hindley_milner.NewSignedTupleType("array", hindley_milner.TVar('a')),
 				hindley_milner.TVar('a'),
 			)),
 	})

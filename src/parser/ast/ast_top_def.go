@@ -11,13 +11,21 @@ import (
 
 type TopDef struct {
 	BaseASTNode
-	Function *FnDef `@@`
+	Class *Class `@@`
+	Function *FnDef `| @@`
 }
 
 func (ast *TopDef) GetDefinedIdentifier() []string {
-	return []string{
-		ast.Function.Name,
+	if ast.IsFunction() {
+		return []string{
+			ast.Function.Name,
+		}
+	} else if ast.IsClass() {
+		return []string{
+			ast.Class.Name,
+		}
 	}
+	return []string{}
 }
 
 func (ast *TopDef) Begin() lexer.Position {
@@ -42,6 +50,10 @@ func (ast *TopDef) Print(c *context.ParsingContext) string {
 	return printNode(c, ast, "%s", ast.Function.Print(c))
 }
 
+func (ast *TopDef) IsClass() bool {
+	return ast.Class != nil
+}
+
 func (ast *TopDef) IsFunction() bool {
 	return ast.Function != nil
 }
@@ -60,6 +72,11 @@ func (ast *TopDef) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Ex
 			BaseASTNode: ast.BaseASTNode,
 			Function:    mapper(ast.Function).(*FnDef),
 		})
+	} else if ast.IsClass() {
+		return mapper(&TopDef{
+			BaseASTNode: ast.BaseASTNode,
+			Class:    mapper(ast.Class).(*Class),
+		})
 	} else {
 		panic("Invalid TopDef type.")
 	}
@@ -68,6 +85,8 @@ func (ast *TopDef) Map(mapper hindley_milner.ExpressionMapper) hindley_milner.Ex
 func (ast *TopDef) Visit(mapper hindley_milner.ExpressionMapper) {
 	if ast.IsFunction() {
 		mapper(ast.Function)
+	} else if ast.IsClass() {
+		mapper(ast.Class)
 	} else {
 		panic("Invalid TopDef type.")
 	}
@@ -77,6 +96,8 @@ func (ast *TopDef) Visit(mapper hindley_milner.ExpressionMapper) {
 func (ast *TopDef) GetContents() hindley_milner.Batch {
 	if ast.IsFunction() {
 		return hindley_milner.Batch{Exp: ast.Expressions()}
+	} else if ast.IsClass() {
+		return hindley_milner.Batch{Exp: ast.Expressions()}
 	} else {
 		panic("Invalid TopDef type.")
 	}
@@ -85,6 +106,8 @@ func (ast *TopDef) GetContents() hindley_milner.Batch {
 func (ast *TopDef) Expressions() []hindley_milner.Expression {
 	if ast.IsFunction() {
 		return []hindley_milner.Expression{ ast.Function, }
+	} else if ast.IsClass() {
+		return []hindley_milner.Expression{ ast.Class, }
 	} else {
 		panic("Invalid TopDef type.")
 	}

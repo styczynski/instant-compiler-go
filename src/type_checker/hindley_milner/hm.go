@@ -760,6 +760,9 @@ func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, 
 
 	s := newSolver()
 	s.solve(infer.cs)
+	if s.err != nil {
+		return nil, nil, s.err
+	}
 
 	//fmt.Printf("SOLVED NOW OCS ARE:\n%#v\n%#v", infer.ocs, infer.cs)
 	cleanCS := infer.cs
