@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"io/ioutil"
 	"regexp"
 	"strings"
 
@@ -23,12 +22,18 @@ type LatteParsedProgram interface {
 	Filename() string
 	ParsingError() *ParsingError
 	Resolve() LatteParsedProgram
+	Context() *context.ParsingContext
 }
 
 type LatteParsedProgramImpl struct {
 	ast *ast.LatteProgram
 	filename string
 	error *ParsingError
+	context *context.ParsingContext
+}
+
+func (prog *LatteParsedProgramImpl) Context() *context.ParsingContext {
+	return prog.context
 }
 
 func (prog *LatteParsedProgramImpl) Resolve() LatteParsedProgram {
@@ -149,9 +154,9 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 
 		defer close(ret)
 		var err error = nil
-		reader := input.Read()
 		output := &ast.LatteProgram{}
-		ctx.ParserInput, err = ioutil.ReadAll(reader)
+		q, err := input.Read()
+		ctx.ParserInput = q
 		if err != nil {
 			ret <- &LatteParsedProgramImpl{
 				ast:      nil,
@@ -160,6 +165,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 					message:     err.Error(),
 					textMessage: err.Error(),
 				},
+				context: ctx,
 			}
 			return
 		}
@@ -183,13 +189,17 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 					message:     message,
 					textMessage: textMessage,
 				},
+				context: ctx,
 			}
 			return
 		}
 
 		var parentSetterVisitor hindley_milner.ExpressionMapper
 		parentSetterVisitor = func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
-			node := e.(ast.TraversableNode)
+			node, ok := e.(ast.TraversableNode)
+			if !ok {
+				return e
+			}
 			if parent == e {
 				return e
 			}
@@ -198,6 +208,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 				return e
 			}
 			node.OverrideParent(parent.(interface{}).(ast.TraversableNode))
+
 			e.Visit(parent, parentSetterVisitor)
 			return e
 		}
@@ -206,6 +217,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 		ret <- &LatteParsedProgramImpl{
 			ast:      output,
 			filename: input.Filename(),
+			context: ctx,
 		}
 	}()
 
@@ -224,6 +236,7 @@ func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *conte
 					message:     err.Error(),
 					textMessage: err.Error(),
 				},
+				context: c,
 			},
 		}
 	}

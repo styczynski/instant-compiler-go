@@ -34,6 +34,17 @@ func (s CliSummaryShortStatus) FormatCliSummaryShortStatus(metricsPromise Collec
 			FormatTimingAggregation(timings))
 }
 
+func centeredText(text string) string {
+	lineWidth := 28
+	spaceLeft := lineWidth-len(text)
+	leftAlign := spaceLeft/2
+	rightAlign := spaceLeft - leftAlign
+	if leftAlign < 0 || rightAlign < 0 {
+		return text[:lineWidth]
+	}
+	return fmt.Sprintf(fmt.Sprintf("%%-%ds", lineWidth), fmt.Sprintf(fmt.Sprintf("%%%ds", rightAlign+len(text)), text))
+}
+
 func (s CliSummaryShortStatus) Summarize(metricsPromise CollectedMetricsPromise) (string, bool) {
 	metrics := metricsPromise.Resolve()
 	errors := metrics.GetAllErrors()
@@ -46,9 +57,10 @@ func (s CliSummaryShortStatus) Summarize(metricsPromise CollectedMetricsPromise)
 				break
 			}
 		}
-		errMessage := formatShortStatusOkFg(formatShortStatusOkBg(fmt.Sprintf("%-20s", fmt.Sprintf("%10s", "OK"))))
+
+		errMessage := formatShortStatusOkFg(formatShortStatusOkBg(centeredText("OK")))
 		if inputErr != nil {
-			errMessage = formatShortStatusErrFg(formatShortStatusErrBg(fmt.Sprintf("%-20s", fmt.Sprintf("%10s", inputErr.ErrorName()))))
+			errMessage = formatShortStatusErrFg(formatShortStatusErrBg(centeredText(inputErr.ErrorName())))
 		}
 		lines = append(lines, fmt.Sprintf(" %3d: %10s - %s",
 			i+1,

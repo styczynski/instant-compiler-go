@@ -1,9 +1,11 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
+	"github.com/alecthomas/repr"
 
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -11,8 +13,7 @@ import (
 
 type Statement struct {
 	BaseASTNode
-	Empty *string `";"`
-	BlockStatement *Block `| @@`
+	BlockStatement *Block `@@`
 	Declaration *Declaration `| @@`
 	Assignment *Assignment `| @@`
 	UnaryStatement *UnaryStatement `| @@`
@@ -45,7 +46,16 @@ func (ast *Statement) GetNode() interface{} {
 }
 
 func (ast *Statement) IsEmpty() bool {
-	return ast.Empty != nil
+	return (
+		!ast.IsBlockStatement() &&
+		!ast.IsDeclaration() &&
+		!ast.IsAssignment() &&
+		!ast.IsUnaryStatement() &&
+		!ast.IsReturn() &&
+		!ast.IsIf() &&
+		!ast.IsWhile() &&
+		!ast.IsFor() &&
+		!ast.IsExpression())
 }
 
 func (ast *Statement) IsBlockStatement() bool {
@@ -86,7 +96,8 @@ func (ast *Statement) IsExpression() bool {
 
 func (ast *Statement) GetChildren() []TraversableNode {
 	if ast.IsEmpty() {
-		return []TraversableNode{ MakeTraversableNodeToken(ast, *ast.Empty, ast.Pos, ast.EndPos) }
+		panic("HUJ!")
+		//return []TraversableNode{ MakeTraversableNodeToken(ast, *ast.Empty, ast.Pos, ast.EndPos) }
 	} else if ast.IsBlockStatement() {
 		return []TraversableNode{ ast.BlockStatement }
 	} else if ast.IsDeclaration() {
@@ -157,7 +168,7 @@ func (ast *Statement) Print(c *context.ParsingContext) string {
 
 func (ast *Statement) Body() hindley_milner.Expression {
 	if ast.IsEmpty() {
-		// ?
+		return hindley_milner.Batch{Exp: []hindley_milner.Expression{}}
 	} else if ast.IsBlockStatement() {
 		return ast.BlockStatement
 	} else if ast.IsDeclaration() {
@@ -177,6 +188,9 @@ func (ast *Statement) Body() hindley_milner.Expression {
 	} else if ast.IsExpression() {
 		return ast.Expression
 	}
+	ast.BaseASTNode = BaseASTNode{}
+	ast.ParentNode = nil
+	fmt.Printf("Failed for node %s\n", repr.String(ast))
 	panic("Invalid Statement type")
 }
 

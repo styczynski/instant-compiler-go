@@ -2,7 +2,7 @@ package input_reader
 
 import (
 	"bufio"
-	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -15,16 +15,16 @@ type LatteInputReader struct {
 }
 
 type LatteInput interface {
-	Read() io.Reader
+	Read() ([]byte, error)
 	Filename() string
 }
 
 type LatteInputImpl struct {
-	read func() io.Reader
+	read func() ([]byte, error)
 	filename func() string
 }
 
-func (in *LatteInputImpl) Read() io.Reader {
+func (in *LatteInputImpl) Read() ([]byte, error) {
 	return in.read()
 }
 
@@ -54,14 +54,19 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 		}
 		return []LatteInput{
 			&LatteInputImpl{
-				read:     func() io.Reader { return f },
+				read:     func() ([]byte, error) {
+					defer f.Close()
+					return ioutil.ReadAll(f)
+				},
 				filename: func() string { return reader.input },
 			},
 		}, nil
 	} else if (reader.input == "-") {
 		return []LatteInput{
 			&LatteInputImpl{
-				read:     func() io.Reader { return bufio.NewReader(os.Stdin) },
+				read:     func() ([]byte, error) {
+					return ioutil.ReadAll(bufio.NewReader(os.Stdin))
+				},
 				filename: func() string { return "<standard input>" },
 			},
 		}, nil

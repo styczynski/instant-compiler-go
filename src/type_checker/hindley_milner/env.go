@@ -10,7 +10,8 @@ type Env interface {
 	SchemeOf(string) (*Scheme, bool)
 	Clone() Env
 
-	Add(string, *Scheme) Env
+	Has(string) bool
+	Add(string, *Scheme, int) (Env, *Scheme, *Scheme)
 	Remove(string) Env
 	VarsNames() []string
 	IsOverloaded(string) bool
@@ -21,6 +22,7 @@ type Env interface {
 type SimpleEnv struct {
 	env map[string][]*Scheme
 	builtins map[string]func()[]*Scheme
+	levels map[string][]int
 }
 
 func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
@@ -50,6 +52,7 @@ func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
 	return &SimpleEnv{
 		env: newEnv,
 		builtins: builtins,
+		levels: map[string][]int{},
 	}
 }
 
@@ -80,6 +83,11 @@ func (e *SimpleEnv) Apply(sub Subs) Substitutable {
 		v[0].Apply(sub) // apply mutates Scheme, so no need to set
 	}
 	return e
+}
+
+func (e *SimpleEnv) Has(name string) bool {
+	_, ok := e.env[name]
+	return ok
 }
 
 func (e *SimpleEnv) FreeTypeVar() TypeVarSet {
@@ -114,6 +122,7 @@ func (e *SimpleEnv) Clone() Env {
 	retVal := &SimpleEnv{
 		env: make(map[string][]*Scheme),
 		builtins: make(map[string]func()[]*Scheme),
+		levels: map[string][]int{},
 	}
 	for k, v := range e.env {
 		retVal.env[k] = []*Scheme{}
@@ -132,6 +141,13 @@ func (e *SimpleEnv) Clone() Env {
 			return ret
 		}
 	}
+	for k, v := range e.levels {
+		newLevels := []int{}
+		for _, i := range v {
+			newLevels = append(newLevels, i)
+		}
+		retVal.levels[k] = newLevels
+	}
 	return retVal
 }
 
@@ -143,20 +159,36 @@ func (e *SimpleEnv) VarsNames() []string {
 	return names
 }
 
-func (e *SimpleEnv) Add(name string, s *Scheme) Env {
+func (e *SimpleEnv) Add(name string, s *Scheme, blockScopeLevel int) (Env, *Scheme, *Scheme) {
 	if _, ok := e.builtins[name]; ok {
 		// Do not override builtins
-		return e
+		return e, nil, nil
+	}
+	//fmt.Printf("Add %s\n", name)
+	if oldLevels, ok := e.levels[name]; ok && len(oldLevels)>0 {
+		oldLevel := oldLevels[len(oldLevels)-1]
+		//fmt.Printf("Oh noes indentifier is redeclared [%s] <%d, %d>\n", name, oldLevel, blockScopeLevel)
+		if oldLevel == blockScopeLevel {
+			// Do not redefine!
+			e.levels[name] = append(e.levels[name], blockScopeLevel)
+			//fmt.Printf("Constrin %v ~ %v\n", e.env[name][0], s)
+			return e, e.env[name][0], s
+		}
 	}
 	e.env[name] = []*Scheme{ s }
+	e.levels[name] = append(e.levels[name], blockScopeLevel)
 	//fmt.Printf("ADD %s => %v\n", name, s)
-	return e
+	return e, nil, nil
 }
 
 func (e *SimpleEnv) Remove(name string) Env {
 	if _, ok := e.builtins[name]; ok {
 		// Do not delete builtins
 		return e
+	}
+	fmt.Printf("Remove %s\n", name)
+	if len(e.levels[name])>0 {
+		e.levels[name] = e.levels[name][:len(e.levels[name])-1]
 	}
 	delete(e.env, name)
 	return e

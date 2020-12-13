@@ -44,6 +44,9 @@ func (err UnificationWrongTypeError) GetCauseName() string {
 }
 
 func (err UnificationWrongTypeError) Source() Expression {
+	if err.Constraint.context.Source == nil {
+		fmt.Printf("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
+	}
 	return *(err.Constraint.context.Source)
 }
 

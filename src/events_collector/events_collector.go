@@ -1,6 +1,7 @@
 package events_collector
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -77,28 +78,32 @@ func (collector *EventsCollector) runEventsCollectorDeamon() {
 			message := <-eventStream
 			switch message.eventType {
 			case "start":
-
-				collector.statuses[message.input.Filename()] = append(collector.statuses[message.input.Filename()], InputStatus{
+				filename := message.input.Filename()
+				collector.statuses[filename] = append(collector.statuses[filename], InputStatus{
 					processName: message.processName,
 					c:           message.c,
 					input:       message.input,
 					start:       time.Now(),
 				})
+				fmt.Printf("[Event] %s - Start %s\n", filename, message.processName)
 			case "end":
-				statusLen := len(collector.statuses[message.input.Filename()])
-				topStatus := collector.statuses[message.input.Filename()][statusLen-1]
+				filename := message.input.Filename()
+				statusLen := len(collector.statuses[filename])
+				topStatus := collector.statuses[filename][statusLen-1]
 				topStatus.end = time.Now()
-				collector.statuses[message.input.Filename()] = collector.statuses[message.input.Filename()][:statusLen-1]
+				collector.statuses[filename] = collector.statuses[filename][:statusLen-1]
 
 				duration := topStatus.end.Sub(topStatus.start)
 				ids := []string{}
 				collector.insertTimeAggregation(ids, duration)
-				for _, parentStatus := range collector.statuses[message.input.Filename()] {
+				for _, parentStatus := range collector.statuses[filename] {
 					ids = append(ids, parentStatus.processName)
 					collector.insertTimeAggregation(ids, duration)
 				}
 				ids = append(ids, topStatus.processName)
 				collector.insertTimeAggregation(ids, duration)
+
+				fmt.Printf("[Event] %s - End %s\n", filename, message.processName)
 
 				if gracefulShutdown {
 					stillProcessing := false
@@ -114,6 +119,16 @@ func (collector *EventsCollector) runEventsCollectorDeamon() {
 				}
 			case "done":
 				gracefulShutdown = true
+				stillProcessing := false
+				for _, statuses := range collector.statuses {
+					if len(statuses) > 0 {
+						stillProcessing = true
+					}
+				}
+				if !stillProcessing {
+					collector.done <- true
+					return
+				}
 			}
 		}
 	}()

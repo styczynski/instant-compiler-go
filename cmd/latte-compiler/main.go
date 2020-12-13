@@ -77,7 +77,9 @@ func ActionCompile(c *cli.Context) error {
 
 	checkedProgram := tc.Check(ast, context)
 	compiledProgram := comp.Compile(checkedProgram, context)
-	message, ok := eventsCollector.SummarizeCompilation(events_collector.CreateCliSummaryShortStatus(), compiledProgram, context)
+	//summary := events_collector.CreateCliSummaryShortStatus()
+	summary := events_collector.CreateCliSummary(-1)
+	message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
 	fmt.Print(message)
 	if !ok {
 		os.Exit(1)

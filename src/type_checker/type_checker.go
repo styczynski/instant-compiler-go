@@ -281,6 +281,9 @@ func (tc *LatteTypeChecker) checkAsync(programPromise parser.LatteParsedProgramP
 	go func() {
 		defer close(r)
 		program := programPromise.Resolve()
+		if program.Context() != nil {
+			ctx = program.Context()
+		}
 		c.EventsCollectorStream.Start("Typechecking", c, program)
 		defer c.EventsCollectorStream.End("Typechecking", c, program)
 

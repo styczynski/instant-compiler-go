@@ -9,7 +9,7 @@ import (
 
 type Type struct {
 	BaseASTNode
-	Name *string `@Ident`
+	Name *string `@( "string" | "boolean" | "int" | "void" )`
 	Dimensions *string `(@( "["`
 	Size *Expression `@@? "]" ))?`
 	ParentNode TraversableNode

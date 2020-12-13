@@ -3,6 +3,7 @@ package hindley_milner
 import (
 	"fmt"
 
+	"github.com/alecthomas/repr"
 	"github.com/pkg/errors"
 )
 
@@ -41,6 +42,7 @@ type inferer struct {
 	ocs []OverloadConstraint
 	ics []IntrospectionConstraint
 	returns []Type
+	blockScopeLevel int
 
 	count int
 	config *InferConfiguration
@@ -118,13 +120,22 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 	// Resolve unions
 	expr, exprType = infer.resolveProxy(expr, exprType)
 
-	// Optionaly get ident dependencies
+	// Optionally get ident dependencies
 	if exprWithDeps, ok := expr.(ExpressionWithIdentifiersDeps); ok {
 		idents := exprWithDeps.GetIdentifierDeps()
 		for _, name := range idents {
+			tv := infer.Fresh()
 			// Declare identifiers
-			infer.env.Add(name,
-				NewScheme(TypeVarSet{TVar('a')}, TVar('a')))
+			_, osx1, osx2 := infer.env.Add(name,
+				NewScheme(nil, tv),
+				infer.blockScopeLevel)
+			if osx1 != nil && osx2 != nil {
+				infer.cs = append(infer.cs, Constraint{
+					a: Instantiate(infer, osx1),
+					b: Instantiate(infer, osx2),
+					context: CreateCodeContext(expr),
+				})
+			}
 		}
 	}
 
@@ -195,11 +206,11 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			argTV: bodyType,
 			context: CreateCodeContext(expr),
 		})
-		//infer.cs = append(infer.cs, Constraint{
-		//	a:       tvArg,
-		//	b:       bodyType,
-		//	context: CodeContext{},
-		//})
+		infer.cs = append(infer.cs, Constraint{
+			a:       tvArg,
+			b:       bodyType,
+			context: CreateCodeContext(expr),
+		})
 
 		return nil
 
@@ -230,7 +241,14 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		}
 		name := et.Name().GetNames()[0]
 		if err = infer.lookup(false, name, et); err != nil {
-			infer.env.Add(name, &Scheme{t: et.Type()})
+			_, s1, s2 := infer.env.Add(name, &Scheme{t: et.Type()}, infer.blockScopeLevel)
+			if s1 != nil && s2 != nil {
+				infer.cs = append(infer.cs, Constraint{
+					a: Instantiate(infer, s1),
+					b: Instantiate(infer, s2),
+					context: CreateCodeContext(expr),
+				})
+			}
 			err = nil
 		}
 
@@ -253,13 +271,13 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		infer.t = tv
 		if defaultTyper, ok := et.(DefaultTyper); ok {
 			infer.cs = append(infer.cs, Constraint{
-				a:       tv,
+				a:       tv.WithContext(CreateCodeContext(expr)),
 				b:       Instantiate(infer, defaultTyper.DefaultType()),
 				context: CreateCodeContext(expr),
 			})
 		} else if infer.config.CreateDefaultEmptyType() != nil {
 			infer.cs = append(infer.cs, Constraint{
-				a:       tv,
+				a:       tv.WithContext(CreateCodeContext(expr)),
 				b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
 				context: CreateCodeContext(expr),
 			})
@@ -284,10 +302,17 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			env = append(env, infer.env) // backup
 
 			infer.env = infer.env.Clone()
-			infer.env.Remove(name)
+			//infer.env.Remove(name)
 			sc := new(Scheme)
 			sc.t = tv[len(tv)-1].WithContext(CreateCodeContext(expr))
-			infer.env.Add(name, sc)
+			_, s1, s2 := infer.env.Add(name, sc, infer.blockScopeLevel)
+			if s1 != nil && s2 != nil {
+				infer.cs = append(infer.cs, Constraint{
+					a: Instantiate(infer, s1),
+					b: Instantiate(infer, s2),
+					context: CreateCodeContext(expr),
+				})
+			}
 
 			if varType != nil {
 				infer.cs = append(infer.cs, Constraint{
@@ -323,23 +348,27 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		}
 
 		for _, ret := range infer.returns {
+			r := infer.t.(*FunctionType).Ret(true)
 			infer.cs = append(infer.cs, Constraint{
-				a:       ret,
-				b:       infer.t.(*FunctionType).Ret(true),
+				a:       r.WithContext(ret.GetContext()),
+				b:       ret.WithContext(CreateCodeContext(expr)),
+				context: ret.GetContext(),
+			})
+		}
+
+		r := infer.t.(*FunctionType).Ret(true)
+		if defaultTyper, ok := et.(DefaultTyper); ok {
+			infer.cs = append(infer.cs, Constraint{
+				a:       r.WithContext(CreateCodeContext(expr)),
+				b:       Instantiate(infer, defaultTyper.DefaultType()),
 				context: CreateCodeContext(expr),
 			})
 		}
-		if true || len(infer.returns) == 0 {
-			r := infer.t.(*FunctionType).Ret(true)
-			if defaultTyper, ok := et.(DefaultTyper); ok {
+
+		if len(infer.returns) == 0 {
+			if infer.config.CreateDefaultEmptyType() != nil {
 				infer.cs = append(infer.cs, Constraint{
-					a:       r,
-					b:       Instantiate(infer, defaultTyper.DefaultType()),
-					context: CreateCodeContext(expr),
-				})
-			} else if infer.config.CreateDefaultEmptyType() != nil {
-				infer.cs = append(infer.cs, Constraint{
-					a:       r,
+					a:       r.WithContext(CreateCodeContext(expr)),
 					b:       Instantiate(infer, infer.config.CreateDefaultEmptyType()),
 					context: CreateCodeContext(expr),
 				})
@@ -382,6 +411,9 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 	case E_BLOCK, E_OPAQUE_BLOCK:
 		et := expr.(Block)
 		env := infer.env // backup
+		if exprType != E_OPAQUE_BLOCK {
+			infer.blockScopeLevel++
+		}
 		//t := infer.t
 
 		for _, statement := range et.GetContents().Expressions() {
@@ -416,6 +448,9 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			infer.retEnv = infer.env.Clone()
 		}
 
+		if exprType != E_OPAQUE_BLOCK {
+			infer.blockScopeLevel--
+		}
 		infer.t = tv
 		if exprType != E_OPAQUE_BLOCK {
 			infer.env = env
@@ -489,8 +524,18 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			//name := et.Var().GetNames()[0]
 
 			infer.env = infer.env.Clone()
-			infer.env.Remove(name)
-			infer.env.Add(name, &Scheme{tvs: TypeVarSet{tv}, t: tv})
+			has := infer.env.Has(name)
+			if !has {
+				infer.env.Remove(name)
+			}
+			_, s1, s2 := infer.env.Add(name, &Scheme{tvs: TypeVarSet{tv}, t: tv}, infer.blockScopeLevel)
+			if s1 != nil && s2 != nil {
+				infer.cs = append(infer.cs, Constraint{
+					a: Instantiate(infer, s1),
+					b: Instantiate(infer, s2),
+					context: CreateCodeContext(expr),
+				})
+			}
 
 			nonVal := false
 			defResolved, _ := infer.resolveProxy(def, def.ExpressionType())
@@ -528,8 +573,17 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 
 			sc := Generalize(infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 
-			infer.env.Remove(name)
-			infer.env.Add(name, sc)
+			if !has {
+				infer.env.Remove(name)
+			}
+			_, os1, os2 := infer.env.Add(name, sc, infer.blockScopeLevel)
+			if os1 != nil && os2 != nil {
+				infer.cs = append(infer.cs, Constraint{
+					a: Instantiate(infer, os1),
+					b: Instantiate(infer, os2),
+					context: CreateCodeContext(expr),
+				})
+			}
 
 			if exprType == E_DECLARATION || exprType == E_FUNCTION_DECLARATION {
 				retType := infer.Fresh()
@@ -594,8 +648,15 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 
 		sc := Generalize(env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 		infer.env = infer.env.Clone()
-		infer.env.Remove(name)
-		infer.env.Add(name, sc)
+		//infer.env.Remove(name)
+		_, s1, s2 := infer.env.Add(name, sc, infer.blockScopeLevel)
+		if s1 != nil && s2 != nil {
+			infer.cs = append(infer.cs, Constraint{
+				a: Instantiate(infer, s1),
+				b: Instantiate(infer, s2),
+				context: CreateCodeContext(expr),
+			})
+		}
 
 		if err = infer.consGen(et.Body(), E_NONE, false, false); err != nil {
 			return err
@@ -616,7 +677,14 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 func (inferer *inferer) cleanupConstraintsRemoveDuplicates() {
 	hashtable := map[string]Constraint{}
 	for _, cs := range inferer.cs {
-		hashtable[fmt.Sprintf("%v", cs)] = cs
+		key := fmt.Sprintf("%v", cs)
+		if entry, ok := hashtable[key]; ok {
+			if entry.context.Source == nil && cs.context.Source != nil {
+				hashtable[fmt.Sprintf("%v", cs)] = cs
+			}
+		} else {
+			hashtable[fmt.Sprintf("%v", cs)] = cs
+		}
 	}
 	inferer.cs = []Constraint{}
 	for _, v := range hashtable {
@@ -644,6 +712,10 @@ func (infer *inferer) cleanupConstraints() {
 				if _, has := freeVars[tv.value]; !has {
 					freeVars[tv.value] = map[Type]interface{}{}
 					contexts[tv.value] = tv.context
+				} else {
+					if contexts[tv.value].Source == nil && tv.context.Source != nil {
+						contexts[tv.value] = tv.context
+					}
 				}
 				has := false
 				for q, _ := range freeVars[tv.value] {
@@ -952,10 +1024,16 @@ func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Sub
 }
 
 func bind(tv TypeVariable, t Type, context Constraint, tvt Type) (sub Subs, err error) {
-	//logf("Binding %v to %v", tv, t)
+	fmt.Printf("Binding %v to %v", tv, t)
 	switch {
 	// case tv == t:
 	case occurs(tv, t):
+		fmt.Printf("KURWA 1\n%v\nKURWA 2\n%v\nKURWA 3\n%v\nKURWA 4\n%v\n",
+			repr.String(*t.GetContext().Source),
+			repr.String(*tv.GetContext().Source),
+				repr.String(*tvt.GetContext().Source),
+					repr.String(*context.context.Source))
+		panic("BŁAGAM SPIERDALAJ")
 		err = UnificationRecurrentTypeError{
 			Type:       t,
 			Variable:   tv,
