@@ -3,22 +3,23 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type New struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Type       *Type       `"new" ( @@`
 	Class      *string       `| @Ident )`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *New) Parent() TraversableNode {
+func (ast *New) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *New) OverrideParent(node TraversableNode) {
+func (ast *New) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -42,11 +43,11 @@ func (ast *New) IsClassConstructor() bool {
 	return ast.Class != nil
 }
 
-func (ast *New) GetTraversableNode() TraversableNode {
+func (ast *New) GetTraversableNode() generic_ast.TraversableNode {
 	if ast.IsTypeConstructor() {
 		return ast.Type
 	} else if ast.IsClassConstructor() {
-		return MakeTraversableNodeValue(ast.GetTraversableNode(), *ast.Class, "ident", ast.Pos, ast.EndPos)
+		return generic_ast.MakeTraversableNodeValue(ast.GetTraversableNode(), *ast.Class, "ident", ast.Pos, ast.EndPos)
 	}
 	panic("Invalid New type")
 }
@@ -60,15 +61,15 @@ func (ast *New) Print(c *context.ParsingContext) string {
 	panic("Invalid New type")
 }
 
-func (ast *New) GetChildren() []TraversableNode {
+func (ast *New) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsTypeConstructor() {
-		return []TraversableNode{
+		return []generic_ast.TraversableNode{
 			ast.Type,
 		}
 	} else if ast.IsClassConstructor() {
-		return []TraversableNode{}
+		return []generic_ast.TraversableNode{}
 	}
-	return []TraversableNode{}
+	return []generic_ast.TraversableNode{}
 }
 
 ////

@@ -3,20 +3,21 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type BuiltinFunction struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	name string
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *BuiltinFunction) Parent() TraversableNode {
+func (ast *BuiltinFunction) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *BuiltinFunction) OverrideParent(node TraversableNode) {
+func (ast *BuiltinFunction) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 

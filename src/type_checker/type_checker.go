@@ -3,6 +3,7 @@ package type_checker
 import (
 	"fmt"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -132,7 +133,7 @@ func (e TypeCheckingError) CliMessage() string {
 
 func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingError {
 	if undef, ok := err.(hindley_milner.UndefinedSymbol); ok {
-		src := undef.Source.(interface{}).(ast.NodeWithPosition)
+		src := undef.Source.(interface{}).(generic_ast.NodeWithPosition)
 		errorName := "Unknown symbol"
 		message, textMessage := c.FormatParsingError(
 			errorName,
@@ -149,7 +150,7 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			errorName: errorName,
 		}
 	} else if wrongType, ok := err.(hindley_milner.UnificationWrongTypeError); ok {
-		src := wrongType.Source().(interface{}).(ast.NodeWithPosition)
+		src := wrongType.Source().(interface{}).(generic_ast.NodeWithPosition)
 		causeInfo := ""
 
 		if wrongType.IsCausedByBuiltin() {
@@ -176,7 +177,7 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			errorName: errorName,
 		}
 	} else if wrongTypeLen, ok := err.(hindley_milner.UnificationLengthError); ok {
-		src := wrongTypeLen.Source().(interface{}).(ast.NodeWithPosition)
+		src := wrongTypeLen.Source().(interface{}).(generic_ast.NodeWithPosition)
 
 		causeInfo := ""
 
@@ -204,7 +205,7 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			errorName: errorName,
 		}
 	} else if noOverloadCandidates, ok := err.(hindley_milner.InvalidOverloadCandidatesError); ok {
-		src := noOverloadCandidates.Source().(interface{}).(ast.NodeWithPosition)
+		src := noOverloadCandidates.Source().(interface{}).(generic_ast.NodeWithPosition)
 
 		causeInfo := ""
 
@@ -224,7 +225,7 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			errorName: errorName,
 		}
 	} else if reccurentTypeError, ok := err.(hindley_milner.UnificationRecurrentTypeError); ok {
-		src := reccurentTypeError.Source().(interface{}).(ast.NodeWithPosition)
+		src := reccurentTypeError.Source().(interface{}).(generic_ast.NodeWithPosition)
 
 		causeInfo := ""
 		errorName := "Recurrent type"

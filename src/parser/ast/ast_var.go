@@ -1,20 +1,21 @@
 package ast
 
 import (
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type VarName struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	name string
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *VarName) Parent() TraversableNode {
+func (ast *VarName) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *VarName) OverrideParent(node TraversableNode) {
+func (ast *VarName) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 

@@ -6,22 +6,23 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Class struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Name string `"class" @Ident "{"`
 	Fields []*ClassField `(@@ ";")* "}"`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Class) Parent() TraversableNode {
+func (ast *Class) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Class) OverrideParent(node TraversableNode) {
+func (ast *Class) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -37,9 +38,9 @@ func (ast *Class) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Class) GetChildren() []TraversableNode {
-	ret := []TraversableNode{
-		MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
+func (ast *Class) GetChildren() []generic_ast.TraversableNode {
+	ret := []generic_ast.TraversableNode{
+		generic_ast.MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
 	}
 	for _, field := range ast.Fields {
 		ret = append(ret, field)
@@ -66,7 +67,7 @@ func (ast *Class) Map(parent hindley_milner.Expression, mapper hindley_milner.Ex
 		BaseASTNode: ast.BaseASTNode,
 		Name: ast.Name,
 		Fields: ast.Fields,
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	}).(*Class)
 }
 

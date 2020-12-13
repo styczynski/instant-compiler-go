@@ -3,21 +3,22 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
 type ClassField struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	ClassFieldType Type `@@`
 	Name string `@Ident`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *ClassField) Parent() TraversableNode {
+func (ast *ClassField) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *ClassField) OverrideParent(node TraversableNode) {
+func (ast *ClassField) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -33,10 +34,10 @@ func (ast *ClassField) GetNode() interface{} {
 	return ast
 }
 
-func (ast *ClassField) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *ClassField) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		&ast.ClassFieldType,
-		MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
+		generic_ast.MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
 	}
 }
 

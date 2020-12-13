@@ -3,22 +3,23 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type DeclarationItem struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Name string `@Ident`
 	Initializer *Expression `( "=" @@ )?`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *DeclarationItem) Parent() TraversableNode {
+func (ast *DeclarationItem) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *DeclarationItem) OverrideParent(node TraversableNode) {
+func (ast *DeclarationItem) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -34,9 +35,9 @@ func (ast *DeclarationItem) GetNode() interface{} {
 	return ast
 }
 
-func (ast *DeclarationItem) GetChildren() []TraversableNode {
-	return []TraversableNode{
-		MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
+func (ast *DeclarationItem) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
+		generic_ast.MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
 		ast.Initializer,
 	}
 }
@@ -66,7 +67,7 @@ func (ast *DeclarationItem) Map(parent hindley_milner.Expression, mapper hindley
 		BaseASTNode: ast.BaseASTNode,
 		Name:        ast.Name,
 		Initializer: mapper(ast, ast.Initializer).(*Expression),
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

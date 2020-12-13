@@ -3,23 +3,24 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type If struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Condition *Expression `"if" "(" @@ ")"`
 	Then *Statement `@@`
 	Else *Statement `( "else" @@ )?`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *If) Parent() TraversableNode {
+func (ast *If) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *If) OverrideParent(node TraversableNode) {
+func (ast *If) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -35,8 +36,8 @@ func (ast *If) GetNode() interface{} {
 	return ast
 }
 
-func (ast *If) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *If) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Condition,
 		ast.Then,
 		ast.Else,
@@ -62,7 +63,7 @@ func (ast *If) Map(parent hindley_milner.Expression, mapper hindley_milner.Expre
 		Condition: mapper(ast, ast.Condition).(*Expression),
 		Then: mapper(ast, ast.Then).(*Statement),
 		Else: mapper(ast, ast.Else).(*Statement),
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

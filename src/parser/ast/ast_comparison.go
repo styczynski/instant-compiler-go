@@ -3,23 +3,24 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Comparison struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Addition *Addition   `@@`
 	Op       string      `[ @( ">" "=" | "<" "=" | "=" "=" | ">" | "<" )`
 	Next     *Comparison `  @@ ]`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Comparison) Parent() TraversableNode {
+func (ast *Comparison) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Comparison) OverrideParent(node TraversableNode) {
+func (ast *Comparison) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -35,10 +36,10 @@ func (ast *Comparison) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Comparison) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *Comparison) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Addition,
-		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
+		generic_ast.MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -67,7 +68,7 @@ func (ast *Comparison) Map(parent hindley_milner.Expression, mapper hindley_miln
 		Addition:    mapper(ast, ast.Addition).(*Addition),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

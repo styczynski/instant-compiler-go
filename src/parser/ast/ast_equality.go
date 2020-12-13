@@ -3,23 +3,24 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Equality struct {
-	BaseASTNode
+	 generic_ast.BaseASTNode
 	Comparison *Comparison `@@`
 	Op         string      `[ @( "!" "=" | "=" "=" )`
 	Next       *Equality   `  @@ ]`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Equality) Parent() TraversableNode {
+func (ast *Equality) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Equality) OverrideParent(node TraversableNode) {
+func (ast *Equality) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -35,10 +36,10 @@ func (ast *Equality) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Equality) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *Equality) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Comparison,
-		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
+		generic_ast.MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -68,7 +69,7 @@ func (ast *Equality) Map(parent hindley_milner.Expression, mapper hindley_milner
 		Comparison:    mapper(ast, ast.Comparison).(*Comparison),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

@@ -6,21 +6,22 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type LatteProgram struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Definitions []*TopDef `@@*`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *LatteProgram) Parent() TraversableNode {
+func (ast *LatteProgram) Parent() generic_ast.TraversableNode {
 	return nil
 }
 
-func (ast *LatteProgram) OverrideParent(node TraversableNode) {
+func (ast *LatteProgram) OverrideParent(node generic_ast.TraversableNode) {
 	// No-op
 }
 
@@ -47,8 +48,8 @@ func (ast *LatteProgram) GetNode() interface{} {
 	return ast
 }
 
-func (ast *LatteProgram) GetChildren() []TraversableNode {
-	nodes := make([]TraversableNode, len(ast.Definitions))
+func (ast *LatteProgram) GetChildren() []generic_ast.TraversableNode {
+	nodes := make([]generic_ast.TraversableNode, len(ast.Definitions))
 	for _, child := range ast.Definitions {
 		nodes = append(nodes, child)
 	}
@@ -77,7 +78,7 @@ func (ast *LatteProgram) Map(parent hindley_milner.Expression, mapper hindley_mi
 	return mapper(parent, &LatteProgram{
 		BaseASTNode: ast.BaseASTNode,
 		Definitions: mappedDef,
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	}).(*LatteProgram)
 }
 

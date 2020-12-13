@@ -3,21 +3,22 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
 type Arg struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	ArgumentType Type `@@`
 	Name string `@Ident`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Arg) Parent() TraversableNode {
+func (ast *Arg) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Arg) OverrideParent(node TraversableNode) {
+func (ast *Arg) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -33,10 +34,10 @@ func (ast *Arg) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Arg) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *Arg) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		&ast.ArgumentType,
-		MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
+		generic_ast.MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos),
 	}
 }
 

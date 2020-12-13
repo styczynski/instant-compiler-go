@@ -7,12 +7,13 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/alecthomas/repr"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Statement struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	BlockStatement *Block `@@`
 	Declaration *Declaration `| @@`
 	Assignment *Assignment `| @@`
@@ -22,14 +23,14 @@ type Statement struct {
 	While *While `| @@`
 	For *For `| @@`
 	Expression *Expression `| @@ ";"`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Statement) Parent() TraversableNode {
+func (ast *Statement) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Statement) OverrideParent(node TraversableNode) {
+func (ast *Statement) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -94,30 +95,30 @@ func (ast *Statement) IsExpression() bool {
 	return ast.Expression != nil
 }
 
-func (ast *Statement) GetChildren() []TraversableNode {
+func (ast *Statement) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsEmpty() {
 		panic("HUJ!")
-		//return []TraversableNode{ MakeTraversableNodeToken(ast, *ast.Empty, ast.Pos, ast.EndPos) }
+		//return []generic_ast.TraversableNode{ generic_ast.MakeTraversableNodeToken(ast, *ast.Empty, ast.Pos, ast.EndPos) }
 	} else if ast.IsBlockStatement() {
-		return []TraversableNode{ ast.BlockStatement }
+		return []generic_ast.TraversableNode{ ast.BlockStatement }
 	} else if ast.IsDeclaration() {
-		return []TraversableNode{ ast.Declaration }
+		return []generic_ast.TraversableNode{ ast.Declaration }
 	} else if ast.IsAssignment() {
-		return []TraversableNode{ ast.Assignment }
+		return []generic_ast.TraversableNode{ ast.Assignment }
 	} else if ast.IsUnaryStatement() {
-		return []TraversableNode{ ast.UnaryStatement }
+		return []generic_ast.TraversableNode{ ast.UnaryStatement }
 	} else if ast.IsReturn() {
-		return []TraversableNode{ ast.Return }
+		return []generic_ast.TraversableNode{ ast.Return }
 	} else if ast.IsIf() {
-		return []TraversableNode{ ast.If }
+		return []generic_ast.TraversableNode{ ast.If }
 	} else if ast.IsWhile() {
-		return []TraversableNode{ ast.While }
+		return []generic_ast.TraversableNode{ ast.While }
 	} else if ast.IsFor() {
-		return []TraversableNode{ ast.For }
+		return []generic_ast.TraversableNode{ ast.For }
 	} else if ast.IsExpression() {
-		return []TraversableNode{ ast.Expression }
+		return []generic_ast.TraversableNode{ ast.Expression }
 	}
-	return []TraversableNode{}
+	return []generic_ast.TraversableNode{}
 }
 
 func (ast *Statement) formatStatementInstruction(statement string, c *context.ParsingContext) string {
@@ -188,7 +189,7 @@ func (ast *Statement) Body() hindley_milner.Expression {
 	} else if ast.IsExpression() {
 		return ast.Expression
 	}
-	ast.BaseASTNode = BaseASTNode{}
+	ast.BaseASTNode = generic_ast.BaseASTNode{}
 	ast.ParentNode = nil
 	fmt.Printf("Failed for node %s\n", repr.String(ast))
 	panic("Invalid Statement type")

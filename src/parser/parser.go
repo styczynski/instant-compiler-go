@@ -7,6 +7,7 @@ import (
 
 	"github.com/alecthomas/participle/v2"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -196,7 +197,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 
 		var parentSetterVisitor hindley_milner.ExpressionMapper
 		parentSetterVisitor = func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
-			node, ok := e.(ast.TraversableNode)
+			node, ok := e.(generic_ast.TraversableNode)
 			if !ok {
 				return e
 			}
@@ -207,7 +208,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 				// Prevent infinite loop
 				return e
 			}
-			node.OverrideParent(parent.(interface{}).(ast.TraversableNode))
+			node.OverrideParent(parent.(interface{}).(generic_ast.TraversableNode))
 
 			e.Visit(parent, parentSetterVisitor)
 			return e

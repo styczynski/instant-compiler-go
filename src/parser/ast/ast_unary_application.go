@@ -5,23 +5,24 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type UnaryApplication struct {
-	BaseASTNode
+	 generic_ast.BaseASTNode
 	Target *string   `( @Ident`
 	Arguments []*Expression   `"(" (@@ ("," @@)*)? ")" )`
 	Index *Index `| @@`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *UnaryApplication) Parent() TraversableNode {
+func (ast *UnaryApplication) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *UnaryApplication) OverrideParent(node TraversableNode) {
+func (ast *UnaryApplication) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -37,20 +38,20 @@ func (ast *UnaryApplication) GetNode() interface{} {
 	return ast
 }
 
-func (ast *UnaryApplication) GetChildren() []TraversableNode {
+func (ast *UnaryApplication) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsApplication() {
-		nodes := make([]TraversableNode, len(ast.Arguments) + 1)
-		nodes = append(nodes, MakeTraversableNodeToken(ast, *ast.Target, ast.Pos, ast.EndPos))
+		nodes := make([]generic_ast.TraversableNode, len(ast.Arguments) + 1)
+		nodes = append(nodes, generic_ast.MakeTraversableNodeToken(ast, *ast.Target, ast.Pos, ast.EndPos))
 		for _, child := range ast.Arguments {
 			nodes = append(nodes, child)
 		}
 		return nodes
 	} else if ast.IsIndex() {
-		return []TraversableNode{
+		return []generic_ast.TraversableNode{
 			ast.Index,
 		}
 	}
-	return []TraversableNode{}
+	return []generic_ast.TraversableNode{}
 }
 
 func (ast *UnaryApplication) IsApplication() bool {
@@ -86,13 +87,13 @@ func (ast *UnaryApplication) Map(parent hindley_milner.Expression, mapper hindle
 			BaseASTNode: ast.BaseASTNode,
 			Target:      ast.Target,
 			Arguments:   args,
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	} else if ast.IsApplication() {
 		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
 			Index: mapper(ast, ast.Index).(*Index),
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	}
 	panic("Invalid UnaryApplication operation type")

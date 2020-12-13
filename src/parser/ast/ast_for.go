@@ -3,23 +3,24 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type For struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	ElementType *Type `"for" "(" @@`
 	Destructor *ForDestructor `@@ ")"`
 	Do *Statement `@@`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *For) Parent() TraversableNode {
+func (ast *For) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *For) OverrideParent(node TraversableNode) {
+func (ast *For) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -35,8 +36,8 @@ func (ast *For) GetNode() interface{} {
 	return ast
 }
 
-func (ast *For) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *For) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Destructor,
 		ast.Do,
 	}

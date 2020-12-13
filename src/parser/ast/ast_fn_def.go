@@ -5,24 +5,25 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type FnDef struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	ReturnType Type `@@`
 	Name string `@Ident`
 	Arg []*Arg `"(" (@@ ( "," @@ )*)? ")"`
 	FunctionBody *Block `@@`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *FnDef) Parent() TraversableNode {
+func (ast *FnDef) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *FnDef) OverrideParent(node TraversableNode) {
+func (ast *FnDef) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -38,10 +39,10 @@ func (ast *FnDef) GetNode() interface{} {
 	return ast
 }
 
-func (ast *FnDef) GetChildren() []TraversableNode {
-	nodes := make([]TraversableNode, len(ast.Arg) + 3)
+func (ast *FnDef) GetChildren() []generic_ast.TraversableNode {
+	nodes := make([]generic_ast.TraversableNode, len(ast.Arg) + 3)
 	nodes = append(nodes, &ast.ReturnType)
-	nodes = append(nodes, MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos))
+	nodes = append(nodes, generic_ast.MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos))
 
 	for _, child := range ast.Arg {
 		nodes = append(nodes, child)
@@ -100,7 +101,7 @@ func (ast *FnDef) Map(parent hindley_milner.Expression, mapper hindley_milner.Ex
 		Name:         ast.Name,
 		Arg:          ast.Arg,
 		FunctionBody: mapper(ast, ast.FunctionBody).(*Block),
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 func (ast *FnDef) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {

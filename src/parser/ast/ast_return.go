@@ -3,21 +3,22 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Return struct {
-	BaseASTNode
+	 generic_ast.BaseASTNode
 	Expression *Expression `"return" (@@)? ";"`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Return) Parent() TraversableNode {
+func (ast *Return) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Return) OverrideParent(node TraversableNode) {
+func (ast *Return) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -37,13 +38,13 @@ func (ast *Return) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Return) GetChildren() []TraversableNode {
+func (ast *Return) GetChildren() []generic_ast.TraversableNode {
 	if ast.HasExpression() {
-		return []TraversableNode{
+		return []generic_ast.TraversableNode{
 			ast.Expression,
 		}
 	}
-	return []TraversableNode{}
+	return []generic_ast.TraversableNode{}
 }
 
 func (ast *Return) Print(c *context.ParsingContext) string {
@@ -67,12 +68,12 @@ func (ast *Return) Map(parent hindley_milner.Expression, mapper hindley_milner.E
 		return mapper(parent, &Return{
 			BaseASTNode: ast.BaseASTNode,
 			Expression:  mapper(ast, ast.Expression).(*Expression),
-			ParentNode:  parent.(TraversableNode),
+			ParentNode:  parent.(generic_ast.TraversableNode),
 		})
 	}
 	return mapper(parent, &Return{
 		BaseASTNode: ast.BaseASTNode,
-		ParentNode:  parent.(TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	})
 }
 

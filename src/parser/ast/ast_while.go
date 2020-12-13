@@ -3,22 +3,23 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type While struct {
-	BaseASTNode
+	 generic_ast.BaseASTNode
 	Condition *Expression `"while" "(" @@ ")"`
 	Do *Statement `@@`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *While) Parent() TraversableNode {
+func (ast *While) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *While) OverrideParent(node TraversableNode) {
+func (ast *While) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -40,8 +41,8 @@ func (ast *While) Print(c *context.ParsingContext) string {
 	return printNode(c, ast, "while (%s) %s", ast.Condition.Print(c), body)
 }
 
-func (ast *While) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *While) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Condition,
 		ast.Do,
 	}
@@ -54,7 +55,7 @@ func (ast *While) Map(parent hindley_milner.Expression, mapper hindley_milner.Ex
 		BaseASTNode: ast.BaseASTNode,
 		Condition: mapper(ast, ast.Condition).(*Expression),
 		Do: mapper(ast, ast.Do).(*Statement),
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

@@ -5,22 +5,23 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type ForDestructor struct {
-	BaseASTNode
+	 generic_ast.BaseASTNode
 	ElementVar string `@Ident`
 	Target *Expression `":" @@`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *ForDestructor) Parent() TraversableNode {
+func (ast *ForDestructor) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *ForDestructor) OverrideParent(node TraversableNode) {
+func (ast *ForDestructor) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -36,8 +37,8 @@ func (ast *ForDestructor) GetNode() interface{} {
 	return ast
 }
 
-func (ast *ForDestructor) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *ForDestructor) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Target,
 	}
 }
@@ -56,7 +57,7 @@ func (ast *ForDestructor) Map(parent hindley_milner.Expression, mapper hindley_m
 		BaseASTNode: ast.BaseASTNode,
 		ElementVar:  ast.ElementVar,
 		Target:      mapper(ast, ast.Target).(*Expression),
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

@@ -5,22 +5,23 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Index struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Primary   *Primary   ` @@ `
 	IndexingExpr *Expression `( "[" @@ "]" )?`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Index) Parent() TraversableNode {
+func (ast *Index) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Index) OverrideParent(node TraversableNode) {
+func (ast *Index) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -36,14 +37,14 @@ func (ast *Index) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Index) GetChildren() []TraversableNode {
+func (ast *Index) GetChildren() []generic_ast.TraversableNode {
 	if ast.HasIndexingExpr() {
-		return []TraversableNode{
+		return []generic_ast.TraversableNode{
 			ast.Primary,
 			ast.IndexingExpr,
 		}
 	} else {
-		return []TraversableNode{
+		return []generic_ast.TraversableNode{
 			ast.Primary,
 		}
 	}
@@ -69,13 +70,13 @@ func (ast *Index) Map(parent hindley_milner.Expression, mapper hindley_milner.Ex
 			BaseASTNode:      ast.BaseASTNode,
 			Primary: mapper(ast, ast.Primary).(*Primary),
 			IndexingExpr: mapper(ast, ast.IndexingExpr).(*Expression),
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	} else {
 		return mapper(parent, &Index{
 			BaseASTNode:      ast.BaseASTNode,
 			Primary: mapper(ast, ast.Primary).(*Primary),
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	}
 }

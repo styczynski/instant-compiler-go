@@ -6,21 +6,22 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Block struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Statements []*Statement `"{" @@* "}"`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Block) Parent() TraversableNode {
+func (ast *Block) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Block) OverrideParent(node TraversableNode) {
+func (ast *Block) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -49,8 +50,8 @@ func (ast *Block) Print(c *context.ParsingContext) string {
 	return printNode(c, ast, "{\n%s\n%s}", strings.Join(statementsList, "\n"), strings.Repeat("  ", c.BlockDepth))
 }
 
-func (ast *Block) GetChildren() []TraversableNode {
-	nodes := make([]TraversableNode, len(ast.Statements))
+func (ast *Block) GetChildren() []generic_ast.TraversableNode {
+	nodes := make([]generic_ast.TraversableNode, len(ast.Statements))
 	for _, child := range ast.Statements {
 		nodes = append(nodes, child)
 	}
@@ -71,7 +72,7 @@ func (ast *Block) Map(parent hindley_milner.Expression, mapper hindley_milner.Ex
 	return mapper(parent, &Block{
 		BaseASTNode: ast.BaseASTNode,
 		Statements:  mappedStmts,
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

@@ -3,26 +3,27 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 
 type Primary struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Variable   *string   `@Ident`
 	Int        *int64    `| @Int`
 	String        *string     `| @String`
 	Bool          *bool       `| @( "true" | "false" )`
 	SubExpression *Expression `| ( "(" @@ ")" )`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Primary) Parent() TraversableNode {
+func (ast *Primary) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Primary) OverrideParent(node TraversableNode) {
+func (ast *Primary) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -38,29 +39,29 @@ func (ast *Primary) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Primary) GetChildren() []TraversableNode {
+func (ast *Primary) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsVariable() {
-		return []TraversableNode{
-			MakeTraversableNodeValue(ast, *ast.Variable, "ident", ast.Pos, ast.EndPos),
+		return []generic_ast.TraversableNode{
+			generic_ast.MakeTraversableNodeValue(ast, *ast.Variable, "ident", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsInt() {
-		return []TraversableNode{
-			MakeTraversableNodeValue(ast, *ast.Int, "int", ast.Pos, ast.EndPos),
+		return []generic_ast.TraversableNode{
+			generic_ast.MakeTraversableNodeValue(ast, *ast.Int, "int", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsString() {
-		return []TraversableNode{
-			MakeTraversableNodeValue(ast, *ast.String, "string", ast.Pos, ast.EndPos),
+		return []generic_ast.TraversableNode{
+			generic_ast.MakeTraversableNodeValue(ast, *ast.String, "string", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsBool() {
-		return []TraversableNode{
-			MakeTraversableNodeValue(ast, *ast.Bool, "bool", ast.Pos, ast.EndPos),
+		return []generic_ast.TraversableNode{
+			generic_ast.MakeTraversableNodeValue(ast, *ast.Bool, "bool", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsSubexpression() {
-		return []TraversableNode{
+		return []generic_ast.TraversableNode{
 			ast.SubExpression,
 		}
 	}
-	return []TraversableNode{}
+	return []generic_ast.TraversableNode{}
 }
 
 func (ast *Primary) IsVariable() bool {

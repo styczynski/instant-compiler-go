@@ -3,23 +3,24 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type LogicalOperation struct {
-	BaseASTNode
+	 generic_ast.BaseASTNode
 	Equality *Equality `@@`
 	Op         string      `[ @( "|" "|" | "&" "&" )`
 	Next       *LogicalOperation   `  @@ ]`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *LogicalOperation) Parent() TraversableNode {
+func (ast *LogicalOperation) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *LogicalOperation) OverrideParent(node TraversableNode) {
+func (ast *LogicalOperation) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -35,10 +36,10 @@ func (ast *LogicalOperation) GetNode() interface{} {
 	return ast
 }
 
-func (ast *LogicalOperation) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *LogicalOperation) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Equality,
-		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
+		generic_ast.MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -66,7 +67,7 @@ func (ast *LogicalOperation) Map(parent hindley_milner.Expression, mapper hindle
 		Equality:    mapper(ast, ast.Equality).(*Equality),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

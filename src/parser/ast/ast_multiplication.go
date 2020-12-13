@@ -3,23 +3,24 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Multiplication struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Unary *Unary          `@@`
 	Op    string          `[ @( "/" | "*" | "%" )`
 	Next  *Multiplication `  @@ ]`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Multiplication) Parent() TraversableNode {
+func (ast *Multiplication) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Multiplication) OverrideParent(node TraversableNode) {
+func (ast *Multiplication) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -35,10 +36,10 @@ func (ast *Multiplication) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Multiplication) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *Multiplication) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Unary,
-		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
+		generic_ast.MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -68,7 +69,7 @@ func (ast *Multiplication) Map(parent hindley_milner.Expression, mapper hindley_
 		Unary:    mapper(ast, ast.Unary).(*Unary),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

@@ -5,21 +5,22 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Typename struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Expr      *LogicalOperation       `"typename" @@`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Typename) Parent() TraversableNode {
+func (ast *Typename) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Typename) OverrideParent(node TraversableNode) {
+func (ast *Typename) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -35,7 +36,7 @@ func (ast *Typename) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Typename) GetTraversableNode() TraversableNode {
+func (ast *Typename) GetTraversableNode() generic_ast.TraversableNode {
 	return ast.Expr
 }
 
@@ -43,8 +44,8 @@ func (ast *Typename) Print(c *context.ParsingContext) string {
 	return fmt.Sprintf("typename %s", ast.Expr.Print(c))
 }
 
-func (ast *Typename) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *Typename) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Expr,
 	}
 }
@@ -144,8 +145,8 @@ func (ast *Typename) OnTypeReturned(t hindley_milner.Type) {
 	}
 
 	newAST.Visit(newAST, func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
-		node := e.(TraversableNode)
-		node.OverrideParent(parent.(interface{}).(TraversableNode))
+		node := e.(generic_ast.TraversableNode)
+		node.OverrideParent(parent.(interface{}).(generic_ast.TraversableNode))
 		return e
 	})
 

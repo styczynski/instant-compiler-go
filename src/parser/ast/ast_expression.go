@@ -3,23 +3,24 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Expression struct {
-	ComplexASTNode
+	generic_ast.ComplexASTNode
 	NewType       *New      `@@`
 	Typename *Typename `| @@`
 	LogicalOperation *LogicalOperation `| @@`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Expression) Parent() TraversableNode {
+func (ast *Expression) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Expression) OverrideParent(node TraversableNode) {
+func (ast *Expression) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -47,22 +48,22 @@ func (ast *Expression) IsTypename() bool {
 	return ast.Typename != nil
 }
 
-func (ast *Expression) GetChildren() []TraversableNode {
+func (ast *Expression) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsLogicalOperation() {
-		return []TraversableNode{ast.LogicalOperation,}
+		return []generic_ast.TraversableNode{ast.LogicalOperation,}
 	} else if ast.IsNewType() {
-		return []TraversableNode{ ast.NewType.GetTraversableNode(), }
+		return []generic_ast.TraversableNode{ ast.NewType.GetTraversableNode(), }
 	} else if ast.IsTypename() {
-		return []TraversableNode{ ast.Typename.GetTraversableNode(), }
+		return []generic_ast.TraversableNode{ ast.Typename.GetTraversableNode(), }
 	}
 	panic("Invalid Expression type")
 }
 
-func printBinaryOperation(c *context.ParsingContext, ast TraversableNode, arg1 string, operator string, arg2 string) string{
+func printBinaryOperation(c *context.ParsingContext, ast generic_ast.TraversableNode, arg1 string, operator string, arg2 string) string{
 	return printNode(c, ast, "%s %s %s", arg1, operator, arg2)
 }
 
-func printUnaryOperation(c *context.ParsingContext, ast TraversableNode, operator string, arg string) string{
+func printUnaryOperation(c *context.ParsingContext, ast generic_ast.TraversableNode, operator string, arg string) string{
 	return printNode(c, ast, "%s%s", operator, arg)
 }
 
@@ -95,19 +96,19 @@ func (ast *Expression) Map(parent hindley_milner.Expression, mapper hindley_miln
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			LogicalOperation: mapper(ast, ast.LogicalOperation).(*LogicalOperation),
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	} else if ast.IsNewType() {
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			NewType: ast.NewType,
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	} else if ast.IsTypename() {
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			Typename: ast.Typename,
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	}
 	panic("Invalid Expression type")

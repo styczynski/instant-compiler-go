@@ -3,23 +3,24 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type Addition struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Multiplication *Multiplication `@@`
 	Op             string          `[ @( "-" | "+" )`
 	Next           *Addition       `  @@ ]`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *Addition) Parent() TraversableNode {
+func (ast *Addition) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *Addition) OverrideParent(node TraversableNode) {
+func (ast *Addition) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -35,10 +36,10 @@ func (ast *Addition) GetNode() interface{} {
 	return ast
 }
 
-func (ast *Addition) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *Addition) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Multiplication,
-		MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
+		generic_ast.MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
 }
@@ -67,7 +68,7 @@ func (ast *Addition) Map(parent hindley_milner.Expression, mapper hindley_milner
 		Multiplication:    mapper(ast, ast.Multiplication).(*Multiplication),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(TraversableNode),
+		ParentNode: parent.(generic_ast.TraversableNode),
 	})
 }
 

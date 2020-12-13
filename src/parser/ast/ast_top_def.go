@@ -5,22 +5,23 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type TopDef struct {
-	BaseASTNode
+	generic_ast.BaseASTNode
 	Class *Class `@@`
 	Function *FnDef `| @@`
-	ParentNode TraversableNode
+	ParentNode generic_ast.TraversableNode
 }
 
-func (ast *TopDef) Parent() TraversableNode {
+func (ast *TopDef) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
 
-func (ast *TopDef) OverrideParent(node TraversableNode) {
+func (ast *TopDef) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
@@ -49,8 +50,8 @@ func (ast *TopDef) GetNode() interface{} {
 	return ast
 }
 
-func (ast *TopDef) GetChildren() []TraversableNode {
-	return []TraversableNode{
+func (ast *TopDef) GetChildren() []generic_ast.TraversableNode {
+	return []generic_ast.TraversableNode{
 		ast.Function,
 	}
 }
@@ -85,13 +86,13 @@ func (ast *TopDef) Map(parent hindley_milner.Expression, mapper hindley_milner.E
 		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
 			Function:    mapper(ast, ast.Function).(*FnDef),
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	} else if ast.IsClass() {
 		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
 			Class:    mapper(ast, ast.Class).(*Class),
-			ParentNode: parent.(TraversableNode),
+			ParentNode: parent.(generic_ast.TraversableNode),
 		})
 	} else {
 		panic("Invalid TopDef type.")
