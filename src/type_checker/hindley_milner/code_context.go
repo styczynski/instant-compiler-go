@@ -2,16 +2,18 @@ package hindley_milner
 
 import (
 	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
 type CodeContext struct {
-	Source *Expression
+	Source *generic_ast.Expression
 	Builtin bool
 	Scheme *Scheme
 	Name string
 }
 
-func CreateCodeContext(source Expression) CodeContext {
+func CreateCodeContext(source generic_ast.Expression) CodeContext {
 	return CodeContext{
 		Source:  &source,
 		Builtin: false,

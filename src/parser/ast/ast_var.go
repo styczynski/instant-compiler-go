@@ -21,14 +21,14 @@ func (ast *VarName) OverrideParent(node generic_ast.TraversableNode) {
 
 func (ast *VarName) Name() hindley_milner.NameGroup     { return hindley_milner.Name(ast.name) }
 
-func (ast *VarName) Body() hindley_milner.Expression { return ast }
+func (ast *VarName) Body() generic_ast.Expression { return ast }
 
-func (ast *VarName) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
-	return mapper(parent, ast)
+func (ast *VarName) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
+	return mapper(parent, ast, context)
 }
 
-func (ast *VarName) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(parent, ast)
+func (ast *VarName) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(parent, ast, context)
 }
 
 func (ast *VarName) Type() hindley_milner.Type {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -49,7 +50,7 @@ func (ast *LatteProgram) GetNode() interface{} {
 }
 
 func (ast *LatteProgram) GetChildren() []generic_ast.TraversableNode {
-	nodes := make([]generic_ast.TraversableNode, len(ast.Definitions))
+	nodes := []generic_ast.TraversableNode{}
 	for _, child := range ast.Definitions {
 		nodes = append(nodes, child)
 	}
@@ -64,29 +65,29 @@ func (ast *LatteProgram) Print(c *context.ParsingContext) string {
 	return printNode(c, ast, "%s\n", strings.Join(defs, "\n\n"))
 }
 
-func (ast *LatteProgram) Body() hindley_milner.Expression {
+func (ast *LatteProgram) Body() generic_ast.Expression {
 	panic(fmt.Errorf("Batch Body() method cannot be called."))
 }
 
 /////
 
-func (ast *LatteProgram) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *LatteProgram) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	mappedDef := []*TopDef{}
 	for _, def := range ast.Definitions {
-		mappedDef = append(mappedDef, mapper(ast, def).(*TopDef))
+		mappedDef = append(mappedDef, mapper(ast, def, context).(*TopDef))
 	}
 	return mapper(parent, &LatteProgram{
 		BaseASTNode: ast.BaseASTNode,
 		Definitions: mappedDef,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}).(*LatteProgram)
+	}, context).(*LatteProgram)
 }
 
-func (ast *LatteProgram) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *LatteProgram) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	for _, def := range ast.Definitions {
-		mapper(ast, def)
+		mapper(ast, def, context)
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
 func (ast *LatteProgram) ExpressionType() hindley_milner.ExpressionType {
@@ -94,11 +95,17 @@ func (ast *LatteProgram) ExpressionType() hindley_milner.ExpressionType {
 }
 
 func (ast *LatteProgram) GetContents() hindley_milner.Batch {
-	exp := []hindley_milner.Expression{}
+	exp := []generic_ast.Expression{}
 	for _, def := range ast.Definitions {
 		exp = append(exp, def)
 	}
 	return hindley_milner.Batch{
 		Exp: exp,
 	}
+}
+
+//
+
+func (ast *LatteProgram) BuildFlowGraph(builder cfg.CFGBuilder) {
+	builder.BuildBlock(ast)
 }

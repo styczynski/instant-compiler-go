@@ -1,10 +1,12 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -65,6 +67,35 @@ func (ast *FnDef) Print(c *context.ParsingContext) string {
 		ast.FunctionBody.Print(c))
 }
 
+/////
+
+func (ast *FnDef) Validate() generic_ast.NodeError {
+	fmt.Printf("Check fn def\n")
+	if _, ok := ast.Parent().(*TopDef); ok {
+		if ast.Name == "main" {
+			returnedType, _ := ast.ReturnType.GetType().Type()
+			expectedType := CreatePrimitive(T_INT)
+			if !returnedType.Eq(expectedType) {
+				message := fmt.Sprintf("main() function has return type of %v. Expected it to be %v.", returnedType, expectedType)
+				return generic_ast.NewNodeError(
+					"Invalid main()",
+					 ast,
+					 message,
+					 message)
+			}
+			if len(ast.Arg) != 0 {
+				message := fmt.Sprintf("main() function cannot accept any arguments, but it has %d parameter/-s in definiton.", len(ast.Arg))
+				return generic_ast.NewNodeError(
+					"Invalid main()",
+					ast,
+					message,
+					message)
+			}
+		}
+	}
+	return nil
+}
+
 //////
 
 func (ast *FnDef) Args() hindley_milner.NameGroup {
@@ -84,7 +115,7 @@ func (ast *FnDef) Var() hindley_milner.NameGroup {
 	return hindley_milner.Name(ast.Name)
 }
 
-func (ast *FnDef) Body() hindley_milner.Expression {
+func (ast *FnDef) Body() generic_ast.Expression {
 	return ast.FunctionBody
 }
 
@@ -94,17 +125,23 @@ func (ast *FnDef) DefaultType() *hindley_milner.Scheme {
 	return ast.ReturnType.GetType()
 }
 
-func (ast *FnDef) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *FnDef) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &FnDef{
 		BaseASTNode:  ast.BaseASTNode,
 		ReturnType:   ast.ReturnType,
 		Name:         ast.Name,
 		Arg:          ast.Arg,
-		FunctionBody: mapper(ast, ast.FunctionBody).(*Block),
+		FunctionBody: mapper(ast, ast.FunctionBody, context).(*Block),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
-func (ast *FnDef) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.FunctionBody)
-	mapper(parent, ast)
+func (ast *FnDef) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.FunctionBody, context)
+	mapper(parent, ast, context)
+}
+
+//
+
+func (ast *FnDef) BuildFlowGraph(builder cfg.CFGBuilder) {
+	builder.BuildNode(ast.FunctionBody)
 }

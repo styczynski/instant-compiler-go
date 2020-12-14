@@ -74,12 +74,12 @@ func (ast *New) GetChildren() []generic_ast.TraversableNode {
 
 ////
 
-func (ast *New) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *New) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	// TODO
 	return ast
 }
 
-func (ast *New) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *New) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	// TODO
 }
 
@@ -96,16 +96,16 @@ func (ast *New) ExpressionType() hindley_milner.ExpressionType {
 	panic("Invalid New type")
 }
 
-func (ast *New) Fn() hindley_milner.Expression {
+func (ast *New) Fn() generic_ast.Expression {
 	return hindley_milner.ExpressionSignedTupleGet("class", 1, 0, &VarName{
 		BaseASTNode: ast.BaseASTNode,
 		name: *ast.Class,
 	})
 }
 
-func (ast *New) Body() hindley_milner.Expression {
+func (ast *New) Body() generic_ast.Expression {
 	return hindley_milner.Batch{
-		Exp: []hindley_milner.Expression{
+		Exp: []generic_ast.Expression{
 			hindley_milner.EmbeddedTypeExpr{
 				GetType: func() *hindley_milner.Scheme {
 					return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID),)

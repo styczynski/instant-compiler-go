@@ -48,20 +48,20 @@ func (ast *Assignment) Print(c *context.ParsingContext) string {
 
 //
 
-func (ast *Assignment) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Assignment) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Assignment{
 		BaseASTNode: ast.BaseASTNode,
-		Value:    mapper(ast, ast.Value).(*Expression),
+		Value:    mapper(ast, ast.Value, context).(*Expression),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *Assignment) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Value)
-	mapper(parent, ast)
+func (ast *Assignment) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Value, context)
+	mapper(parent, ast, context)
 }
 
-func (ast *Assignment) Fn() hindley_milner.Expression {
+func (ast *Assignment) Fn() generic_ast.Expression {
 	//return &BuiltinFunction{
 	//	BaseASTNode: ast.BaseASTNode,
 	//	name: "=",
@@ -73,9 +73,9 @@ func (ast *Assignment) Fn() hindley_milner.Expression {
 	}}
 }
 
-func (ast *Assignment) Body() hindley_milner.Expression {
+func (ast *Assignment) Body() generic_ast.Expression {
 	return hindley_milner.Batch{
-		Exp: []hindley_milner.Expression{
+		Exp: []generic_ast.Expression{
 			&VarName{
 				BaseASTNode: ast.BaseASTNode,
 				name: ast.TargetName,

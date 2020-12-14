@@ -2,6 +2,8 @@ package hindley_milner
 
 import (
 	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
 // SignedTuple is a basic record/tuple type. It takes an optional name.
@@ -137,10 +139,10 @@ type SignedTupleUnwrapExpr struct {
 	name string
 	len int16
 	index int16
-	expr Expression
+	expr  generic_ast.Expression
 }
 
-func ExpressionSignedTupleGet(name string, len int, index int, expr Expression) *SignedTupleUnwrapExpr {
+func ExpressionSignedTupleGet(name string, len int, index int, expr generic_ast.Expression) *SignedTupleUnwrapExpr {
 	return &SignedTupleUnwrapExpr{
 		name:  name,
 		len:   int16(len),
@@ -149,20 +151,20 @@ func ExpressionSignedTupleGet(name string, len int, index int, expr Expression) 
 	}
 }
 
-func (ast *SignedTupleUnwrapExpr) Map(parent Expression, mapper ExpressionMapper) Expression {
+func (ast *SignedTupleUnwrapExpr) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	// TODO
-	return mapper(parent, ast)
+	return mapper(parent, ast, context)
 }
 
-func (ast *SignedTupleUnwrapExpr) Visit(parent Expression, mapper ExpressionMapper) {
-	mapper(parent, ast)
+func (ast *SignedTupleUnwrapExpr) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(parent, ast, context)
 }
 
 func (ast *SignedTupleUnwrapExpr) ExpressionType() ExpressionType {
 	return E_APPLICATION
 }
 
-func (ast *SignedTupleUnwrapExpr) Fn() Expression {
+func (ast *SignedTupleUnwrapExpr) Fn() generic_ast.Expression {
 	args := []TypeVariable{}
 	argsTypes := []Type{}
 	for i := int16(0); i<ast.len; i++ {
@@ -178,6 +180,6 @@ func (ast *SignedTupleUnwrapExpr) Fn() Expression {
 	}
 }
 
-func (ast *SignedTupleUnwrapExpr) Body() Expression {
+func (ast *SignedTupleUnwrapExpr) Body() generic_ast.Expression {
 	return ast.expr
 }

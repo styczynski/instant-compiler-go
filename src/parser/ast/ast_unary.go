@@ -70,46 +70,46 @@ func (ast *Unary) Print(c *context.ParsingContext) string {
 ////
 
 
-func (ast *Unary) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Unary) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	if ast.IsOperation() {
 		return mapper(parent, &Unary{
 			BaseASTNode:      ast.BaseASTNode,
 			Op:               ast.Op,
-			Unary:            mapper(ast, ast.Unary).(*Unary),
+			Unary:            mapper(ast, ast.Unary, context).(*Unary),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	} else if ast.IsUnaryApplication() {
 		return mapper(parent, &Unary{
 			BaseASTNode:      ast.BaseASTNode,
-			UnaryApplication: mapper(ast, ast.UnaryApplication).(*UnaryApplication),
+			UnaryApplication: mapper(ast, ast.UnaryApplication, context).(*UnaryApplication),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	}
 	panic("Invalid Unary operation type")
 }
 
-func (ast *Unary) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *Unary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	if ast.IsOperation() {
-		mapper(ast, ast.Unary)
+		mapper(ast, ast.Unary, context)
 	} else if ast.IsUnaryApplication() {
-		mapper(ast, ast.UnaryApplication)
+		mapper(ast, ast.UnaryApplication, context)
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
-func (ast *Unary) Fn() hindley_milner.Expression {
+func (ast *Unary) Fn() generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
 		name: "unary_"+ast.Op,
 	}
 }
 
-func (ast *Unary) Body() hindley_milner.Expression {
+func (ast *Unary) Body() generic_ast.Expression {
 	if ast.IsUnaryApplication() {
 		return ast.UnaryApplication
 	}
 	return hindley_milner.Batch{
-		Exp: []hindley_milner.Expression{
+		Exp: []generic_ast.Expression{
 			ast.Unary,
 		},
 	}

@@ -50,22 +50,22 @@ func (ast *While) GetChildren() []generic_ast.TraversableNode {
 
 ///
 
-func (ast *While) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *While) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &While{
 		BaseASTNode: ast.BaseASTNode,
-		Condition: mapper(ast, ast.Condition).(*Expression),
-		Do: mapper(ast, ast.Do).(*Statement),
+		Condition: mapper(ast, ast.Condition, context).(*Expression),
+		Do: mapper(ast, ast.Do, context).(*Statement),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *While) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Condition)
-	mapper(ast, ast.Do)
-	mapper(parent, ast)
+func (ast *While) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Condition, context)
+	mapper(ast, ast.Do, context)
+	mapper(parent, ast, context)
 }
 
-func (ast *While) Fn() hindley_milner.Expression {
+func (ast *While) Fn() generic_ast.Expression {
 	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
 		return hindley_milner.NewScheme(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
@@ -73,8 +73,8 @@ func (ast *While) Fn() hindley_milner.Expression {
 	}}
 }
 
-func (ast *While) Body() hindley_milner.Expression {
-	args := []hindley_milner.Expression{
+func (ast *While) Body() generic_ast.Expression {
+	args := []generic_ast.Expression{
 		ast.Condition,
 		ast.Do,
 	}

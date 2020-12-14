@@ -55,25 +55,25 @@ func (ast *DeclarationItem) Print(c *context.ParsingContext) string {
 
 /////
 
-func (ast *DeclarationItem) Body() hindley_milner.Expression {
+func (ast *DeclarationItem) Body() generic_ast.Expression {
 	if !ast.HasInitializer() {
-		return hindley_milner.Batch{Exp: []hindley_milner.Expression{}}
+		return hindley_milner.Batch{Exp: []generic_ast.Expression{}}
 	}
 	return ast.Initializer
 }
 
-func (ast *DeclarationItem) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *DeclarationItem) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &DeclarationItem{
 		BaseASTNode: ast.BaseASTNode,
 		Name:        ast.Name,
-		Initializer: mapper(ast, ast.Initializer).(*Expression),
+		Initializer: mapper(ast, ast.Initializer, context).(*Expression),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *DeclarationItem) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Initializer)
-	mapper(parent, ast)
+func (ast *DeclarationItem) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Initializer, context)
+	mapper(parent, ast, context)
 }
 
 func (ast *DeclarationItem) ExpressionType() hindley_milner.ExpressionType {

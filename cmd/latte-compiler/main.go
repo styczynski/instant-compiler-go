@@ -10,6 +10,7 @@ import (
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/events_collector"
+	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser"
 	context2 "github.com/styczynski/latte-compiler/src/parser/context"
@@ -75,14 +76,19 @@ func ActionCompile(c *cli.Context) error {
 	comp := compiler.CreateLatteCompiler()
 	ast := p.ParseInput(reader, context)
 
-	checkedProgram := tc.Check(ast, context)
-	compiledProgram := comp.Compile(checkedProgram, context)
-	//summary := events_collector.CreateCliSummaryShortStatus()
-	summary := events_collector.CreateCliSummary(-1)
-	message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
-	fmt.Print(message)
-	if !ok {
-		os.Exit(1)
+	if false {
+		checkedProgram := tc.Check(ast, context)
+		compiledProgram := comp.Compile(checkedProgram, context)
+		//summary := events_collector.CreateCliSummaryShortStatus()
+		summary := events_collector.CreateCliSummary(-1)
+		message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
+		fmt.Print(message)
+		if !ok {
+			os.Exit(1)
+		}
+	} else {
+		analyzer := flow_analysis.CreateLatteFlowAnalyzer()
+		analyzer.Analyze(ast, context)
 	}
 
 	//f, err := os.Create("compiler.prof")

@@ -1,6 +1,10 @@
 package hindley_milner
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/generic_ast"
+)
 
 // A Namer is anything that knows its own name
 type Namer interface {
@@ -61,8 +65,6 @@ type Inferer interface {
 	Infer(Env, Fresher) (Type, error)
 }
 
-type ExpressionMapper = func (parent Expression, e Expression) Expression
-
 type ExpressionType int
 
 const (
@@ -86,36 +88,34 @@ const (
 )
 
 // An Expression is basically an AST node. In its simplest form, it's lambda calculus
-type Expression interface {
-	Body() Expression
-	Map(parent Expression, mapper ExpressionMapper) Expression
-	Visit(parent Expression, mapper ExpressionMapper)
+type HMExpression interface {
+	generic_ast.Expression
 	ExpressionType() ExpressionType
 }
 
 type Batch struct {
-	Exp []Expression
+	Exp []generic_ast.Expression
 }
 
 func (b Batch) ExpressionType() ExpressionType {
 	return E_BLOCK
 }
 
-func (b Batch) Map(parent Expression, mapper ExpressionMapper) Expression {
-	mappedExp := []Expression{}
+func (b Batch) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
+	mappedExp := []generic_ast.Expression{}
 	for _, exp := range b.Exp {
-		mappedExp = append(mappedExp, mapper(b, exp))
+		mappedExp = append(mappedExp, mapper(b, exp, context))
 	}
 	return mapper(parent, Batch{
 		Exp: mappedExp,
-	})
+	}, context)
 }
 
-func (b Batch) Visit(parent Expression, mapper ExpressionMapper) {
+func (b Batch) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	for _, exp := range b.Exp {
-		mapper(b, exp)
+		mapper(b, exp, context)
 	}
-	mapper(parent, b)
+	mapper(parent, b, context)
 }
 
 func (b Batch) GetContents() Batch {
@@ -126,32 +126,32 @@ func (b Batch) IsBlock() bool {
 	return true
 }
 
-func (b Batch) Expressions() []Expression {
+func (b Batch) Expressions() []generic_ast.Expression {
 	return b.Exp
 }
 
-func (b Batch) Body() Expression {
+func (b Batch) Body() generic_ast.Expression {
 	panic(fmt.Errorf("Batch Body() method cannot be called."))
 }
 
-func IsBatch(exp Expression) bool {
+func IsBatch(exp generic_ast.Expression) bool {
 	_, ok := exp.(Batch)
 	return ok
 }
 
-func FlattenBatch(exp Expression) []Expression {
+func FlattenBatch(exp generic_ast.Expression) []generic_ast.Expression {
 	if IsBatch(exp) {
-		ret := []Expression{}
+		ret := []generic_ast.Expression{}
 		for _, e := range exp.(Batch).Expressions() {
 			ret = append(ret, FlattenBatch(e)...)
 		}
 		return ret
 	} else {
-		return []Expression{ exp }
+		return []generic_ast.Expression{ exp }
 	}
 }
 
-func ApplyBatch(exp Expression, fn func(e Expression) error) error {
+func ApplyBatch(exp generic_ast.Expression, fn func(e generic_ast.Expression) error) error {
 	for _, e := range FlattenBatch(exp) {
 		err := fn(e)
 		if err != nil {
@@ -163,7 +163,7 @@ func ApplyBatch(exp Expression, fn func(e Expression) error) error {
 
 // Var is an expression representing a variable
 type Var interface {
-	Expression
+	generic_ast.Expression
 	Namer
 	Typer
 }
@@ -175,43 +175,43 @@ type Literal interface {
 
 // Apply is an Expression/AST node that represents a function application
 type Apply interface {
-	Expression
-	Fn() Expression
+	generic_ast.Expression
+	Fn() generic_ast.Expression
 }
 
 type LetBase interface {
 	// let name = def in body
-	Expression
+	generic_ast.Expression
 	Var() NameGroup
 }
 
 // Let is an Expression/AST node that represents the standard let polymorphism found in functional languages
 type Let interface {
 	LetBase
-	Def() Expression
+	Def() generic_ast.Expression
 }
 
 // Lambda is an Expression/AST node that represents a function definiton
 type Lambda interface {
-	Expression
+	generic_ast.Expression
 	Args() NameGroup
 }
 
 // EmbeddedType is a type directly embedded into the code
 type EmbeddedType interface {
-	Expression
+	generic_ast.Expression
 	EmbeddedType() *Scheme
 }
 
 // Block is an imperative block of code
 type Block interface {
-	Expression
+	generic_ast.Expression
 	GetContents() Batch
 }
 
 // Return is an imperative return statement
 type Return interface {
-	Expression
+	generic_ast.Expression
 }
 
 type DefaultTyper interface {
@@ -222,12 +222,12 @@ type CustomExpressionEnv struct {
 	Env Env
 	InferencedType Type
 	LookupEnv func(isLiteral bool, name string) error
-	GenerateConstraints func(expr Expression) (error, Env, Type, Constraints)
+	GenerateConstraints func(expr generic_ast.Expression) (error, Env, Type, Constraints)
 	FreshTypeVariable func() TypeVariable
 }
 
 type CustomExpression interface {
-	Expression
+	generic_ast.Expression
 	GenerateConstraints(context CustomExpressionEnv) (error, Env, Type, Constraints)
 }
 
@@ -240,6 +240,6 @@ type ExpressionWithIdentifiersDeps interface {
 }
 
 type IntrospectionExpression interface {
-	Expression
+	generic_ast.Expression
 	OnTypeReturned(t Type)
 }

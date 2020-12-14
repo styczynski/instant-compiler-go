@@ -3,6 +3,7 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -57,26 +58,26 @@ func (ast *If) Print(c *context.ParsingContext) string {
 
 ///
 
-func (ast *If) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *If) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &If{
 		BaseASTNode: ast.BaseASTNode,
-		Condition: mapper(ast, ast.Condition).(*Expression),
-		Then: mapper(ast, ast.Then).(*Statement),
-		Else: mapper(ast, ast.Else).(*Statement),
+		Condition: mapper(ast, ast.Condition, context).(*Expression),
+		Then: mapper(ast, ast.Then, context).(*Statement),
+		Else: mapper(ast, ast.Else, context).(*Statement),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *If) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Condition)
-	mapper(ast, ast.Then)
+func (ast *If) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Condition, context)
+	mapper(ast, ast.Then, context)
 	if ast.HasElseBlock() {
-		mapper(ast, ast.Else)
+		mapper(ast, ast.Else, context)
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
-func (ast *If) Fn() hindley_milner.Expression {
+func (ast *If) Fn() generic_ast.Expression {
 	//return &BuiltinFunction{
 	//	BaseASTNode: ast.BaseASTNode,
 	//	name: "if",
@@ -88,8 +89,8 @@ func (ast *If) Fn() hindley_milner.Expression {
 	}}
 }
 
-func (ast *If) Body() hindley_milner.Expression {
-	args := []hindley_milner.Expression{
+func (ast *If) Body() generic_ast.Expression {
+	args := []generic_ast.Expression{
 		ast.Condition,
 		ast.Then,
 	}
@@ -105,4 +106,23 @@ func (ast *If) Body() hindley_milner.Expression {
 
 func (ast *If) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_APPLICATION
+}
+
+//
+
+func (ast *If) BuildFlowGraph(builder cfg.CFGBuilder) {
+	builder.AddSucc(ast)
+
+	builder.UpdatePrev([]generic_ast.NormalNode{ast})
+	builder.BuildNode(ast.Then)
+
+	ctrlExits := builder.GetPrev() // aggregate of builder.prev from each condition
+	if ast.HasElseBlock() {
+		builder.UpdatePrev([]generic_ast.NormalNode{ast})
+		builder.BuildNode(ast.Else)
+		ctrlExits = append(ctrlExits, builder.GetPrev()...)
+	} else {
+		ctrlExits = append(ctrlExits, ast)
+	}
+	builder.UpdatePrev(ctrlExits)
 }

@@ -1,7 +1,6 @@
 int main () {
  printInt(fact(7)) ;
  printInt(factr(7)) ;
- return 0 ;
 }
 
 // iteracyjnie
@@ -18,12 +17,13 @@ while (i < n+1) {
  }
  }
  r;
+ return 0;
 }
 
 int factr (int n) {
- if (n < 2) {
-   return 1 ; // rekurencyjnie
-} else {
-   return (n * factr(n-1)) ;
-}
+     if (n < 2) {
+       return 1 ; // rekurencyjnie
+    } else {
+       return (n * factr(n-1)) ;
+    }
 }

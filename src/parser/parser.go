@@ -11,7 +11,6 @@ import (
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
-	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type LatteParser struct {
@@ -195,8 +194,13 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 			return
 		}
 
-		var parentSetterVisitor hindley_milner.ExpressionMapper
-		parentSetterVisitor = func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
+		var parentSetterVisitor generic_ast.ExpressionMapper
+		visitedNodes := map[generic_ast.Expression]interface{}{}
+		parentSetterVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) generic_ast.Expression {
+			if _, ok := visitedNodes[e]; ok {
+				return e
+			}
+			visitedNodes[e] = true
 			node, ok := e.(generic_ast.TraversableNode)
 			if !ok {
 				return e
@@ -210,11 +214,61 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 			}
 			node.OverrideParent(parent.(interface{}).(generic_ast.TraversableNode))
 
-			e.Visit(parent, parentSetterVisitor)
+			e.Visit(parent, parentSetterVisitor, generic_ast.NewEmptyVisitorContext())
 			return e
 		}
 
-		output.Visit(output, parentSetterVisitor)
+		var nodeSyntaxValidationVisitor generic_ast.ExpressionMapper
+		var syntaxValidationError generic_ast.NodeError = nil
+		nodeSyntaxValidationVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) generic_ast.Expression {
+			if _, ok := visitedNodes[e]; ok {
+				return e
+			}
+			visitedNodes[e] = true
+			node, ok := e.(generic_ast.TraversableNode)
+			if !ok {
+				return e
+			}
+			if parent == e {
+				return e
+			}
+			if nodeWithValidation, ok := node.(generic_ast.NodeWithSyntaxValidation); ok {
+				validationError := nodeWithValidation.Validate()
+				if validationError != nil {
+					syntaxValidationError = validationError
+					return e
+				}
+			}
+			e.Visit(parent, nodeSyntaxValidationVisitor, generic_ast.NewEmptyVisitorContext())
+			return e
+		}
+
+		output.Visit(output, parentSetterVisitor, generic_ast.NewEmptyVisitorContext())
+		visitedNodes = map[generic_ast.Expression]interface{}{}
+		output.Visit(output, nodeSyntaxValidationVisitor, generic_ast.NewEmptyVisitorContext())
+
+		if syntaxValidationError != nil {
+			pos := syntaxValidationError.GetSource().(generic_ast.NodeWithPosition).Begin()
+			message, textMessage := ctx.FormatParsingError(
+				syntaxValidationError.ErrorName(),
+				syntaxValidationError.GetMessage(),
+				pos.Line,
+				pos.Column,
+				pos.Filename,
+				"",
+				examineParsingErrorMessage(syntaxValidationError.GetMessage(), ""))
+			ret <- &LatteParsedProgramImpl{
+				ast:      nil,
+				filename: input.Filename(),
+				error:      &ParsingError{
+					message:     message,
+					textMessage: textMessage,
+				},
+				context: ctx,
+			}
+			return
+		}
+
 		ret <- &LatteParsedProgramImpl{
 			ast:      output,
 			filename: input.Filename(),

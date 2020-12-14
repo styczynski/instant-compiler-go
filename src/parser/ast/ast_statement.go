@@ -7,6 +7,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/alecthomas/repr"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -167,9 +168,9 @@ func (ast *Statement) Print(c *context.ParsingContext) string {
 
 //////
 
-func (ast *Statement) Body() hindley_milner.Expression {
+func (ast *Statement) Body() generic_ast.Expression {
 	if ast.IsEmpty() {
-		return hindley_milner.Batch{Exp: []hindley_milner.Expression{}}
+		return hindley_milner.Batch{Exp: []generic_ast.Expression{}}
 	} else if ast.IsBlockStatement() {
 		return ast.BlockStatement
 	} else if ast.IsDeclaration() {
@@ -195,15 +196,41 @@ func (ast *Statement) Body() hindley_milner.Expression {
 	panic("Invalid Statement type")
 }
 
-func (ast *Statement) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Statement) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	// TODO: Fix that to feed mapper(ast.Body()) back into AST!
-	mapper(ast, ast.Body())
-	return mapper(parent, ast)
+	mapper(ast, ast.Body(), context)
+	return mapper(parent, ast, context)
 }
 
-func (ast *Statement) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Body())
-	mapper(parent, ast)
+func (ast *Statement) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Body(), context)
+	mapper(parent, ast, context)
 }
 
 func (ast *Statement) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_PROXY }
+
+//
+
+func (ast *Statement) BuildFlowGraph(builder cfg.CFGBuilder) {
+	if ast.IsEmpty() {
+		// Do nothing
+	} else if ast.IsBlockStatement() {
+		builder.BuildNode(ast.BlockStatement)
+	} else if ast.IsDeclaration() {
+		builder.BuildNode(ast.Declaration)
+	} else if ast.IsAssignment() {
+		builder.BuildNode(ast.Assignment)
+	} else if ast.IsUnaryStatement() {
+		builder.BuildNode(ast.UnaryStatement)
+	} else if ast.IsReturn() {
+		builder.BuildNode(ast.Return)
+	} else if ast.IsIf() {
+		builder.BuildNode(ast.If)
+	} else if ast.IsWhile() {
+		builder.BuildNode(ast.While)
+	} else if ast.IsFor() {
+		builder.BuildNode(ast.For)
+	} else if ast.IsExpression() {
+		builder.BuildNode(ast.Expression)
+	}
+}

@@ -17,10 +17,13 @@ import (
 )
 
 type CFGBuilder interface {
+	GetPrev() []generic_ast.NormalNode
 	AddSucc(current generic_ast.NormalNode)
 	AddBranch(branch generic_ast.NormalNode)
 	UpdatePrev(nodes []generic_ast.NormalNode)
 	BuildNode(node generic_ast.NormalNode)
+	BuildBlock(node generic_ast.TraversableNode)
+	Exit() generic_ast.NormalNode
 }
 
 type NodeWithControlInformation interface {
@@ -183,6 +186,20 @@ func (b *builder) BuildNode(node generic_ast.NormalNode) {
 		b.AddSucc(node)
 		b.UpdatePrev([]generic_ast.NormalNode{ node })
 	}
+}
+
+func (b *builder) BuildBlock(node generic_ast.TraversableNode) {
+	for _, child := range node.GetChildren() {
+		b.BuildNode(child.(generic_ast.NormalNode))
+	}
+}
+
+func (b *builder) Exit() generic_ast.NormalNode {
+	return b.exit
+}
+
+func (b *builder) GetPrev() []generic_ast.NormalNode{
+	return b.prev
 }
 
 func (b *builder) UpdatePrev(nodes []generic_ast.NormalNode) {

@@ -1,6 +1,7 @@
 package generic_ast
 
 import (
+	context2 "context"
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
@@ -42,9 +43,43 @@ type TraversableNode interface {
 	OverrideParent(node TraversableNode)
 }
 
+type NodeWithSyntaxValidation interface {
+	Validate() NodeError
+}
+
 type NormalNode interface {
 	PrintableNode
 	TraversableNode
+}
+
+type NormalNodeSelection struct {
+	node NormalNode
+	describe func(src context.SelectionBlock, id int, mappingID func(block context.SelectionBlock) int) []string
+}
+
+func NewNormalNodeSelection(node NormalNode, describe func(src context.SelectionBlock, id int, mappingID func(block context.SelectionBlock) int) []string) NormalNodeSelection {
+	return NormalNodeSelection{
+		node: node,
+		describe: describe,
+	}
+}
+
+func (sel NormalNodeSelection) GetNode() NormalNode {
+	return sel.node
+}
+
+func (sel NormalNodeSelection) Describe(src context.SelectionBlock, id int, mappingID func(block context.SelectionBlock) int) []string {
+	return sel.describe(src, id, mappingID)
+}
+
+func (sel NormalNodeSelection) Begin() (int, int) {
+	n := sel.node.Begin()
+	return n.Line, n.Column
+}
+
+func (sel NormalNodeSelection) End() (int, int) {
+	n := sel.node.End()
+	return n.Line, n.Column
 }
 
 type TraversableNodeToken struct {
@@ -143,4 +178,93 @@ func TraverseAST(node TraversableNode, visitor func(ast TraversableNode)) {
 		visitor(child)
 		TraverseAST(child, visitor)
 	}
+}
+
+type ExpressionMapper = func (parent Expression, e Expression, context VisitorContext) Expression
+
+type VisitorContext interface {
+	context2.Context
+	WithValue(key, val interface{}) VisitorContext
+	Set(key, val interface{}) interface{}
+	Get(key interface{}, defaultValue interface{}) interface{}
+}
+
+type VisitorContextImpl struct {
+	context2.Context
+}
+
+func (c *VisitorContextImpl) Set(key, val interface{}) interface{} {
+	v := c.Value(key)
+	c.Context = context2.WithValue(c, key, val)
+	return v
+}
+
+func (c *VisitorContextImpl) Get(key interface{}, defaultValue interface{}) interface{} {
+	v := c.Context.Value(key)
+	if v == nil {
+		return defaultValue
+	}
+	return v
+}
+
+func (c *VisitorContextImpl) WithValue(key, val interface{}) VisitorContext {
+	return &VisitorContextImpl{
+		context2.WithValue(c, key, val),
+	}
+}
+
+func NewEmptyVisitorContext() VisitorContext {
+	return &VisitorContextImpl{
+		context2.Background(),
+	}
+}
+
+// An Expression is basically an AST node. In its simplest form, it's lambda calculus
+type Expression interface {
+	Body() Expression
+	Map(parent Expression, mapper ExpressionMapper, context VisitorContext) Expression
+	Visit(parent Expression, mapper ExpressionMapper, context VisitorContext)
+}
+
+type Batch struct {
+	Exp []Expression
+}
+
+type NodeError interface {
+	ErrorName() string
+	GetMessage() string
+	GetCliMessage() string
+	GetSource() Expression
+}
+
+func NewNodeError(errorName string, source Expression, message string, cliMessage string) *NodeErrorImpl {
+	return &NodeErrorImpl{
+		Message:    message,
+		CliMessage: cliMessage,
+		Source:     source,
+		ErrorTypeName: errorName,
+	}
+}
+
+type NodeErrorImpl struct {
+	ErrorTypeName string
+	Message string
+	CliMessage string
+	Source Expression
+}
+
+func (e *NodeErrorImpl) ErrorName() string {
+	return e.ErrorTypeName
+}
+
+func (e *NodeErrorImpl) GetMessage() string {
+	return e.Message
+}
+
+func (e *NodeErrorImpl) GetCliMessage() string {
+	return e.CliMessage
+}
+
+func (e *NodeErrorImpl) GetSource() Expression {
+	return e.Source
 }

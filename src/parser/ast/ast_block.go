@@ -6,6 +6,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -51,7 +52,7 @@ func (ast *Block) Print(c *context.ParsingContext) string {
 }
 
 func (ast *Block) GetChildren() []generic_ast.TraversableNode {
-	nodes := make([]generic_ast.TraversableNode, len(ast.Statements))
+	nodes := []generic_ast.TraversableNode{}
 	for _, child := range ast.Statements {
 		nodes = append(nodes, child)
 	}
@@ -64,27 +65,27 @@ func (ast *Block) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_BLOCK
 }
 
-func (ast *Block) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Block) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	mappedStmts := []*Statement{}
 	for _, stmt := range ast.Statements {
-		mappedStmts = append(mappedStmts, mapper(ast, stmt).(*Statement))
+		mappedStmts = append(mappedStmts, mapper(ast, stmt, context).(*Statement))
 	}
 	return mapper(parent, &Block{
 		BaseASTNode: ast.BaseASTNode,
 		Statements:  mappedStmts,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *Block) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *Block) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	for _, stmt := range ast.Statements {
-		mapper(ast, stmt)
+		mapper(ast, stmt, context)
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
 func (ast *Block) GetContents() hindley_milner.Batch {
-	exprs := []hindley_milner.Expression{}
+	exprs := []generic_ast.Expression{}
 	for _, stmt := range ast.Statements {
 		exprs = append(exprs, stmt)
 	}
@@ -93,10 +94,16 @@ func (ast *Block) GetContents() hindley_milner.Batch {
 	}
 }
 
-func (ast *Block) Expressions() []hindley_milner.Expression {
+func (ast *Block) Expressions() []generic_ast.Expression {
 	return ast.GetContents().Exp
 }
 
-func (ast *Block) Body() hindley_milner.Expression {
+func (ast *Block) Body() generic_ast.Expression {
 	panic(fmt.Errorf("Batch Body() method cannot be called."))
+}
+
+//
+
+func (ast *Block) BuildFlowGraph(builder cfg.CFGBuilder) {
+	builder.BuildBlock(ast)
 }

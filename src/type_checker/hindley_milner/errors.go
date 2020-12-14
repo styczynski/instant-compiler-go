@@ -3,6 +3,8 @@ package hindley_milner
 import (
 	"fmt"
 	"strings"
+
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
 type UnificationLengthError struct {
@@ -25,7 +27,7 @@ func (err UnificationLengthError) GetCauseName() string {
 	return err.Constraint.context.Name
 }
 
-func (err UnificationLengthError) Source() Expression {
+func (err UnificationLengthError) Source() generic_ast.Expression {
 	return *(err.Constraint.context.Source)
 }
 
@@ -43,7 +45,7 @@ func (err UnificationWrongTypeError) GetCauseName() string {
 	return err.Constraint.context.Name
 }
 
-func (err UnificationWrongTypeError) Source() Expression {
+func (err UnificationWrongTypeError) Source() generic_ast.Expression {
 	if err.Constraint.context.Source == nil {
 		fmt.Printf("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
 	}
@@ -64,7 +66,7 @@ type UnificationRecurrentTypeError struct {
 	Constraint Constraint
 }
 
-func (err UnificationRecurrentTypeError) Source() Expression {
+func (err UnificationRecurrentTypeError) Source() generic_ast.Expression {
 	return *(err.Constraint.context.Source)
 }
 
@@ -78,7 +80,7 @@ func (err UnificationRecurrentTypeError) Error() string {
 
 type UndefinedSymbol struct {
 	Name string
-	Source Expression
+	Source generic_ast.Expression
 	IsLiteral bool
 	IsVariable bool
 }
@@ -113,6 +115,6 @@ func (err InvalidOverloadCandidatesError) Error() string {
 	)
 }
 
-func (err InvalidOverloadCandidatesError) Source() Expression {
+func (err InvalidOverloadCandidatesError) Source() generic_ast.Expression {
 	return *(err.Context.Source)
 }

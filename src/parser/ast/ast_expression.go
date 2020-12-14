@@ -80,7 +80,7 @@ func (ast *Expression) Print(c *context.ParsingContext) string {
 
 ////
 
-func (ast *Expression) Body() hindley_milner.Expression {
+func (ast *Expression) Body() generic_ast.Expression {
 	if ast.IsLogicalOperation() {
 		return ast.LogicalOperation
 	} else if ast.IsNewType() {
@@ -91,38 +91,38 @@ func (ast *Expression) Body() hindley_milner.Expression {
 	panic("Invalid Expression type")
 }
 
-func (ast *Expression) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Expression) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	if ast.IsLogicalOperation() {
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
-			LogicalOperation: mapper(ast, ast.LogicalOperation).(*LogicalOperation),
+			LogicalOperation: mapper(ast, ast.LogicalOperation, context).(*LogicalOperation),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	} else if ast.IsNewType() {
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			NewType: ast.NewType,
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	} else if ast.IsTypename() {
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			Typename: ast.Typename,
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	}
 	panic("Invalid Expression type")
 }
 
-func (ast *Expression) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *Expression) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	if ast.IsLogicalOperation() {
-		mapper(ast, ast.LogicalOperation)
+		mapper(ast, ast.LogicalOperation, context)
 	} else if ast.IsNewType() {
-		mapper(ast, ast.NewType)
+		mapper(ast, ast.NewType, context)
 	} else if ast.IsTypename() {
-		mapper(ast, ast.Typename)
+		mapper(ast, ast.Typename, context)
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
 func (ast *Expression) ExpressionType() hindley_milner.ExpressionType {

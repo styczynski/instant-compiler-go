@@ -5,6 +5,8 @@ import (
 
 	"github.com/alecthomas/repr"
 	"github.com/pkg/errors"
+
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
 // Cloner is any type that can clone
@@ -17,7 +19,7 @@ type Fresher interface {
 	Fresh() TypeVariable
 }
 
-func saveExprContext(t Type, source *Expression) Type {
+func saveExprContext(t Type, source *generic_ast.Expression) Type {
 	return t.WithContext(CreateCodeContext(*source))
 }
 
@@ -64,7 +66,7 @@ func (infer *inferer) Fresh() TypeVariable {
 	}
 }
 
-func (infer *inferer) lookup(isLiteral bool, name string, source Expression) error {
+func (infer *inferer) lookup(isLiteral bool, name string, source generic_ast.Expression) error {
 	if infer.env.IsBuiltin(name) {
 		//fmt.Printf("%s IS BUILTIN\n", name)
 		scheme, _ := infer.env.SchemeOf(name)
@@ -85,7 +87,7 @@ func (infer *inferer) lookup(isLiteral bool, name string, source Expression) err
 	return nil
 }
 
-func (infer *inferer) resolveProxy(expr Expression, exprType ExpressionType) (Expression, ExpressionType) {
+func (infer *inferer) resolveProxy(expr generic_ast.Expression, exprType ExpressionType) (generic_ast.Expression, ExpressionType) {
 	// Resolve proxies
 	for {
 		if expr == nil {
@@ -95,12 +97,12 @@ func (infer *inferer) resolveProxy(expr Expression, exprType ExpressionType) (Ex
 			break
 		}
 		expr = expr.Body()
-		exprType = expr.ExpressionType()
+		exprType = expr.(HMExpression).ExpressionType()
 	}
 	return expr, exprType
 }
 
-func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error) {
+func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error) {
 
 	defer infer.cleanupConstraints()
 
@@ -112,7 +114,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 
 	// fallbacks
 
-	exprType := expr.ExpressionType()
+	exprType := expr.(HMExpression).ExpressionType()
 	if forceType != E_NONE {
 		exprType = forceType
 	}
@@ -165,7 +167,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			LookupEnv:           func(isLiteral bool, name string) error {
 				return infer.lookup(isLiteral, name, et)
 			},
-			GenerateConstraints: func(expr Expression) (e error, env Env, i Type, constraints Constraints) {
+			GenerateConstraints: func(expr generic_ast.Expression) (e error, env Env, i Type, constraints Constraints) {
 				backupT := infer.t
 				backupEnv := infer.env
 				backupCS := infer.cs
@@ -380,7 +382,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 	case E_APPLICATION:
 		et := expr.(Apply)
 		firstExec := true
-		batchErr := ApplyBatch(et.Body(), func(body Expression) error {
+		batchErr := ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
 			if firstExec {
 				if err = infer.consGen(et.Fn(), E_NONE, false, false); err != nil {
 					return err
@@ -465,7 +467,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 		names := et.Var().GetNames()
 		types := []*Scheme{}
 
-		definitions := []Expression{}
+		definitions := []generic_ast.Expression{}
 		if len(names) == 1 {
 			if exprType == E_FUNCTION_DECLARATION {
 				definitions = append(definitions, et.(Lambda))
@@ -538,7 +540,7 @@ func (infer *inferer) consGen(expr Expression, forceType ExpressionType, isTop b
 			}
 
 			nonVal := false
-			defResolved, _ := infer.resolveProxy(def, def.ExpressionType())
+			defResolved, _ := infer.resolveProxy(def, def.(HMExpression).ExpressionType())
 			if block, ok := defResolved.(Block); ok && exprType == E_DECLARATION {
 				if len(block.GetContents().Expressions()) == 0 {
 					nonVal = true
@@ -836,7 +838,7 @@ func NewInferConfiguration() *InferConfiguration {
 }
 
 // Infer takes an env, and an expression, and returns a scheme.
-func Infer(env Env, expr Expression, config *InferConfiguration) (*Scheme, Env, error) {
+func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*Scheme, Env, error) {
 	if expr == nil {
 		return nil, nil, errors.Errorf("Cannot infer a nil expression")
 	}

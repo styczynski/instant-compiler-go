@@ -58,21 +58,21 @@ func (ast *Class) Print(c *context.ParsingContext) string {
 
 ////
 
-func (ast *Class) Body() hindley_milner.Expression {
+func (ast *Class) Body() generic_ast.Expression {
 	return ast
 }
 
-func (ast *Class) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Class) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Class{
 		BaseASTNode: ast.BaseASTNode,
 		Name: ast.Name,
 		Fields: ast.Fields,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}).(*Class)
+	}, context).(*Class)
 }
 
-func (ast *Class) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(parent, ast)
+func (ast *Class) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(parent, ast, context)
 }
 
 func (ast *Class) ExpressionType() hindley_milner.ExpressionType {
@@ -103,7 +103,7 @@ func (ast *Class) GetClassInstanceType() hindley_milner.Type {
 	return hindley_milner.NewSignedStructType(ast.Name, fields)
 }
 
-func (ast *Class) Def() hindley_milner.Expression {
+func (ast *Class) Def() generic_ast.Expression {
 	return hindley_milner.EmbeddedTypeExpr{
 		GetType: func() *hindley_milner.Scheme {
 			return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("class", hindley_milner.NewFnType(

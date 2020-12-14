@@ -3,6 +3,7 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -56,32 +57,41 @@ func (ast *Return) Print(c *context.ParsingContext) string {
 
 ///
 
-func (ast *Return) Body() hindley_milner.Expression {
+func (ast *Return) Body() generic_ast.Expression {
 	if ast.HasExpression() {
 		return ast.Expression
 	}
-	return hindley_milner.Batch{Exp: []hindley_milner.Expression{}}
+	return hindley_milner.Batch{Exp: []generic_ast.Expression{}}
 }
 
-func (ast *Return) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Return) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	if ast.HasExpression() {
 		return mapper(parent, &Return{
 			BaseASTNode: ast.BaseASTNode,
-			Expression:  mapper(ast, ast.Expression).(*Expression),
+			Expression:  mapper(ast, ast.Expression, context).(*Expression),
 			ParentNode:  parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	}
 	return mapper(parent, &Return{
 		BaseASTNode: ast.BaseASTNode,
 		ParentNode:  parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *Return) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *Return) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	if ast.HasExpression() {
-		mapper(ast, ast.Expression)
+		mapper(ast, ast.Expression, context)
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
 func (ast *Return) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_RETURN }
+
+//
+
+func (ast *Return) BuildFlowGraph(builder cfg.CFGBuilder) {
+	builder.AddSucc(ast)
+	builder.UpdatePrev([]generic_ast.NormalNode{ ast })
+	builder.AddSucc(builder.Exit())
+	builder.UpdatePrev(nil)
+}

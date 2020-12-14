@@ -52,22 +52,22 @@ func (ast *Typename) GetChildren() []generic_ast.TraversableNode {
 
 ////
 
-func (ast *Typename) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Typename) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	// TODO
 	return ast
 }
 
-func (ast *Typename) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *Typename) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	// TODO
-	mapper(ast, ast.Expr)
-	mapper(parent, ast)
+	mapper(ast, ast.Expr, context)
+	mapper(parent, ast, context)
 }
 
 func (ast *Typename) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_INTROSPECTION
 }
 
-func (ast *Typename) Body() hindley_milner.Expression {
+func (ast *Typename) Body() generic_ast.Expression {
 	return ast.Expr
 }
 
@@ -144,11 +144,11 @@ func (ast *Typename) OnTypeReturned(t hindley_milner.Type) {
 		ParentNode:  nil,
 	}
 
-	newAST.Visit(newAST, func(parent hindley_milner.Expression, e hindley_milner.Expression) hindley_milner.Expression {
+	newAST.Visit(newAST, func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) generic_ast.Expression {
 		node := e.(generic_ast.TraversableNode)
 		node.OverrideParent(parent.(interface{}).(generic_ast.TraversableNode))
 		return e
-	})
+	}, generic_ast.NewEmptyVisitorContext())
 
 	expr.LogicalOperation = newAST
 }

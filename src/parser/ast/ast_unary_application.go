@@ -77,53 +77,53 @@ func (ast *UnaryApplication) Print(c *context.ParsingContext) string {
 
 ////
 
-func (ast *UnaryApplication) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *UnaryApplication) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	if ast.IsIndex() {
 		args := []*Expression{}
 		for _, arg := range ast.Arguments {
-			args = append(args, mapper(ast, arg).(*Expression))
+			args = append(args, mapper(ast, arg, context).(*Expression))
 		}
 		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
 			Target:      ast.Target,
 			Arguments:   args,
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	} else if ast.IsApplication() {
 		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
-			Index: mapper(ast, ast.Index).(*Index),
+			Index: mapper(ast, ast.Index, context).(*Index),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	}
 	panic("Invalid UnaryApplication operation type")
 }
 
-func (ast *UnaryApplication) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *UnaryApplication) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	if ast.IsIndex() {
-		mapper(ast, ast.Index)
+		mapper(ast, ast.Index, context)
 	} else if ast.IsApplication() {
 		for _, arg := range ast.Arguments {
-			mapper(ast, arg)
+			mapper(ast, arg, context)
 		}
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
-func (ast *UnaryApplication) Fn() hindley_milner.Expression {
+func (ast *UnaryApplication) Fn() generic_ast.Expression {
 	return &VarName{
 		BaseASTNode: ast.BaseASTNode,
 		name: *ast.Target,
 	}
 }
 
-func (ast *UnaryApplication) Body() hindley_milner.Expression {
+func (ast *UnaryApplication) Body() generic_ast.Expression {
 	if ast.IsIndex() {
 		return ast.Index
 	}
 	if len(ast.Arguments) == 0 {
 		return hindley_milner.Batch{
-			Exp: []hindley_milner.Expression{
+			Exp: []generic_ast.Expression{
 				hindley_milner.EmbeddedTypeExpr{
 					GetType: func() *hindley_milner.Scheme {
 						return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
@@ -132,7 +132,7 @@ func (ast *UnaryApplication) Body() hindley_milner.Expression {
 			},
 		}
 	}
-	args := []hindley_milner.Expression{}
+	args := []generic_ast.Expression{}
 	for _, arg := range ast.Arguments {
 		args = append(args, arg)
 	}

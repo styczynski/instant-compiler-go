@@ -58,41 +58,41 @@ func (ast *Comparison) Print(c *context.ParsingContext) string {
 
 ////
 
-func (ast *Comparison) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Comparison) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	next := ast.Next
 	if ast.HasNext() {
-		next = mapper(ast, ast.Next).(*Comparison)
+		next = mapper(ast, ast.Next, context).(*Comparison)
 	}
 	return mapper(parent, &Comparison{
 		BaseASTNode: ast.BaseASTNode,
-		Addition:    mapper(ast, ast.Addition).(*Addition),
+		Addition:    mapper(ast, ast.Addition, context).(*Addition),
 		Op:          ast.Op,
 		Next:        next,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *Comparison) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Addition)
+func (ast *Comparison) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Addition, context)
 	if ast.HasNext() {
-		mapper(ast, ast.Next)
+		mapper(ast, ast.Next, context)
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
-func (ast *Comparison) Fn() hindley_milner.Expression {
+func (ast *Comparison) Fn() generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
 		name: ast.Op,
 	}
 }
 
-func (ast *Comparison) Body() hindley_milner.Expression {
+func (ast *Comparison) Body() generic_ast.Expression {
 	if !ast.HasNext() {
 		return ast.Addition
 	}
 	return hindley_milner.Batch{
-		Exp: []hindley_milner.Expression{
+		Exp: []generic_ast.Expression{
 			ast.Addition,
 			ast.Next,
 		},

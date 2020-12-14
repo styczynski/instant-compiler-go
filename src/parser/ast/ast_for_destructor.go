@@ -52,30 +52,30 @@ func (ast *ForDestructor) Print(c *context.ParsingContext) string {
 ////
 
 
-func (ast *ForDestructor) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *ForDestructor) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &ForDestructor{
 		BaseASTNode: ast.BaseASTNode,
 		ElementVar:  ast.ElementVar,
-		Target:      mapper(ast, ast.Target).(*Expression),
+		Target:      mapper(ast, ast.Target, context).(*Expression),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *ForDestructor) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Target)
-	mapper(parent, ast)
+func (ast *ForDestructor) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Target, context)
+	mapper(parent, ast, context)
 }
 
-func (ast *ForDestructor) Fn() hindley_milner.Expression {
+func (ast *ForDestructor) Fn() generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
 		name: "[_]",
 	}
 }
 
-func (ast *ForDestructor) Body() hindley_milner.Expression {
+func (ast *ForDestructor) Body() generic_ast.Expression {
 	return hindley_milner.Batch{
-		Exp: []hindley_milner.Expression{
+		Exp: []generic_ast.Expression{
 			ast.Target,
 		},
 	}

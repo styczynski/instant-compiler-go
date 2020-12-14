@@ -56,21 +56,21 @@ func (ast *Declaration) Print(c *context.ParsingContext) string {
 
 //////
 
-func (ast *Declaration) Body() hindley_milner.Expression {
+func (ast *Declaration) Body() generic_ast.Expression {
 	return ast
 }
 
-func (ast *Declaration) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Declaration) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Declaration{
 		BaseASTNode: ast.BaseASTNode,
 		DeclarationType: ast.DeclarationType,
 		Items: ast.Items,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}).(*Declaration)
+	}, context).(*Declaration)
 }
 
-func (ast *Declaration) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(parent, ast)
+func (ast *Declaration) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(parent, ast, context)
 }
 
 func (ast *Declaration) ExpressionType() hindley_milner.ExpressionType {
@@ -87,8 +87,8 @@ func (ast *Declaration) Var() hindley_milner.NameGroup {
 	return hindley_milner.NamesWithTypes(names, types)
 }
 
-func (ast *Declaration) Def() hindley_milner.Expression {
-	defs := []hindley_milner.Expression{}
+func (ast *Declaration) Def() generic_ast.Expression {
+	defs := []generic_ast.Expression{}
 	for _, item := range ast.Items {
 		defs = append(defs, item)
 	}

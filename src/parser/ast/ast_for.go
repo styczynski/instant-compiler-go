@@ -53,14 +53,14 @@ func (ast *For) Print(c *context.ParsingContext) string {
 
 ///
 
-func (ast *For) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *For) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	// TODO
 	return ast
 }
-func (ast *For) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Destructor)
-	mapper(ast, ast.Do)
-	mapper(parent, ast)
+func (ast *For) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Destructor, context)
+	mapper(ast, ast.Do, context)
+	mapper(parent, ast, context)
 }
 
 func (ast *For) Var() hindley_milner.NameGroup {
@@ -69,12 +69,12 @@ func (ast *For) Var() hindley_milner.NameGroup {
 	return hindley_milner.NamesWithTypes([]string{ ast.Destructor.ElementVar }, types)
 }
 
-func (ast *For) Def() hindley_milner.Expression {
+func (ast *For) Def() generic_ast.Expression {
 	return ast.Destructor
 }
 
-func (ast *For) Body() hindley_milner.Expression {
-	return hindley_milner.Batch{Exp: []hindley_milner.Expression{
+func (ast *For) Body() generic_ast.Expression {
+	return hindley_milner.Batch{Exp: []generic_ast.Expression{
 		ast.Do,
 	}}
 }

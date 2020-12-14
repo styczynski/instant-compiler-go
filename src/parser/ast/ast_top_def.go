@@ -5,6 +5,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -81,33 +82,33 @@ func (ast *TopDef) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_OPAQUE_BLOCK
 }
 
-func (ast *TopDef) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *TopDef) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	if ast.IsFunction() {
 		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
-			Function:    mapper(ast, ast.Function).(*FnDef),
+			Function:    mapper(ast, ast.Function, context).(*FnDef),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	} else if ast.IsClass() {
 		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
-			Class:    mapper(ast, ast.Class).(*Class),
+			Class:    mapper(ast, ast.Class, context).(*Class),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	} else {
 		panic("Invalid TopDef type.")
 	}
 }
 
-func (ast *TopDef) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *TopDef) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	if ast.IsFunction() {
-		mapper(ast, ast.Function)
+		mapper(ast, ast.Function, context)
 	} else if ast.IsClass() {
-		mapper(ast, ast.Class)
+		mapper(ast, ast.Class, context)
 	} else {
 		panic("Invalid TopDef type.")
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
 func (ast *TopDef) GetContents() hindley_milner.Batch {
@@ -120,16 +121,24 @@ func (ast *TopDef) GetContents() hindley_milner.Batch {
 	}
 }
 
-func (ast *TopDef) Expressions() []hindley_milner.Expression {
+func (ast *TopDef) Expressions() []generic_ast.Expression {
 	if ast.IsFunction() {
-		return []hindley_milner.Expression{ ast.Function, }
+		return []generic_ast.Expression{ ast.Function, }
 	} else if ast.IsClass() {
-		return []hindley_milner.Expression{ ast.Class, }
+		return []generic_ast.Expression{ ast.Class, }
 	} else {
 		panic("Invalid TopDef type.")
 	}
 }
 
-func (ast *TopDef) Body() hindley_milner.Expression {
+func (ast *TopDef) Body() generic_ast.Expression {
 	panic(fmt.Errorf("Batch Body() method cannot be called."))
+}
+
+//
+
+func (ast *TopDef) BuildFlowGraph(builder cfg.CFGBuilder) {
+	if ast.IsFunction() {
+		builder.BuildNode(ast.Function)
+	}
 }

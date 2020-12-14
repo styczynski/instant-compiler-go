@@ -1,7 +1,8 @@
 package flow_analysis
 
 import (
-	"github.com/alecthomas/repr"
+	"fmt"
+	"os"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -40,13 +41,23 @@ func (p LatteAnalyzedProgramPromiseChan) Resolve() LatteAnalyzedProgram {
 
 func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise parser.LatteParsedProgramPromise, c *context.ParsingContext) LatteAnalyzedProgramPromise {
 	r := make(chan LatteAnalyzedProgram)
+	ctx := c.Copy()
 	go func() {
 		defer close(r)
 		program := programPromise.Resolve()
+		if program.Context() != nil {
+			ctx = program.Context()
+		}
+		if program.ParsingError() != nil {
+			fmt.Print(program.ParsingError().CliMessage())
+			os.Exit(1)
+		}
 		ast := program.AST()
 
 		cfgGraph := cfg.FromStmts([]generic_ast.NormalNode{ ast })
-		repr.Print(cfgGraph)
+		fmt.Printf("\n\nENTIRE GRAPH:\n\n")
+		fmt.Print(cfgGraph.PrintCFG(ctx))
+		os.Exit(0)
 
 		r <- LatteAnalyzedProgram{
 			Program:  program,
@@ -60,6 +71,8 @@ func (fa *LatteFlowAnalyzer) Analyze(programs []parser.LatteParsedProgramPromise
 	ret := []LatteAnalyzedProgramPromise{}
 	for _, programPromise := range programs {
 		ret = append(ret, fa.analyzerAsync(programPromise, c))
+		// TODO: Remove
+		ret[len(ret)-1].Resolve()
 	}
 	return ret
 }

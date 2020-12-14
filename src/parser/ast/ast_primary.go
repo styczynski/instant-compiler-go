@@ -107,19 +107,19 @@ func (ast *Primary) Name() hindley_milner.NameGroup     {
 	}
 	panic("Cannot get name for Primary expression which is not a variable")
 }
-func (ast *Primary) Body() hindley_milner.Expression {
+func (ast *Primary) Body() generic_ast.Expression {
 	if ast.IsSubexpression() {
 		return ast.SubExpression
 	}
 	return ast
 }
-func (ast *Primary) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Primary) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	// TODO
 	return ast
 }
-func (ast *Primary) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
+func (ast *Primary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
 	// TODO
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 func (ast *Primary) Type() hindley_milner.Type {
 	if ast.IsVariable() {

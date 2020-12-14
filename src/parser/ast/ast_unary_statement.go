@@ -48,29 +48,29 @@ func (ast *UnaryStatement) Print(c *context.ParsingContext) string {
 
 ///
 
-func (ast *UnaryStatement) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *UnaryStatement) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &UnaryStatement{
 		BaseASTNode: ast.BaseASTNode,
 		TargetName: ast.TargetName,
 		Operation: ast.Operation,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	})
+	}, context)
 }
 
-func (ast *UnaryStatement) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(parent, ast)
+func (ast *UnaryStatement) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(parent, ast, context)
 }
 
-func (ast *UnaryStatement) Fn() hindley_milner.Expression {
+func (ast *UnaryStatement) Fn() generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
 		name: ast.Operation,
 	}
 }
 
-func (ast *UnaryStatement) Body() hindley_milner.Expression {
+func (ast *UnaryStatement) Body() generic_ast.Expression {
 	return hindley_milner.Batch{
-		Exp: []hindley_milner.Expression{
+		Exp: []generic_ast.Expression{
 			&VarName{
 				BaseASTNode: ast.BaseASTNode,
 				name: *ast.TargetName,

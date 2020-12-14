@@ -64,44 +64,44 @@ func (ast *Index) Print(c *context.ParsingContext) string {
 ////
 
 
-func (ast *Index) Map(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) hindley_milner.Expression {
+func (ast *Index) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	if ast.HasIndexingExpr() {
 		return mapper(parent, &Index{
 			BaseASTNode:      ast.BaseASTNode,
-			Primary: mapper(ast, ast.Primary).(*Primary),
-			IndexingExpr: mapper(ast, ast.IndexingExpr).(*Expression),
+			Primary: mapper(ast, ast.Primary, context).(*Primary),
+			IndexingExpr: mapper(ast, ast.IndexingExpr, context).(*Expression),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	} else {
 		return mapper(parent, &Index{
 			BaseASTNode:      ast.BaseASTNode,
-			Primary: mapper(ast, ast.Primary).(*Primary),
+			Primary: mapper(ast, ast.Primary, context).(*Primary),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		})
+		}, context)
 	}
 }
 
-func (ast *Index) Visit(parent hindley_milner.Expression, mapper hindley_milner.ExpressionMapper) {
-	mapper(ast, ast.Primary)
+func (ast *Index) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Primary, context)
 	if ast.HasIndexingExpr() {
-		mapper(ast, ast.IndexingExpr)
+		mapper(ast, ast.IndexingExpr, context)
 	}
-	mapper(parent, ast)
+	mapper(parent, ast, context)
 }
 
-func (ast *Index) Fn() hindley_milner.Expression {
+func (ast *Index) Fn() generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
 		name: "[]",
 	}
 }
 
-func (ast *Index) Body() hindley_milner.Expression {
+func (ast *Index) Body() generic_ast.Expression {
 	if !ast.HasIndexingExpr() {
 		return ast.Primary
 	}
 	return hindley_milner.Batch{
-		Exp: []hindley_milner.Expression{
+		Exp: []generic_ast.Expression{
 			ast.Primary,
 			ast.IndexingExpr,
 		},
