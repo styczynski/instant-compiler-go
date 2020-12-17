@@ -84,6 +84,7 @@ func (cfg *CFG) GetAllEndGateways() []generic_ast.NormalNode {
 		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
 			return
 		}
+		visitedIDs[block.ID] = struct{}{}
 		for _, child := range block.succs {
 			if child == cfg.CodeEnd {
 				gateways = append(gateways, block.stmt)

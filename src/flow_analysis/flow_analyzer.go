@@ -1,6 +1,8 @@
 package flow_analysis
 
 import (
+	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -112,6 +114,13 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 			}
 			return
 		}
+		if program.Program.ParsingError() != nil {
+			r <- LatteAnalyzedProgram{
+				Program:  program,
+				filename: program.Filename(),
+			}
+			return
+		}
 		if program.Program.Context() != nil {
 			ctx = program.Program.Context()
 		}
@@ -132,18 +141,18 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				flow := cfg.CreateFlowAnalysis(ast)
 
 
-				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				//fmt.Print(flow.Print(ctx))
-				//fmt.Printf("\nPerform fold()\n")
+				fmt.Printf("\n\nENTIRE GRAPH:\n\n")
+				fmt.Print(flow.Print(ctx))
+				fmt.Printf("\nPerform fold()\n")
 				flow.ConstFold(c)
 				flow.Rebuild()
 				ast = flow.Output()
 
-				//fmt.Printf("Fold done.\n")
-				//fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
-				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				//fmt.Print(flow.Print(ctx))
-				//fmt.Printf("Yeah.\n")
+				fmt.Printf("Fold done.\n")
+				fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
+				fmt.Printf("\n\nENTIRE GRAPH:\n\n")
+				fmt.Print(flow.Print(ctx))
+				fmt.Printf("Yeah.\n")
 
 				customErr := nodeForAnalysis.OnFlowAnalysis(flow)
 				if customErr != nil {

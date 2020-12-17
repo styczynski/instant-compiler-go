@@ -225,16 +225,16 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			errorName: errorName,
 		}
 	} else if reccurentTypeError, ok := err.(hindley_milner.UnificationRecurrentTypeError); ok {
-		src := reccurentTypeError.Source().(interface{}).(generic_ast.NodeWithPosition)
+		//src := reccurentTypeError.Source().(interface{}).(generic_ast.NodeWithPosition)
 
 		causeInfo := ""
 		errorName := "Recurrent type"
 		message, textMessage := c.FormatParsingError(
 			errorName,
 			undef.Error(),
-			src.Begin().Line,
-			src.Begin().Column,
-			src.Begin().Filename,
+			0, //src.Begin().Line,
+			0, //src.Begin().Column,
+			"", //src.Begin().Filename,
 			"",
 			fmt.Sprintf("%s%s", reccurentTypeError.Error(), causeInfo),
 		)

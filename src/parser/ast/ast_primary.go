@@ -61,7 +61,37 @@ func (a *Primary) Add(b *Primary, Op string) *Primary {
 
 
 func (a *Primary) Compare(b *Primary, Op string) *Primary {
-	if a.IsInt() && b.IsInt() {
+	if a.IsString() && b.IsString() {
+		v := false
+		if Op == ">=" {
+			v = *a.String >= *b.String
+		} else if Op == "<=" {
+			v = *a.String <= *b.String
+		} else if Op == "==" {
+			v = *a.String == *b.String
+		} else if Op == "!=" {
+			v = *a.String != *b.String
+		} else if Op == "<" {
+			v = *a.String < *b.String
+		} else if Op == ">" {
+			v = *a.String > *b.String
+		} else {
+			panic("Invalid comaprison type")
+		}
+		return &Primary{
+			BaseASTNode:   a.BaseASTNode,
+			Bool: &v,
+		}
+	} else if a.IsBool() && b.IsBool() {
+		v := false
+		if Op == "==" {
+			v = *a.Bool == *b.Bool
+		}
+		return &Primary{
+			BaseASTNode:   a.BaseASTNode,
+			Bool: &v,
+		}
+	} else if a.IsInt() && b.IsInt() {
 		v := false
 		if Op == ">=" {
 			v = *a.Int >= *b.Int
@@ -112,6 +142,19 @@ func (ast *Primary) Parent() generic_ast.TraversableNode {
 
 func (ast *Primary) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
+
+	// Normalize
+	if ast.IsVariable() {
+		if *ast.Variable == "true" {
+			ast.Variable = nil
+			v := true
+			ast.Bool = &v
+		} else if *ast.Variable == "false" {
+			ast.Variable = nil
+			v := false
+			ast.Bool = &v
+		}
+	}
 }
 
 func (ast *Primary) Begin() lexer.Position {

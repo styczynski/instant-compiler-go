@@ -168,8 +168,6 @@ func (ast *UnaryApplication) RenameVariables(subst cfg.VariableSubstitution) {
 func (ast *UnaryApplication) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
 	if ast.IsApplication() {
 		vars.Add(cfg.NewVariable(*ast.Target, nil))
-	}
-	if ast.IsApplication() {
 		for _, arg := range ast.Arguments {
 			vars.Insert(cfg.GetAllUsagesVariables(arg))
 		}

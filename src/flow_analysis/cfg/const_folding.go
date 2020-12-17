@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -61,6 +62,7 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) {
 	flow.Reaching()
 
  	for true {
+ 		fmt.Printf("fold() iterate\n")
  		change := false
 
 		// Firstly, run const optimization on each node
@@ -96,8 +98,12 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) {
 					if constExtractable, ok := node.(generic_ast.ConstExtractableNode); ok {
 						varConst, isConst := constExtractable.ExtractConst()
 						if isConst {
-							generic_ast.ReplaceExpressionRecursively(block, variable.Value(), varConst)
-							change = true
+							val := variable.Value()
+							if val == nil || (reflect.ValueOf(val).Kind() == reflect.Ptr && reflect.ValueOf(val).IsNil()) {
+								// Do nothing
+							} else if val != varConst {
+								generic_ast.ReplaceExpressionRecursively(block, val, varConst)
+							}
 						}
 					}
 				}
