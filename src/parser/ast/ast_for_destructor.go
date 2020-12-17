@@ -56,12 +56,12 @@ func (ast *ForDestructor) Map(parent generic_ast.Expression, mapper generic_ast.
 	return mapper(parent, &ForDestructor{
 		BaseASTNode: ast.BaseASTNode,
 		ElementVar:  ast.ElementVar,
-		Target:      mapper(ast, ast.Target, context).(*Expression),
+		Target:      mapper(ast, ast.Target, context, false).(*Expression),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *ForDestructor) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *ForDestructor) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Target, context)
 	mapper(parent, ast, context)
 }

@@ -68,10 +68,10 @@ func (ast *Class) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 		Name: ast.Name,
 		Fields: ast.Fields,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context).(*Class)
+	}, context, true).(*Class)
 }
 
-func (ast *Class) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Class) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(parent, ast, context)
 }
 

@@ -3,6 +3,7 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -66,16 +67,34 @@ func (ast *DeclarationItem) Map(parent generic_ast.Expression, mapper generic_as
 	return mapper(parent, &DeclarationItem{
 		BaseASTNode: ast.BaseASTNode,
 		Name:        ast.Name,
-		Initializer: mapper(ast, ast.Initializer, context).(*Expression),
+		Initializer: mapper(ast, ast.Initializer, context, false).(*Expression),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *DeclarationItem) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *DeclarationItem) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Initializer, context)
 	mapper(parent, ast, context)
 }
 
 func (ast *DeclarationItem) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_PROXY
+}
+
+//
+
+func (ast *DeclarationItem) GetDeclaredVariables() cfg.VariableSet {
+	return cfg.NewVariableSet(cfg.NewVariable(ast.Name, ast.Initializer))
+}
+
+func (ast *DeclarationItem) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+	if !ast.HasInitializer() {
+		return cfg.NewVariableSet()
+	}
+	return cfg.GetAllUsagesVariables(ast.Initializer)
+}
+
+
+func (ast *DeclarationItem) RenameVariables(subst cfg.VariableSubstitution) {
+	ast.Name = subst.Replace(ast.Name)
 }

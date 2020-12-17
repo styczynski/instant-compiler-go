@@ -3,6 +3,7 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -53,13 +54,13 @@ func (ast *While) GetChildren() []generic_ast.TraversableNode {
 func (ast *While) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &While{
 		BaseASTNode: ast.BaseASTNode,
-		Condition: mapper(ast, ast.Condition, context).(*Expression),
-		Do: mapper(ast, ast.Do, context).(*Statement),
+		Condition: mapper(ast, ast.Condition, context, false).(*Expression),
+		Do: mapper(ast, ast.Do, context, false).(*Statement),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *While) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *While) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Condition, context)
 	mapper(ast, ast.Do, context)
 	mapper(parent, ast, context)
@@ -85,4 +86,34 @@ func (ast *While) Body() generic_ast.Expression {
 
 func (ast *While) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_APPLICATION
+}
+
+///
+
+func (ast *While) BuildFlowGraph(builder cfg.CFGBuilder) {
+	// flows as such (range same w/o init & post):
+	// previous -> [ init -> ] for -> body -> [ post -> ] for -> next
+
+	var post generic_ast.NormalNode = ast
+
+	builder.AddSucc(ast)
+
+	builder.UpdatePrev([]generic_ast.NormalNode{ ast })
+	builder.BuildNode(ast.Do)
+
+	builder.AddSucc(post)
+
+	ctrlExits := []generic_ast.NormalNode{ ast }
+
+	// handle any branches; if no label or for me: handle and remove from branches.
+	for i := 0; i < len(builder.Branches()); i++ {
+		//br := builder.Branches()[i]
+		// Deal with continue/break here if such thing will be implemented
+	}
+
+	builder.UpdatePrev(ctrlExits) // for stmt and any appropriate break statements
+}
+
+func (ast *While) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+	return cfg.GetAllVariables(ast.Condition)
 }

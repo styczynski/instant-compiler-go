@@ -3,6 +3,7 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -54,10 +55,10 @@ func (ast *UnaryStatement) Map(parent generic_ast.Expression, mapper generic_ast
 		TargetName: ast.TargetName,
 		Operation: ast.Operation,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *UnaryStatement) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *UnaryStatement) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(parent, ast, context)
 }
 
@@ -81,4 +82,20 @@ func (ast *UnaryStatement) Body() generic_ast.Expression {
 
 func (ast *UnaryStatement) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_APPLICATION
+}
+
+///
+
+func (ast *UnaryStatement) GetAssignedVariables(wantMembers bool) cfg.VariableSet {
+	return cfg.NewVariableSet(cfg.NewVariable(*ast.TargetName, nil))
+}
+
+func (ast *UnaryStatement) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+	vars.Add(cfg.NewVariable(*ast.TargetName, nil))
+	return vars
+}
+
+func (ast *UnaryStatement) RenameVariables(subst cfg.VariableSubstitution) {
+	v := subst.Replace(*ast.TargetName)
+	ast.TargetName = &v
 }

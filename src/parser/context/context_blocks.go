@@ -14,6 +14,7 @@ type SelectionBlock interface {
 	Begin() (int, int)
 	End() (int, int)
 	Describe(src SelectionBlock, id int, mappingID func(SelectionBlock) int) []string
+	GetID() int
 }
 
 type SelectionBlocks []SelectionBlock
@@ -49,11 +50,9 @@ func (c *ParsingContext) PrintSelectionBlocksList(inputBlocks SelectionBlocks) s
 	blocks := inputBlocks
 
 	sort.Sort(blocks)
-	freshBlockID := 1
 	blockIDs := map[string]int{}
 	for _, block := range blocks {
-		blockIDs[hashBlock(block)] = freshBlockID
-		freshBlockID++
+		blockIDs[hashBlock(block)] = block.GetID()
 	}
 
 	output := []string{}
@@ -101,14 +100,12 @@ func (c *ParsingContext) PrintSelectionBlocks(inputBlocks SelectionBlocks) strin
 		color.BgYellow,
 	}
 
-	freshBlockID := 1
 	blockIDs := map[string]int{}
 	for _, block := range blocks {
-		blockIDs[hashBlock(block)] = freshBlockID
-		freshBlockID++
+		blockIDs[hashBlock(block)] = block.GetID()
 	}
 
-	lineWidth := 40
+	lineWidth := 60
 	for scanner.Scan() {
 		//letterBuf := []rune{}
 		lineOut := ""
@@ -171,7 +168,9 @@ func (c *ParsingContext) PrintSelectionBlocks(inputBlocks SelectionBlocks) strin
 		}
 		lineContent := fmt.Sprintf("%5d | %s", curLineNo, lineOut)
 		if len(linePostfix) > 0 {
-			lineContent += strings.Repeat(" ", lineWidth-len(originalLine))
+			if lineWidth-len(originalLine) > 0 {
+				lineContent += strings.Repeat(" ", lineWidth-len(originalLine))
+			}
 		}
 		lines = append(lines, fmt.Sprintf("%s%s", lineContent, linePostfix))
 		//for i, letter := range originalLine {

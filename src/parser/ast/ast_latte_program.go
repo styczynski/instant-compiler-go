@@ -74,16 +74,16 @@ func (ast *LatteProgram) Body() generic_ast.Expression {
 func (ast *LatteProgram) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	mappedDef := []*TopDef{}
 	for _, def := range ast.Definitions {
-		mappedDef = append(mappedDef, mapper(ast, def, context).(*TopDef))
+		mappedDef = append(mappedDef, mapper(ast, def, context, false).(*TopDef))
 	}
 	return mapper(parent, &LatteProgram{
 		BaseASTNode: ast.BaseASTNode,
 		Definitions: mappedDef,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context).(*LatteProgram)
+	}, context, true).(*LatteProgram)
 }
 
-func (ast *LatteProgram) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *LatteProgram) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	for _, def := range ast.Definitions {
 		mapper(ast, def, context)
 	}

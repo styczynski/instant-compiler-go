@@ -19,5 +19,6 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/cli/v2 v2.3.0 // indirect
+	github.com/willf/bitset v1.1.11
 	github.com/xtgo/set v1.0.0
 )

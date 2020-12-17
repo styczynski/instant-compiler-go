@@ -194,53 +194,53 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 			return
 		}
 
-		var parentSetterVisitor generic_ast.ExpressionMapper
+		var parentSetterVisitor generic_ast.ExpressionVisitor
 		visitedNodes := map[generic_ast.Expression]interface{}{}
-		parentSetterVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) generic_ast.Expression {
+		parentSetterVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
 			if _, ok := visitedNodes[e]; ok {
-				return e
+				return
 			}
 			visitedNodes[e] = true
 			node, ok := e.(generic_ast.TraversableNode)
 			if !ok {
-				return e
+				return
 			}
 			if parent == e {
-				return e
+				return
 			}
 			if node.Parent() != nil {
 				// Prevent infinite loop
-				return e
+				return
 			}
 			node.OverrideParent(parent.(interface{}).(generic_ast.TraversableNode))
 
 			e.Visit(parent, parentSetterVisitor, generic_ast.NewEmptyVisitorContext())
-			return e
+			return
 		}
 
-		var nodeSyntaxValidationVisitor generic_ast.ExpressionMapper
+		var nodeSyntaxValidationVisitor generic_ast.ExpressionVisitor
 		var syntaxValidationError generic_ast.NodeError = nil
-		nodeSyntaxValidationVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) generic_ast.Expression {
+		nodeSyntaxValidationVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
 			if _, ok := visitedNodes[e]; ok {
-				return e
+				return
 			}
 			visitedNodes[e] = true
 			node, ok := e.(generic_ast.TraversableNode)
 			if !ok {
-				return e
+				return
 			}
 			if parent == e {
-				return e
+				return
 			}
 			if nodeWithValidation, ok := node.(generic_ast.NodeWithSyntaxValidation); ok {
 				validationError := nodeWithValidation.Validate()
 				if validationError != nil {
 					syntaxValidationError = validationError
-					return e
+					return
 				}
 			}
 			e.Visit(parent, nodeSyntaxValidationVisitor, generic_ast.NewEmptyVisitorContext())
-			return e
+			return
 		}
 
 		output.Visit(output, parentSetterVisitor, generic_ast.NewEmptyVisitorContext())

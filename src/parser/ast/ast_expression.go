@@ -16,6 +16,13 @@ type Expression struct {
 	ParentNode generic_ast.TraversableNode
 }
 
+func (ast *Expression) ExtractConst() (generic_ast.TraversableNode, bool) {
+	if ast.IsLogicalOperation() {
+		return ast.LogicalOperation.ExtractConst()
+	}
+	return nil, false
+}
+
 func (ast *Expression) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
@@ -95,26 +102,26 @@ func (ast *Expression) Map(parent generic_ast.Expression, mapper generic_ast.Exp
 	if ast.IsLogicalOperation() {
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
-			LogicalOperation: mapper(ast, ast.LogicalOperation, context).(*LogicalOperation),
+			LogicalOperation: mapper(ast, ast.LogicalOperation, context, false).(*LogicalOperation),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	} else if ast.IsNewType() {
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			NewType: ast.NewType,
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	} else if ast.IsTypename() {
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			Typename: ast.Typename,
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	}
 	panic("Invalid Expression type")
 }
 
-func (ast *Expression) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Expression) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	if ast.IsLogicalOperation() {
 		mapper(ast, ast.LogicalOperation, context)
 	} else if ast.IsNewType() {

@@ -3,11 +3,11 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
-
 
 type Primary struct {
 	generic_ast.BaseASTNode
@@ -17,6 +17,93 @@ type Primary struct {
 	Bool          *bool       `| @( "true" | "false" )`
 	SubExpression *Expression `| ( "(" @@ ")" )`
 	ParentNode generic_ast.TraversableNode
+}
+
+func (ast *Primary) ExtractConst() (generic_ast.TraversableNode, bool) {
+	if ast.IsSubexpression() {
+		return ast.SubExpression.ExtractConst()
+	} else if ast.IsVariable() {
+		return nil, false
+	}
+	return ast, true
+}
+
+// Basic arithmetic functions
+
+func (a *Primary) Add(b *Primary, Op string) *Primary {
+	if a.IsInt() && b.IsInt() {
+		v := int64(0)
+		if Op == "+" {
+			v = *a.Int + *b.Int
+		} else if Op == "-" {
+			v = *a.Int - *b.Int
+		} else {
+			panic("Invalid add operation")
+		}
+		return &Primary{
+			BaseASTNode:   a.BaseASTNode,
+			Int: &v,
+		}
+	} else if a.IsString() && b.IsString() {
+		v := ""
+		if Op == "+" {
+			v = *a.String + *b.String
+		} else {
+			panic("Invalid add operation")
+		}
+		return &Primary{
+			BaseASTNode:   a.BaseASTNode,
+			String: &v,
+		}
+	}
+	panic("Invalid addition")
+}
+
+
+func (a *Primary) Compare(b *Primary, Op string) *Primary {
+	if a.IsInt() && b.IsInt() {
+		v := false
+		if Op == ">=" {
+			v = *a.Int >= *b.Int
+		} else if Op == "<=" {
+			v = *a.Int <= *b.Int
+		} else if Op == "==" {
+			v = *a.Int == *b.Int
+		} else if Op == "!=" {
+			v = *a.Int != *b.Int
+		} else if Op == "<" {
+			v = *a.Int < *b.Int
+		} else if Op == ">" {
+			v = *a.Int > *b.Int
+		} else {
+			panic("Invalid comaprison type")
+		}
+		return &Primary{
+			BaseASTNode:   a.BaseASTNode,
+			Bool: &v,
+		}
+	}
+	panic("Invalid addition")
+}
+
+func (a *Primary) Mul(b *Primary, Op string) *Primary {
+	if a.IsInt() && b.IsInt() {
+		v := int64(0)
+		if Op == "/" {
+			v = *a.Int / *b.Int
+		} else if Op == "*" {
+			v = *a.Int * *b.Int
+		} else if Op == "%" {
+			v = *a.Int % *b.Int
+		} else {
+			panic("Invalid multiplication type")
+		}
+		return &Primary{
+			BaseASTNode:   a.BaseASTNode,
+			Int: &v,
+		}
+	}
+	panic("Invalid addition")
 }
 
 func (ast *Primary) Parent() generic_ast.TraversableNode {
@@ -92,10 +179,11 @@ func (ast *Primary) Print(c *context.ParsingContext) string {
 	} else if ast.IsString() {
 		return printNode(c, ast, "\"%s\"", *ast.String)
 	} else if ast.IsBool() {
-		return printNode(c, ast, "%b", *ast.Bool)
+		return printNode(c, ast, "%v", *ast.Bool)
 	} else if ast.IsSubexpression() {
 		return printNode(c, ast, "(%s)", ast.SubExpression.Print(c))
 	}
+	panic("Unvalid Expression value")
 	return "UNKNOWN"
 }
 
@@ -114,10 +202,24 @@ func (ast *Primary) Body() generic_ast.Expression {
 	return ast
 }
 func (ast *Primary) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	// TODO
-	return ast
+	if ast.IsSubexpression() {
+		return mapper(parent, &Primary{
+			BaseASTNode:   ast.BaseASTNode,
+			SubExpression: mapper(ast, ast.SubExpression, context, false).(*Expression),
+			ParentNode:    ast.ParentNode,
+		}, context, true)
+	}
+	return mapper(parent, &Primary{
+		BaseASTNode:   ast.BaseASTNode,
+		Variable:      ast.Variable,
+		Int:           ast.Int,
+		String:        ast.String,
+		Bool:          ast.Bool,
+		SubExpression: nil,
+		ParentNode:    ast.ParentNode,
+	}, context, true)
 }
-func (ast *Primary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Primary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	// TODO
 	mapper(parent, ast, context)
 }
@@ -142,3 +244,22 @@ func  (ast *Primary)  ExpressionType() hindley_milner.ExpressionType {
 	}
 	return hindley_milner.E_LITERAL
 }
+
+///
+
+func (ast *Primary) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+	if ast.IsVariable() {
+		return cfg.NewVariableSet(cfg.NewVariable(*ast.Variable, ast))
+	} else if ast.IsSubexpression() {
+		return vars
+	}
+	return cfg.NewVariableSet()
+}
+
+func (ast *Primary) RenameVariables(subst cfg.VariableSubstitution) {
+	if ast.IsVariable() {
+		v := subst.Replace(*ast.Variable)
+		ast.Variable = &v
+	}
+}
+

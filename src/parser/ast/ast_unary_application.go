@@ -5,6 +5,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -16,6 +17,13 @@ type UnaryApplication struct {
 	Arguments []*Expression   `"(" (@@ ("," @@)*)? ")" )`
 	Index *Index `| @@`
 	ParentNode generic_ast.TraversableNode
+}
+
+func (ast *UnaryApplication) ExtractConst() (generic_ast.TraversableNode, bool) {
+	if ast.IsIndex() {
+		return ast.Index.ExtractConst()
+	}
+	return nil, false
 }
 
 func (ast *UnaryApplication) Parent() generic_ast.TraversableNode {
@@ -72,34 +80,34 @@ func (ast *UnaryApplication) Print(c *context.ParsingContext) string {
 	} else if ast.IsIndex() {
 		return ast.Index.Print(c)
 	}
-	return "UNKNOWN"
+	panic("Unvalid UnaryApplication value")
 }
 
 ////
 
 func (ast *UnaryApplication) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	if ast.IsIndex() {
+	if ast.IsApplication() {
 		args := []*Expression{}
 		for _, arg := range ast.Arguments {
-			args = append(args, mapper(ast, arg, context).(*Expression))
+			args = append(args, mapper(ast, arg, context, false).(*Expression))
 		}
 		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
 			Target:      ast.Target,
 			Arguments:   args,
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
-	} else if ast.IsApplication() {
+		}, context, true)
+	} else if ast.IsIndex() {
 		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
-			Index: mapper(ast, ast.Index, context).(*Index),
+			Index: mapper(ast, ast.Index, context, false).(*Index),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	}
 	panic("Invalid UnaryApplication operation type")
 }
 
-func (ast *UnaryApplication) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *UnaryApplication) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	if ast.IsIndex() {
 		mapper(ast, ast.Index, context)
 	} else if ast.IsApplication() {
@@ -148,4 +156,25 @@ func (ast *UnaryApplication) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_APPLICATION
 }
 
+///
 
+func (ast *UnaryApplication) RenameVariables(subst cfg.VariableSubstitution) {
+	if ast.IsApplication() {
+		v := subst.Replace(*ast.Target)
+		ast.Target = &v
+	}
+}
+
+func (ast *UnaryApplication) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+	if ast.IsApplication() {
+		vars.Add(cfg.NewVariable(*ast.Target, nil))
+	}
+	if ast.IsApplication() {
+		for _, arg := range ast.Arguments {
+			vars.Insert(cfg.GetAllUsagesVariables(arg))
+		}
+	} else if ast.IsIndex() {
+		vars.Insert(cfg.GetAllUsagesVariables(ast.Index))
+	}
+	return vars
+}

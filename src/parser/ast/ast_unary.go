@@ -16,6 +16,13 @@ type Unary struct {
 	ParentNode generic_ast.TraversableNode
 }
 
+func (ast *Unary) ExtractConst() (generic_ast.TraversableNode, bool) {
+	if ast.IsUnaryApplication() {
+		return ast.UnaryApplication.ExtractConst()
+	}
+	return nil, false
+}
+
 func (ast *Unary) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
@@ -64,7 +71,7 @@ func (ast *Unary) Print(c *context.ParsingContext) string {
 	} else if ast.IsUnaryApplication() {
 		return ast.UnaryApplication.Print(c)
 	}
-	return "UNKNOWN"
+	panic("Unvalid Unary value")
 }
 
 ////
@@ -75,20 +82,20 @@ func (ast *Unary) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 		return mapper(parent, &Unary{
 			BaseASTNode:      ast.BaseASTNode,
 			Op:               ast.Op,
-			Unary:            mapper(ast, ast.Unary, context).(*Unary),
+			Unary:            mapper(ast, ast.Unary, context, false).(*Unary),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	} else if ast.IsUnaryApplication() {
 		return mapper(parent, &Unary{
 			BaseASTNode:      ast.BaseASTNode,
-			UnaryApplication: mapper(ast, ast.UnaryApplication, context).(*UnaryApplication),
+			UnaryApplication: mapper(ast, ast.UnaryApplication, context, false).(*UnaryApplication),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	}
 	panic("Invalid Unary operation type")
 }
 
-func (ast *Unary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Unary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	if ast.IsOperation() {
 		mapper(ast, ast.Unary, context)
 	} else if ast.IsUnaryApplication() {

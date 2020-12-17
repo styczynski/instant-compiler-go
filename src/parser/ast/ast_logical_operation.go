@@ -16,6 +16,13 @@ type LogicalOperation struct {
 	ParentNode generic_ast.TraversableNode
 }
 
+func (ast *LogicalOperation) ExtractConst() (generic_ast.TraversableNode, bool) {
+	if ast.HasNext() {
+		return nil, false
+	}
+	return ast.Equality.ExtractConst()
+}
+
 func (ast *LogicalOperation) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
@@ -60,18 +67,18 @@ func (ast *LogicalOperation) Print(c *context.ParsingContext) string {
 func (ast *LogicalOperation) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	next := ast.Next
 	if ast.HasNext() {
-		next = mapper(ast, ast.Next, context).(*LogicalOperation)
+		next = mapper(ast, ast.Next, context, false).(*LogicalOperation)
 	}
 	return mapper(parent, &LogicalOperation{
 		BaseASTNode: ast.BaseASTNode,
-		Equality:    mapper(ast, ast.Equality, context).(*Equality),
+		Equality:    mapper(ast, ast.Equality, context, false).(*Equality),
 		Op:          ast.Op,
 		Next:        next,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *LogicalOperation) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *LogicalOperation) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Equality, context)
 	if ast.HasNext() {
 		mapper(ast, ast.Next, context)

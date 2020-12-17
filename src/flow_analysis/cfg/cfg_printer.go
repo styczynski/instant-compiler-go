@@ -7,7 +7,11 @@ import (
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
-func (cfg *CFG) PrintCFG(c *context.ParsingContext) string {
+func (flow *FlowAnalysisImpl) Print(c *context.ParsingContext) string {
+	cfg := flow.Graph()
+	liveness := flow.Liveness()
+	reaching := flow.Reaching()
+
 	blocks := []context.SelectionBlock{}
 	i := 0
 
@@ -24,23 +28,26 @@ func (cfg *CFG) PrintCFG(c *context.ParsingContext) string {
 		}
 		for _, pred := range srcBlock.preds {
 			if pred != nil {
-				predID := mappingID(generic_ast.NewNormalNodeSelection(pred, describer))
+				predID := mappingID(generic_ast.NewNormalNodeSelection(pred, -1, describer))
 				items = append(items, fmt.Sprintf("<-%d", predID))
 			}
 		}
 		for _, succ := range srcBlock.succs {
 			if succ != nil {
-				predID := mappingID(generic_ast.NewNormalNodeSelection(succ, describer))
+				predID := mappingID(generic_ast.NewNormalNodeSelection(succ, -1, describer))
 				items = append(items, fmt.Sprintf("->%d", predID))
 			}
 		}
+		items = append(items, cfg.ReferencedVars(srcNode).Print())
+		items = append(items, liveness.BlockIn(srcBlock.stmt).String())
+		items = append(items, reaching.ReachedBlocks(srcNode).Print(cfg))
 		return items
 	}
 
 	for _, b := range cfg.blocks {
 		block := b
 		if block.stmt != nil {
-			blocks = append(blocks, generic_ast.NewNormalNodeSelection(block.stmt, describer))
+			blocks = append(blocks, generic_ast.NewNormalNodeSelection(block.stmt, block.ID, describer))
 			i++
 		}
 	}

@@ -196,13 +196,62 @@ func (ast *Statement) Body() generic_ast.Expression {
 	panic("Invalid Statement type")
 }
 
-func (ast *Statement) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	// TODO: Fix that to feed mapper(ast.Body()) back into AST!
-	mapper(ast, ast.Body(), context)
-	return mapper(parent, ast, context)
+func feedExpressionIntoStatement(node interface{}, base generic_ast.BaseASTNode) *Statement {
+	if block, ok := node.(*Block); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			BlockStatement: block,
+		}
+	} else if decl, ok := node.(*Declaration); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			Declaration: decl,
+		}
+	} else if assignment, ok := node.(*Assignment); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			Assignment: assignment,
+		}
+	} else if unaryStmt, ok := node.(*UnaryStatement); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			UnaryStatement: unaryStmt,
+		}
+	} else if returnStmt, ok := node.(*Return); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			Return: returnStmt,
+		}
+	} else if ifStmt, ok := node.(*If); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			If: ifStmt,
+		}
+	} else if whileStmt, ok := node.(*While); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			While: whileStmt,
+		}
+	} else if forStmt, ok := node.(*For); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			For: forStmt,
+		}
+	} else if expr, ok := node.(*Expression); ok {
+		return &Statement{
+			BaseASTNode:    base,
+			Expression: expr,
+		}
+	}
+	panic("Invalid statement type")
 }
 
-func (ast *Statement) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Statement) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
+	mappedStatement := feedExpressionIntoStatement(mapper(ast, ast.Body(), context, false), ast.BaseASTNode)
+	return mapper(parent, mappedStatement, context, true)
+}
+
+func (ast *Statement) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Body(), context)
 	mapper(parent, ast, context)
 }

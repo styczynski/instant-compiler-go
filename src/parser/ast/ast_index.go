@@ -17,6 +17,13 @@ type Index struct {
 	ParentNode generic_ast.TraversableNode
 }
 
+func (ast *Index) ExtractConst() (generic_ast.TraversableNode, bool) {
+	if ast.HasIndexingExpr() {
+		return nil, false
+	}
+	return ast.Primary.ExtractConst()
+}
+
 func (ast *Index) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
@@ -68,20 +75,20 @@ func (ast *Index) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 	if ast.HasIndexingExpr() {
 		return mapper(parent, &Index{
 			BaseASTNode:      ast.BaseASTNode,
-			Primary: mapper(ast, ast.Primary, context).(*Primary),
-			IndexingExpr: mapper(ast, ast.IndexingExpr, context).(*Expression),
+			Primary: mapper(ast, ast.Primary, context, false).(*Primary),
+			IndexingExpr: mapper(ast, ast.IndexingExpr, context, false).(*Expression),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	} else {
 		return mapper(parent, &Index{
 			BaseASTNode:      ast.BaseASTNode,
-			Primary: mapper(ast, ast.Primary, context).(*Primary),
+			Primary: mapper(ast, ast.Primary, context, false).(*Primary),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	}
 }
 
-func (ast *Index) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Index) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Primary, context)
 	if ast.HasIndexingExpr() {
 		mapper(ast, ast.IndexingExpr, context)

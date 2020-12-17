@@ -153,10 +153,10 @@ func ExpressionSignedTupleGet(name string, len int, index int, expr generic_ast.
 
 func (ast *SignedTupleUnwrapExpr) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	// TODO
-	return mapper(parent, ast, context)
+	return mapper(parent, ast, context, false)
 }
 
-func (ast *SignedTupleUnwrapExpr) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *SignedTupleUnwrapExpr) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(parent, ast, context)
 }
 

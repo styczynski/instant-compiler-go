@@ -75,11 +75,15 @@ func (ast *New) GetChildren() []generic_ast.TraversableNode {
 ////
 
 func (ast *New) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	// TODO
-	return ast
+	return mapper(parent, &New{
+		BaseASTNode: ast.BaseASTNode,
+		Type:        ast.Type,
+		Class:       ast.Class,
+		ParentNode:  ast.ParentNode,
+	}, context, true)
 }
 
-func (ast *New) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *New) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	// TODO
 }
 

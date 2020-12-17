@@ -66,10 +66,10 @@ func (ast *Declaration) Map(parent generic_ast.Expression, mapper generic_ast.Ex
 		DeclarationType: ast.DeclarationType,
 		Items: ast.Items,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context).(*Declaration)
+	}, context, true).(*Declaration)
 }
 
-func (ast *Declaration) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Declaration) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(parent, ast, context)
 }
 
@@ -96,3 +96,4 @@ func (ast *Declaration) Def() generic_ast.Expression {
 		Exp: defs,
 	}
 }
+

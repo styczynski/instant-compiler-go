@@ -68,17 +68,17 @@ func (ast *Return) Map(parent generic_ast.Expression, mapper generic_ast.Express
 	if ast.HasExpression() {
 		return mapper(parent, &Return{
 			BaseASTNode: ast.BaseASTNode,
-			Expression:  mapper(ast, ast.Expression, context).(*Expression),
+			Expression:  mapper(ast, ast.Expression, context, false).(*Expression),
 			ParentNode:  parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	}
 	return mapper(parent, &Return{
 		BaseASTNode: ast.BaseASTNode,
 		ParentNode:  parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *Return) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Return) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	if ast.HasExpression() {
 		mapper(ast, ast.Expression, context)
 	}

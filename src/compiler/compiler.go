@@ -1,8 +1,8 @@
 package compiler
 
 import (
+	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/parser/context"
-	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
 type CompilationError struct {
@@ -25,7 +25,7 @@ func (e CompilationError) CliMessage() string {
 type LatteCompiler struct {}
 
 type LatteCompiledProgram struct {
-	TypecheckedProgram type_checker.LatteTypecheckedProgram
+	Program          flow_analysis.LatteAnalyzedProgram
 	CompilationError *CompilationError
 }
 
@@ -34,7 +34,7 @@ type LatteCompiledProgramPromise interface {
 }
 
 func (p LatteCompiledProgram) Filename() string {
-	return p.TypecheckedProgram.Filename()
+	return p.Program.Filename()
 }
 
 type LatteCompiledProgramPromiseChan <-chan LatteCompiledProgram
@@ -47,7 +47,7 @@ func CreateLatteCompiler() *LatteCompiler {
 	return &LatteCompiler{}
 }
 
-func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTypecheckedProgramPromise, c *context.ParsingContext) LatteCompiledProgramPromise {
+func (compiler *LatteCompiler) compileAsync(programPromise flow_analysis.LatteAnalyzedProgramPromise, c *context.ParsingContext) LatteCompiledProgramPromise {
 	ret := make(chan LatteCompiledProgram)
 	//ctx := c.Copy()
 	go func() {
@@ -57,14 +57,14 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 		defer c.EventsCollectorStream.End("Generate compiled code", c, program)
 
 		ret <- LatteCompiledProgram{
-			TypecheckedProgram: program,
-			CompilationError:   nil,
+			Program:          program,
+			CompilationError: nil,
 		}
 	}()
 	return LatteCompiledProgramPromiseChan(ret)
 }
 
-func (compiler *LatteCompiler) Compile(programs []type_checker.LatteTypecheckedProgramPromise, c *context.ParsingContext) []LatteCompiledProgramPromise {
+func (compiler *LatteCompiler) Compile(programs []flow_analysis.LatteAnalyzedProgramPromise, c *context.ParsingContext) []LatteCompiledProgramPromise {
 	ret := []LatteCompiledProgramPromise{}
 	for _, program := range programs {
 		ret = append(ret, compiler.compileAsync(program, c))

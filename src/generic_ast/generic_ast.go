@@ -3,6 +3,7 @@ package generic_ast
 import (
 	context2 "context"
 	"fmt"
+	"reflect"
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -43,6 +44,39 @@ type TraversableNode interface {
 	OverrideParent(node TraversableNode)
 }
 
+func ReplaceExpressionRecursively(node TraversableNode, oldNode TraversableNode, newNode TraversableNode) TraversableNode {
+	//fmt.Printf("REPLACE %p -> %p <%b>\n", oldNode, newNode, oldNode == newNode)
+	if e, ok := node.(Expression); ok {
+		var mapper ExpressionVisitor
+		visitedNodes := map[Expression]struct{}{}
+		mapper = func(parent Expression, e Expression, context VisitorContext) {
+			//fmt.Printf("REPLACE %p\n", e)
+			if _, ok := visitedNodes[e]; ok {
+				return
+			}
+			visitedNodes[e] = struct{}{}
+			if e.(TraversableNode) == oldNode {
+				//if newExpr, ok := newNode.(Expression); ok {
+				//	return newExpr.Map(parent, mapper, context)
+				//}
+				//fmt.Printf("-- REPLACE --\n")
+				if reflect.TypeOf(e).Kind() == reflect.Ptr {
+					// Pointer:
+					reflect.ValueOf(e).Elem().Set(reflect.ValueOf(newNode).Elem())
+					//reflect.New(reflect.ValueOf(newNode).Elem().Type()).Interface().(User)
+
+				} else {
+					// Not pointer:
+					panic("Cannot replace node that is not a pointer")
+				}
+			}
+			e.Visit(parent, mapper, context)
+		}
+		e.Visit(e, mapper, NewEmptyVisitorContext())
+	}
+	return node
+}
+
 type NodeWithSyntaxValidation interface {
 	Validate() NodeError
 }
@@ -52,16 +86,34 @@ type NormalNode interface {
 	TraversableNode
 }
 
+type ConstFoldableNode interface {
+	ConstFold() TraversableNode
+}
+
+type ConstExtractableNode interface {
+	ExtractConst() (TraversableNode, bool)
+}
+
+type NormalNodeWithID interface {
+	NormalNode
+}
+
 type NormalNodeSelection struct {
 	node NormalNode
+	id int
 	describe func(src context.SelectionBlock, id int, mappingID func(block context.SelectionBlock) int) []string
 }
 
-func NewNormalNodeSelection(node NormalNode, describe func(src context.SelectionBlock, id int, mappingID func(block context.SelectionBlock) int) []string) NormalNodeSelection {
+func NewNormalNodeSelection(node NormalNode, id int, describe func(src context.SelectionBlock, id int, mappingID func(block context.SelectionBlock) int) []string) NormalNodeSelection {
 	return NormalNodeSelection{
 		node: node,
 		describe: describe,
+		id: id,
 	}
+}
+
+func (sel NormalNodeSelection) GetID() int {
+	return sel.id
 }
 
 func (sel NormalNodeSelection) GetNode() NormalNode {
@@ -180,7 +232,8 @@ func TraverseAST(node TraversableNode, visitor func(ast TraversableNode)) {
 	}
 }
 
-type ExpressionMapper = func (parent Expression, e Expression, context VisitorContext) Expression
+type ExpressionVisitor = func (parent Expression, e Expression, context VisitorContext)
+type ExpressionMapper = func (parent Expression, e Expression, context VisitorContext, backwards bool) Expression
 
 type VisitorContext interface {
 	context2.Context
@@ -223,7 +276,7 @@ func NewEmptyVisitorContext() VisitorContext {
 type Expression interface {
 	Body() Expression
 	Map(parent Expression, mapper ExpressionMapper, context VisitorContext) Expression
-	Visit(parent Expression, mapper ExpressionMapper, context VisitorContext)
+	Visit(parent Expression, mapper ExpressionVisitor, context VisitorContext)
 }
 
 type Batch struct {

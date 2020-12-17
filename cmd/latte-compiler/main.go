@@ -74,21 +74,18 @@ func ActionCompile(c *cli.Context) error {
 	p := parser.CreateLatteParser()
 	reader := input_reader.CreateLatteInputReader(c.String("input"))
 	comp := compiler.CreateLatteCompiler()
+	analyzer := flow_analysis.CreateLatteFlowAnalyzer()
 	ast := p.ParseInput(reader, context)
 
-	if false {
-		checkedProgram := tc.Check(ast, context)
-		compiledProgram := comp.Compile(checkedProgram, context)
-		//summary := events_collector.CreateCliSummaryShortStatus()
-		summary := events_collector.CreateCliSummary(-1)
-		message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
-		fmt.Print(message)
-		if !ok {
-			os.Exit(1)
-		}
-	} else {
-		analyzer := flow_analysis.CreateLatteFlowAnalyzer()
-		analyzer.Analyze(ast, context)
+	checkedProgram := tc.Check(ast, context)
+	analyzedProgram := analyzer.Analyze(checkedProgram, context)
+	compiledProgram := comp.Compile(analyzedProgram, context)
+	summary := events_collector.CreateCliSummaryShortStatus()
+	//summary := events_collector.CreateCliSummary(-1)
+	message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
+	fmt.Print(message)
+	if !ok {
+		os.Exit(1)
 	}
 
 	//f, err := os.Create("compiler.prof")

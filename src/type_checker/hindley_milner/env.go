@@ -186,7 +186,7 @@ func (e *SimpleEnv) Remove(name string) Env {
 		// Do not delete builtins
 		return e
 	}
-	fmt.Printf("Remove %s\n", name)
+	//fmt.Printf("Remove %s\n", name)
 	if len(e.levels[name])>0 {
 		e.levels[name] = e.levels[name][:len(e.levels[name])-1]
 	}

@@ -1,11 +1,11 @@
 package events_collector
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
+	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker"
@@ -69,6 +69,10 @@ func (collector *EventsCollector) insertTimeAggregation(ids []string, t time.Dur
 	}
 }
 
+func (collector *EventsCollector) debugOutputEvent(format string, a ...interface{}) {
+	//fmt.Printf(format, a...)
+}
+
 func (collector *EventsCollector) runEventsCollectorDeamon() {
 	eventStream := collector.eventStream
 	go func() {
@@ -85,7 +89,7 @@ func (collector *EventsCollector) runEventsCollectorDeamon() {
 					input:       message.input,
 					start:       time.Now(),
 				})
-				fmt.Printf("[Event] %s - Start %s\n", filename, message.processName)
+				collector.debugOutputEvent("[Event] %s - Start %s\n", filename, message.processName)
 			case "end":
 				filename := message.input.Filename()
 				statusLen := len(collector.statuses[filename])
@@ -103,7 +107,7 @@ func (collector *EventsCollector) runEventsCollectorDeamon() {
 				ids = append(ids, topStatus.processName)
 				collector.insertTimeAggregation(ids, duration)
 
-				fmt.Printf("[Event] %s - End %s\n", filename, message.processName)
+				collector.debugOutputEvent("[Event] %s - End %s\n", filename, message.processName)
 
 				if gracefulShutdown {
 					stillProcessing := false
@@ -300,6 +304,19 @@ func (ec *EventsCollector) collectSyncTypecheckingErrors(programs []type_checker
 	return out, inputs
 }
 
+func (ec *EventsCollector) collectSyncFlowAnalysisError(program flow_analysis.LatteAnalyzedProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, bool, flow_analysis.LatteAnalyzedProgram) {
+	result := program.Resolve()
+	if result.FlowAnalysisError != nil {
+		return append(out, CollectedError{
+			filename: result.Filename(),
+			err: result.FlowAnalysisError,
+		}), false, result
+	} else {
+		out, ok, _ := ec.collectSyncTypecheckingError(result.Program, c, out)
+		return out, ok, result
+	}
+}
+
 func (ec *EventsCollector) collectSyncCompilationError(program compiler.LatteCompiledProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, bool, compiler.LatteCompiledProgram) {
 	result := program.Resolve()
 	if result.CompilationError != nil {
@@ -308,7 +325,7 @@ func (ec *EventsCollector) collectSyncCompilationError(program compiler.LatteCom
 			err: result.CompilationError,
 		}), false, result
 	} else {
-		out, ok, _ := ec.collectSyncTypecheckingError(result.TypecheckedProgram, c, out)
+		out, ok, _ := ec.collectSyncFlowAnalysisError(result.Program, c, out)
 		return out, ok, result
 	}
 }

@@ -68,16 +68,16 @@ func (ast *Block) ExpressionType() hindley_milner.ExpressionType {
 func (ast *Block) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	mappedStmts := []*Statement{}
 	for _, stmt := range ast.Statements {
-		mappedStmts = append(mappedStmts, mapper(ast, stmt, context).(*Statement))
+		mappedStmts = append(mappedStmts, mapper(ast, stmt, context, false).(*Statement))
 	}
 	return mapper(parent, &Block{
 		BaseASTNode: ast.BaseASTNode,
 		Statements:  mappedStmts,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *Block) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Block) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	for _, stmt := range ast.Statements {
 		mapper(ast, stmt, context)
 	}

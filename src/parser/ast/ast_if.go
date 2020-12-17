@@ -59,16 +59,25 @@ func (ast *If) Print(c *context.ParsingContext) string {
 ///
 
 func (ast *If) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	return mapper(parent, &If{
-		BaseASTNode: ast.BaseASTNode,
-		Condition: mapper(ast, ast.Condition, context).(*Expression),
-		Then: mapper(ast, ast.Then, context).(*Statement),
-		Else: mapper(ast, ast.Else, context).(*Statement),
-		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	if ast.HasElseBlock() {
+		return mapper(parent, &If{
+			BaseASTNode: ast.BaseASTNode,
+			Condition:   mapper(ast, ast.Condition, context, false).(*Expression),
+			Then:        mapper(ast, ast.Then, context, false).(*Statement),
+			Else:        mapper(ast, ast.Else, context, false).(*Statement),
+			ParentNode:  parent.(generic_ast.TraversableNode),
+		}, context, true)
+	} else {
+		return mapper(parent, &If{
+			BaseASTNode: ast.BaseASTNode,
+			Condition:   mapper(ast, ast.Condition, context, false).(*Expression),
+			Then:        mapper(ast, ast.Then, context, false).(*Statement),
+			ParentNode:  parent.(generic_ast.TraversableNode),
+		}, context, true)
+	}
 }
 
-func (ast *If) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *If) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Condition, context)
 	mapper(ast, ast.Then, context)
 	if ast.HasElseBlock() {
@@ -111,6 +120,26 @@ func (ast *If) ExpressionType() hindley_milner.ExpressionType {
 //
 
 func (ast *If) BuildFlowGraph(builder cfg.CFGBuilder) {
+
+	skipThen := false
+	skipElse := false
+	if constCond, hasConstCond := ast.Condition.ExtractConst(); hasConstCond {
+		if *(constCond.(*Primary).Bool) {
+			skipElse = true
+		} else {
+			skipThen = true
+		}
+	}
+
+	if skipThen || skipElse {
+		if skipThen {
+			builder.BuildNode(ast.Else)
+		} else if skipElse {
+			builder.BuildNode(ast.Then)
+		}
+		return
+	}
+
 	builder.AddSucc(ast)
 
 	builder.UpdatePrev([]generic_ast.NormalNode{ast})
@@ -125,4 +154,8 @@ func (ast *If) BuildFlowGraph(builder cfg.CFGBuilder) {
 		ctrlExits = append(ctrlExits, ast)
 	}
 	builder.UpdatePrev(ctrlExits)
+}
+
+func (ast *If) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+	return cfg.GetAllUsagesVariables(ast.Condition)
 }

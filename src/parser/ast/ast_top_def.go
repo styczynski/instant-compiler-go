@@ -5,6 +5,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -86,21 +87,21 @@ func (ast *TopDef) Map(parent generic_ast.Expression, mapper generic_ast.Express
 	if ast.IsFunction() {
 		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
-			Function:    mapper(ast, ast.Function, context).(*FnDef),
+			Function:    mapper(ast, ast.Function, context, false).(*FnDef),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	} else if ast.IsClass() {
 		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
-			Class:    mapper(ast, ast.Class, context).(*Class),
+			Class:    mapper(ast, ast.Class, context, false).(*Class),
 			ParentNode: parent.(generic_ast.TraversableNode),
-		}, context)
+		}, context, true)
 	} else {
 		panic("Invalid TopDef type.")
 	}
 }
 
-func (ast *TopDef) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *TopDef) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	if ast.IsFunction() {
 		mapper(ast, ast.Function, context)
 	} else if ast.IsClass() {
@@ -141,4 +142,26 @@ func (ast *TopDef) BuildFlowGraph(builder cfg.CFGBuilder) {
 	if ast.IsFunction() {
 		builder.BuildNode(ast.Function)
 	}
+}
+
+func (ast *TopDef) OnFlowAnalysis(flow cfg.FlowAnalysis) error {
+	if ast.IsFunction() {
+		// Validate flow graph
+		retType, _ := ast.Function.ReturnType.GetType().Type()
+		if !retType.Eq(CreatePrimitive(T_VOID)) {
+			gateways := flow.Graph().GetAllEndGateways()
+			for _, gateway := range gateways {
+				if returnNode, isRet := gateway.(*Return); isRet {
+					if !returnNode.HasExpression() {
+						// Fail
+						return errors.CreateLocalizedError("Invalid return", "Non-void function cannot use return statement without expression.", returnNode)
+					}
+				} else {
+					// Fail
+					return errors.CreateLocalizedError("Missing return", "Non-void function should have return in each possible branch.", gateway)
+				}
+			}
+		}
+	}
+	return nil
 }

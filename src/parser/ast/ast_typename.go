@@ -53,11 +53,14 @@ func (ast *Typename) GetChildren() []generic_ast.TraversableNode {
 ////
 
 func (ast *Typename) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	// TODO
-	return ast
+	return mapper(parent, &Typename{
+		BaseASTNode: ast.BaseASTNode,
+		Expr:        mapper(ast, ast.Expr, context, false).(*LogicalOperation),
+		ParentNode:  ast.ParentNode,
+	}, context, true)
 }
 
-func (ast *Typename) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Typename) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	// TODO
 	mapper(ast, ast.Expr, context)
 	mapper(parent, ast, context)
@@ -144,10 +147,9 @@ func (ast *Typename) OnTypeReturned(t hindley_milner.Type) {
 		ParentNode:  nil,
 	}
 
-	newAST.Visit(newAST, func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) generic_ast.Expression {
+	newAST.Visit(newAST, func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
 		node := e.(generic_ast.TraversableNode)
 		node.OverrideParent(parent.(interface{}).(generic_ast.TraversableNode))
-		return e
 	}, generic_ast.NewEmptyVisitorContext())
 
 	expr.LogicalOperation = newAST

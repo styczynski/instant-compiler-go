@@ -38,10 +38,10 @@ func (ast *BuiltinFunction) Name() hindley_milner.NameGroup     { return hindley
 func (ast *BuiltinFunction) Body() generic_ast.Expression { return ast }
 
 func (ast *BuiltinFunction) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	return mapper(parent, ast, context)
+	return mapper(parent, ast, context, false)
 }
 
-func (ast *BuiltinFunction) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *BuiltinFunction) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(parent, ast, context)
 }
 

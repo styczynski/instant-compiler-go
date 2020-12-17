@@ -20,6 +20,7 @@ type CFGBuilder interface {
 	GetPrev() []generic_ast.NormalNode
 	AddSucc(current generic_ast.NormalNode)
 	AddBranch(branch generic_ast.NormalNode)
+	Branches() []generic_ast.NormalNode
 	UpdatePrev(nodes []generic_ast.NormalNode)
 	BuildNode(node generic_ast.NormalNode)
 	BuildBlock(node generic_ast.TraversableNode)
@@ -48,16 +49,132 @@ type NodeWithControlInformation interface {
 // there is a 1-1 correspondence between a block in the CFG and an generic_ast.NormalNode.
 type CFG struct {
 	// Sentinel nodes for single-entry, single-exit CFG. Not in original AST.
-	Entry, Exit generic_ast.NormalNode
+	Entry, Exit, CodeEnd generic_ast.NormalNode
 	// All defers found in CFG, disjoint from blocks. May be flowed to after Exit.
 	Defers []generic_ast.NormalNode
 	blocks map[generic_ast.NormalNode]*block
+	blocksOrder []generic_ast.NormalNode
+	blocksIDs map[generic_ast.NormalNode]int
+}
+
+func getBeginPos(node generic_ast.NormalNode) (int, int) {
+	return node.Begin().Line, node.Begin().Column
+}
+
+func getEndPos(node generic_ast.NormalNode) (int, int) {
+	return node.End().Line, node.End().Column
+}
+
+type ControlFlowGraphVisitor func (cfg *CFG, block *block, next func(node generic_ast.NormalNode))
+
+func (cfg *CFG) VisitGraph(node generic_ast.NormalNode, visitor ControlFlowGraphVisitor) {
+	block := cfg.blocks[node]
+	next := func(node generic_ast.NormalNode) {
+		cfg.VisitGraph(node, visitor)
+	}
+	for _, child := range block.succs {
+		visitor(cfg, cfg.blocks[child], next)
+	}
+}
+
+func (cfg *CFG) GetAllEndGateways() []generic_ast.NormalNode {
+	gateways := []generic_ast.NormalNode{}
+	visitedIDs := map[int]struct{}{}
+	cfg.VisitGraph(cfg.Entry, func(cfg *CFG, block *block, next func(node generic_ast.NormalNode)) {
+		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
+			return
+		}
+		for _, child := range block.succs {
+			if child == cfg.CodeEnd {
+				gateways = append(gateways, block.stmt)
+			}
+		}
+		next(block.stmt)
+	})
+	return gateways
+}
+
+func (cfg *CFG) ReplaceBlock(old generic_ast.NormalNode, new generic_ast.NormalNode) {
+
+	for block, blockDescription := range cfg.blocks {
+		if blockDescription != nil {
+			if blockDescription.stmt == old {
+				blockDescription.stmt = new
+			}
+			for j, nestedNode := range blockDescription.succs {
+				if nestedNode == old {
+					blockDescription.succs[j] = new
+				}
+			}
+			for j, nestedNode := range blockDescription.preds {
+				if nestedNode == old {
+					blockDescription.preds[j] = new
+				}
+			}
+			if block == old {
+				delete(cfg.blocks, old)
+				cfg.blocks[new] = blockDescription
+			}
+		}
+	}
+	for i, block := range cfg.Defers {
+		if block == old {
+			cfg.Defers[i] = new
+		}
+	}
+	for i, block := range cfg.blocksOrder {
+		if block == old {
+			cfg.blocksOrder[i] = new
+		}
+	}
+	for block, id := range cfg.blocksIDs {
+		if block == old {
+			delete(cfg.blocksIDs, old)
+			cfg.blocksIDs[new] = id
+		}
+	}
+}
+
+type OrderBlocksByPosition []generic_ast.NormalNode
+
+func (s OrderBlocksByPosition) Len() int {
+	return len(s)
+}
+
+func (s OrderBlocksByPosition) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s OrderBlocksByPosition) Less(i, j int) bool {
+	if isNilNode(s[i]) {
+		return false
+	}
+	if isNilNode(s[j]) {
+		return true
+	}
+	if virtualNode, ok := s[i].(*generic_ast.VirtualNode); ok {
+		if virtualNode.Name() == "ENTRY" {
+			return true
+		}
+	}
+	if virtualNode, ok := s[i].(*generic_ast.VirtualNode); ok {
+		if virtualNode.Name() == "EXIT" {
+			return false
+		}
+	}
+	b1, e1 := getBeginPos(s[i])
+	b2, e2 := getEndPos(s[j])
+	if b1 == b2 {
+		return e1 < e2
+	}
+	return b1 < b2
 }
 
 type block struct {
 	stmt  generic_ast.NormalNode
 	preds []generic_ast.NormalNode
 	succs []generic_ast.NormalNode
+	ID int
 }
 
 // FromStmts returns the control-flow graph for the given sequence of statements.
@@ -74,17 +191,24 @@ func (c *CFG) Preds(s generic_ast.NormalNode) []generic_ast.NormalNode {
 // Succs returns a slice of all immediate successors to the given statement.
 // May include Exit node.
 func (c *CFG) Succs(s generic_ast.NormalNode) []generic_ast.NormalNode {
+	if _, ok := c.blocks[s]; !ok {
+		panic("Missing succ")
+	}
 	return c.blocks[s].succs
 }
 
 // Blocks returns a slice of all blocks in a CFG, including the Entry and Exit nodes.
 // The blocks are roughly in the order they appear in the source code.
 func (c *CFG) Blocks() []generic_ast.NormalNode {
-	blocks := make([]generic_ast.NormalNode, 0, len(c.blocks))
-	for s := range c.blocks {
-		blocks = append(blocks, s)
+	v := []generic_ast.NormalNode{}
+	for _, block := range c.blocksOrder {
+		v = append(v, block)
 	}
-	return blocks
+	return v
+}
+
+func (c *CFG) GetStatementID(node generic_ast.NormalNode) int {
+	return c.blocksIDs[node]
 }
 
 // type for sorting statements by their starting positions in the source code
@@ -143,7 +267,7 @@ type builder struct {
 	blocks      map[generic_ast.NormalNode]*block
 	prev        []generic_ast.NormalNode        // blocks to hook up to current block
 	branches    []generic_ast.NormalNode // accumulated branches from current inner blocks
-	entry, exit generic_ast.NormalNode      // single-entry, single-exit nodes
+	entry, exit, codeEnd generic_ast.NormalNode      // single-entry, single-exit nodes
 	defers      []generic_ast.NormalNode  // all defers encountered
 }
 
@@ -153,29 +277,62 @@ func newBuilder() *builder {
 	// followed by the other CFG nodes.
 	return &builder{
 		blocks: map[generic_ast.NormalNode]*block{},
-		//FIXME: SHIT!
-		//entry:  &ast.BadStmt{-2, -2},
-		//exit:   &ast.BadStmt{-1, -1},
+		entry:  generic_ast.CreateVirtualNode(generic_ast.V_NODE_ENTRY),
+		exit:   generic_ast.CreateVirtualNode(generic_ast.V_NODE_EXIT),
+		codeEnd: generic_ast.CreateVirtualNode(generic_ast.V_NODE_CODE_END),
 	}
 }
 
 // build runs buildBlock on the given block (traversing nested statements), and
 // adds entry and exit nodes.
 func (b *builder) build(s []generic_ast.NormalNode) *CFG {
+
 	b.prev = []generic_ast.NormalNode{b.entry}
 	b.buildBlock(s)
+	b.AddSucc(b.codeEnd)
+	b.prev = []generic_ast.NormalNode{b.codeEnd}
 	b.AddSucc(b.exit)
 
+
+	sortedExprs := OrderBlocksByPosition{}
+	for e, _ := range b.blocks {
+		sortedExprs = append(sortedExprs, e)
+	}
+	sort.Sort(sortedExprs)
+
+	exprIDs := map[generic_ast.NormalNode]int{}
+	freeID := 1
+	freeBlockID := 1
+	for _, expr := range sortedExprs {
+		if expr != nil {
+			exprIDs[expr] = freeID
+			if block, ok := b.blocks[expr]; ok {
+				if block.ID == 0 {
+					block.ID = freeBlockID
+					freeBlockID++
+				}
+			}
+		}
+		freeID++
+	}
+
 	return &CFG{
-		blocks: b.blocks,
-		Entry:  b.entry,
-		Exit:   b.exit,
-		Defers: b.defers,
+		Entry:       b.entry,
+		Exit:        b.exit,
+		CodeEnd:     b.codeEnd,
+		Defers:      b.defers,
+		blocks:      b.blocks,
+		blocksOrder: sortedExprs,
+		blocksIDs:   exprIDs,
 	}
 }
 
 func (b *builder) AddBranch(branch generic_ast.NormalNode) {
 	b.branches = append(b.branches, branch)
+}
+
+func (b *builder) Branches() []generic_ast.NormalNode {
+	return b.branches
 }
 
 func (b *builder) BuildNode(node generic_ast.NormalNode) {

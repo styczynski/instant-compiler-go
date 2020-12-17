@@ -70,7 +70,6 @@ func (ast *FnDef) Print(c *context.ParsingContext) string {
 /////
 
 func (ast *FnDef) Validate() generic_ast.NodeError {
-	fmt.Printf("Check fn def\n")
 	if _, ok := ast.Parent().(*TopDef); ok {
 		if ast.Name == "main" {
 			returnedType, _ := ast.ReturnType.GetType().Type()
@@ -131,11 +130,11 @@ func (ast *FnDef) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 		ReturnType:   ast.ReturnType,
 		Name:         ast.Name,
 		Arg:          ast.Arg,
-		FunctionBody: mapper(ast, ast.FunctionBody, context).(*Block),
+		FunctionBody: mapper(ast, ast.FunctionBody, context, false).(*Block),
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
-func (ast *FnDef) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *FnDef) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.FunctionBody, context)
 	mapper(parent, ast, context)
 }

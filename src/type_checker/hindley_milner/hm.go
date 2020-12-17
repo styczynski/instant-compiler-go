@@ -3,7 +3,6 @@ package hindley_milner
 import (
 	"fmt"
 
-	"github.com/alecthomas/repr"
 	"github.com/pkg/errors"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -1026,16 +1025,16 @@ func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Sub
 }
 
 func bind(tv TypeVariable, t Type, context Constraint, tvt Type) (sub Subs, err error) {
-	fmt.Printf("Binding %v to %v", tv, t)
+	//fmt.Printf("Binding %v to %v", tv, t)
 	switch {
 	// case tv == t:
 	case occurs(tv, t):
-		fmt.Printf("KURWA 1\n%v\nKURWA 2\n%v\nKURWA 3\n%v\nKURWA 4\n%v\n",
-			repr.String(*t.GetContext().Source),
-			repr.String(*tv.GetContext().Source),
-				repr.String(*tvt.GetContext().Source),
-					repr.String(*context.context.Source))
-		panic("BŁAGAM SPIERDALAJ")
+		//fmt.Printf("KURWA 1\n%v\nKURWA 2\n%v\nKURWA 3\n%v\nKURWA 4\n%v\n",
+		//	repr.String(*t.GetContext().Source),
+		//	repr.String(*tv.GetContext().Source),
+		//		repr.String(*tvt.GetContext().Source),
+		//			repr.String(*context.context.Source))
+		//panic("BŁAGAM SPIERDALAJ")
 		err = UnificationRecurrentTypeError{
 			Type:       t,
 			Variable:   tv,

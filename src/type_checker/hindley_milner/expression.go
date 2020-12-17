@@ -104,14 +104,14 @@ func (b Batch) ExpressionType() ExpressionType {
 func (b Batch) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	mappedExp := []generic_ast.Expression{}
 	for _, exp := range b.Exp {
-		mappedExp = append(mappedExp, mapper(b, exp, context))
+		mappedExp = append(mappedExp, mapper(b, exp, context, false))
 	}
 	return mapper(parent, Batch{
 		Exp: mappedExp,
-	}, context)
+	}, context, true)
 }
 
-func (b Batch) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (b Batch) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	for _, exp := range b.Exp {
 		mapper(b, exp, context)
 	}

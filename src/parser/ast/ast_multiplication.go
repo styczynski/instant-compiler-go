@@ -16,6 +16,13 @@ type Multiplication struct {
 	ParentNode generic_ast.TraversableNode
 }
 
+func (ast *Multiplication) ExtractConst() (generic_ast.TraversableNode, bool) {
+	if ast.HasNext() {
+		return nil, false
+	}
+	return ast.Unary.ExtractConst()
+}
+
 func (ast *Multiplication) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
@@ -62,18 +69,18 @@ func (ast *Multiplication) Print(c *context.ParsingContext) string {
 func (ast *Multiplication) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	next := ast.Next
 	if ast.HasNext() {
-		next = mapper(ast, ast.Next, context).(*Multiplication)
+		next = mapper(ast, ast.Next, context, false).(*Multiplication)
 	}
 	return mapper(parent, &Multiplication{
 		BaseASTNode: ast.BaseASTNode,
-		Unary:    mapper(ast, ast.Unary, context).(*Unary),
+		Unary:    mapper(ast, ast.Unary, context, false).(*Unary),
 		Op:          ast.Op,
 		Next:        next,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *Multiplication) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Multiplication) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Unary, context)
 	if ast.HasNext() {
 		mapper(ast, ast.Next, context)
@@ -105,4 +112,24 @@ func (ast *Multiplication) ExpressionType() hindley_milner.ExpressionType {
 		return hindley_milner.E_PROXY
 	}
 	return hindley_milner.E_APPLICATION
+}
+
+//
+
+func (ast *Multiplication) ConstFold() generic_ast.TraversableNode {
+	if ast.HasNext() {
+		const1, ok1 := ast.Unary.ExtractConst()
+		const2, ok2 := ast.Next.Unary.ExtractConst()
+		if ok1 && ok2 {
+			p1 := const1.(*Primary)
+			p2 := const2.(*Primary)
+			v := p1.Mul(p2, ast.Op)
+			// Change pointers
+			ast.Unary.UnaryApplication.Index.Primary = v
+			ast.Op = ast.Next.Op
+			ast.Next = ast.Next.Next
+			return ast
+		}
+	}
+	return ast
 }

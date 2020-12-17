@@ -3,6 +3,7 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -51,12 +52,13 @@ func (ast *Assignment) Print(c *context.ParsingContext) string {
 func (ast *Assignment) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Assignment{
 		BaseASTNode: ast.BaseASTNode,
-		Value:    mapper(ast, ast.Value, context).(*Expression),
+		Value:    mapper(ast, ast.Value, context, false).(*Expression),
+		TargetName: ast.TargetName,
 		ParentNode: parent.(generic_ast.TraversableNode),
-	}, context)
+	}, context, true)
 }
 
-func (ast *Assignment) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *Assignment) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(ast, ast.Value, context)
 	mapper(parent, ast, context)
 }
@@ -88,3 +90,24 @@ func (ast *Assignment) Body() generic_ast.Expression {
 func (ast *Assignment) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_APPLICATION
 }
+
+// Validate here this shit
+
+func (ast *Assignment) GetAssignedVariables(wantMembers bool) cfg.VariableSet {
+	return cfg.NewVariableSet(cfg.NewVariable(ast.TargetName, ast.Value))
+}
+
+func (ast *Assignment) RenameVariables(subst cfg.VariableSubstitution) {
+	ast.TargetName = subst.Replace(ast.TargetName)
+}
+
+//func (ast *Assignment) GetAssignedVariables(wantMembers bool) cfg.VariableSet {
+//	if ast.HasIndexingExpr() {
+//		if wantMembers {
+//			return cfg.GetAllAssignedVariables(ast.Primary, wantMembers)
+//		} else {
+//			return cfg.NewVariableSet()
+//		}
+//	}
+//	return cfg.GetAllVariables(ast.Primary)
+//}

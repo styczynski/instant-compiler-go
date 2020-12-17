@@ -11,10 +11,10 @@ func (n EmbeddedTypeExpr) Body() generic_ast.Expression {
 }
 
 func (n EmbeddedTypeExpr) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	return mapper(parent, n, context)
+	return mapper(parent, n, context, false)
 }
 
-func (n EmbeddedTypeExpr) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (n EmbeddedTypeExpr) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(parent, n, context)
 }
 

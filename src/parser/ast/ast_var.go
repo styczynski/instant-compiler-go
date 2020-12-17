@@ -24,10 +24,10 @@ func (ast *VarName) Name() hindley_milner.NameGroup     { return hindley_milner.
 func (ast *VarName) Body() generic_ast.Expression { return ast }
 
 func (ast *VarName) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	return mapper(parent, ast, context)
+	return mapper(parent, ast, context, false)
 }
 
-func (ast *VarName) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) {
+func (ast *VarName) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	mapper(parent, ast, context)
 }
 
