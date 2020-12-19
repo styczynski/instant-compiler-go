@@ -1,5 +1,0 @@
-int main() {
-    boolean a = (true == true) || 2;
-    boolean b = (1 == 2);
-    return 0;
-}

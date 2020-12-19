@@ -1,7 +1,7 @@
 # This is adapted from https://github.com/thockin/go-build-template
 
 # The binary to build (just the basename).
-BIN := latte-compiler
+BIN := latc
 
 # Where to push the docker image.
 REGISTRY ?= docker.pkg.github.com/styczynski/latte-compiler
@@ -35,7 +35,10 @@ TEST_IMAGE ?= martinheinz/golang:1.12-alpine-test
 
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
-all: build
+all: build-native
+
+build-native:
+	go build -o $(BIN) ./cmd/latte-compiler/main.go
 
 # For the following OS/ARCH expansions, we transform OS/ARCH into OS_ARCH
 # because make pattern rules don't match with embedded '/' characters.

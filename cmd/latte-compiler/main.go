@@ -72,7 +72,9 @@ func ActionCompile(c *cli.Context) error {
 
 	tc := type_checker.CreateLatteTypeChecker()
 	p := parser.CreateLatteParser()
-	reader := input_reader.CreateLatteInputReader(c.String("input"))
+
+	inputPaths := c.Args().Slice()
+	reader := input_reader.CreateLatteInputReader(inputPaths)
 	comp := compiler.CreateLatteCompiler()
 	analyzer := flow_analysis.CreateLatteFlowAnalyzer()
 	ast := p.ParseInput(reader, context)
@@ -83,10 +85,14 @@ func ActionCompile(c *cli.Context) error {
 	//summary := events_collector.CreateCliSummaryShortStatus()
 	summary := events_collector.CreateCliSummary(-1)
 	message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
-	fmt.Print(message)
+
 	if !ok {
+		os.Stderr.WriteString("ERROR\n")
 		os.Exit(1)
+	} else {
+		os.Stderr.WriteString("OK\n")
 	}
+	fmt.Print(message)
 
 	//f, err := os.Create("compiler.prof")
 	//if err != nil {
@@ -107,22 +113,7 @@ func main() {
 	app := &cli.App{
 		Flags: []cli.Flag{
 		},
-		Commands: []*cli.Command{
-			{
-				Name:    "compile",
-				Aliases: []string{"c"},
-				Usage:   "Compile file",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:     "input",
-						Value:    "",
-						Usage:    "Input file",
-						Required: true,
-					},
-				},
-				Action: ActionCompile,
-			},
-		},
+		Action: ActionCompile,
 	}
 
 	err := app.Run(os.Args)

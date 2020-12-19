@@ -11,7 +11,7 @@ import (
 )
 
 type LatteInputReader struct {
-	input string
+	input []string
 }
 
 type LatteInput interface {
@@ -37,7 +37,7 @@ func fileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-func CreateLatteInputReader(input string) *LatteInputReader {
+func CreateLatteInputReader(input []string) *LatteInputReader {
 	return &LatteInputReader{
 		input: input,
 	}
@@ -47,50 +47,49 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 	c.EventsCollectorStream.Start("Read input", c, events_utils.GeneralEventSource{})
 	defer c.EventsCollectorStream.End("Read input", c, events_utils.GeneralEventSource{})
 
-	if fileExists(reader.input) {
-		f, err := os.Open(reader.input)
-		if err != nil {
-			return nil, err
-		}
-		return []LatteInput{
-			&LatteInputImpl{
-				read:     func() ([]byte, error) {
-					defer f.Close()
-					return ioutil.ReadAll(f)
-				},
-				filename: func() string { return reader.input },
-			},
-		}, nil
-	} else if (reader.input == "-") {
-		return []LatteInput{
-			&LatteInputImpl{
-				read:     func() ([]byte, error) {
-					return ioutil.ReadAll(bufio.NewReader(os.Stdin))
-				},
-				filename: func() string { return "<standard input>" },
-			},
-		}, nil
-	} else {
-		// Use glob
-		matches, err := filepath.Glob(reader.input)
-		if err != nil {
-			return nil, err
-		}
-		ret := []LatteInput{}
-		for _, path := range matches {
-			if path == "." || path == ".." {
-				continue
-			}
-			subreader := CreateLatteInputReader(path)
-			subinputs, err := subreader.Read(c)
+	allInputs := []LatteInput{}
+	for _, inp := range reader.input {
+		input := inp
+		if fileExists(inp) {
+			f, err := os.Open(inp)
 			if err != nil {
 				return nil, err
 			}
-			ret = append(ret, subinputs...)
+			allInputs = append(allInputs, &LatteInputImpl{
+				read: func() ([]byte, error) {
+					defer f.Close()
+					return ioutil.ReadAll(f)
+				},
+				filename: func() string { return input },
+			})
+		} else if (inp == "-") {
+			allInputs = append(allInputs,&LatteInputImpl{
+				read: func() ([]byte, error) {
+					return ioutil.ReadAll(bufio.NewReader(os.Stdin))
+				},
+				filename: func() string { return "<standard input>" },
+			})
+		} else {
+			// Use glob
+			matches, err := filepath.Glob(inp)
+			if err != nil {
+				return nil, err
+			}
+			ret := []LatteInput{}
+			for _, path := range matches {
+				if path == "." || path == ".." {
+					continue
+				}
+				subreader := CreateLatteInputReader([]string{path})
+				subinputs, err := subreader.Read(c)
+				if err != nil {
+					return nil, err
+				}
+				ret = append(ret, subinputs...)
+			}
+			allInputs = append(allInputs, ret...)
 		}
-		return ret, nil
 	}
 
-	// TODO: Implement
-	return nil, nil
+	return allInputs, nil
 }
