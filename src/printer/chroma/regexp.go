@@ -461,7 +461,7 @@ func matchRules(text []rune, pos int, rules []*CompiledRule) (int, *CompiledRule
 }
 
 // replace \r and \r\n with \n
-// same as strings.ReplaceAll but more efficient
+// same as strings.Replace but more efficient
 func ensureLF(text string) string {
 	buf := make([]byte, len(text))
 	var j int
