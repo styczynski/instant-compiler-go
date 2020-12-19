@@ -43,19 +43,19 @@ func NewVariableSet(vars ...Variable) VariableSet {
 }
 
 type NodeWithVariables interface {
-	GetAllVariables() VariableSet
+	GetAllVariables(visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet
 }
 
 type NodeWithAssignedVariables interface {
-	GetAssignedVariables(wantMembers bool) VariableSet
+	GetAssignedVariables(wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet
 }
 
 type NodeWithDeclaredVariables interface {
-	GetDeclaredVariables() VariableSet
+	GetDeclaredVariables(visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet
 }
 
 type NodeWithUsedVariables interface {
-	GetUsedVariables(vars VariableSet) VariableSet
+	GetUsedVariables(vars VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet
 }
 
 type NodeWithVariableReplacement interface {
@@ -131,41 +131,49 @@ func (v VariableSet) Insert(src VariableSet) {
 	}
 }
 
-func GetAllUsagesVariables(node generic_ast.TraversableNode) VariableSet {
+func GetAllUsagesVariables(node generic_ast.TraversableNode, visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet {
+	if _, wasVisited := visitedMap[node]; wasVisited {
+		return NewVariableSet()
+	}
+	visitedMap[node] = struct{}{}
 	if isNilNode(node) {
 		return NewVariableSet()
 	}
 	vars := VariableSet{}
 	for _, child := range node.GetChildren() {
 		if child != nil {
-			vars.Insert(GetAllUsagesVariables(child))
+			vars.Insert(GetAllUsagesVariables(child, visitedMap))
 		}
 	}
 	if nodeWithUsedVariables, ok := node.(NodeWithUsedVariables); ok {
-		return nodeWithUsedVariables.GetUsedVariables(vars)
+		return nodeWithUsedVariables.GetUsedVariables(vars, visitedMap)
 	} else {
 		//vars.Insert(GetAllVariables(node))
 	}
 	return vars
 }
 
-func GetAllVariables(node generic_ast.TraversableNode) VariableSet {
+func GetAllVariables(node generic_ast.TraversableNode, visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet {
+	if _, wasVisited := visitedMap[node]; wasVisited {
+		return NewVariableSet()
+	}
+	visitedMap[node] = struct{}{}
 	if isNilNode(node) {
 		return NewVariableSet()
 	}
 	vars := VariableSet{}
 	if nodeWithVariables, ok := node.(NodeWithVariables); ok {
-		vars = nodeWithVariables.GetAllVariables()
+		vars = nodeWithVariables.GetAllVariables(visitedMap)
 	} else {
 		for _, child := range node.GetChildren() {
 			if child != nil {
-				vars.Insert(GetAllVariables(child))
+				vars.Insert(GetAllVariables(child, visitedMap))
 			}
 		}
 	}
-	vars.Insert(GetAllAssignedVariables(node, true))
-	vars.Insert(GetAllAssignedVariables(node, false))
-	vars.Insert(GetAllDeclaredVariables(node))
+	vars.Insert(GetAllAssignedVariables(node, true, map[generic_ast.TraversableNode]struct{}{}))
+	vars.Insert(GetAllAssignedVariables(node, false, map[generic_ast.TraversableNode]struct{}{}))
+	vars.Insert(GetAllDeclaredVariables(node, map[generic_ast.TraversableNode]struct{}{}))
 	return vars
 }
 
@@ -173,33 +181,41 @@ func isNilNode(node generic_ast.TraversableNode) bool {
 	return node == nil || (reflect.ValueOf(node).Kind() == reflect.Ptr && reflect.ValueOf(node).IsNil())
 }
 
-func GetAllAssignedVariables(node generic_ast.TraversableNode, wantMembers bool) VariableSet {
+func GetAllAssignedVariables(node generic_ast.TraversableNode, wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet {
+	if _, wasVisited := visitedMap[node]; wasVisited {
+		return NewVariableSet()
+	}
+	visitedMap[node] = struct{}{}
 	if isNilNode(node) {
 		return NewVariableSet()
 	}
 	if nodeWithAssignedVariables, ok := node.(NodeWithAssignedVariables); ok {
-		return nodeWithAssignedVariables.GetAssignedVariables(wantMembers)
+		return nodeWithAssignedVariables.GetAssignedVariables(wantMembers, visitedMap)
 	}
 	vars := VariableSet{}
 	for _, child := range node.GetChildren() {
 		if child != nil {
-			vars.Insert(GetAllAssignedVariables(child, wantMembers))
+			vars.Insert(GetAllAssignedVariables(child, wantMembers, visitedMap))
 		}
 	}
 	return vars
 }
 
-func GetAllDeclaredVariables(node generic_ast.TraversableNode) VariableSet {
+func GetAllDeclaredVariables(node generic_ast.TraversableNode, visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet {
+	if _, wasVisited := visitedMap[node]; wasVisited {
+		return NewVariableSet()
+	}
+	visitedMap[node] = struct{}{}
 	if isNilNode(node) {
 		return NewVariableSet()
 	}
 	if nodeWithDeclaredVariables, ok := node.(NodeWithDeclaredVariables); ok {
-		return nodeWithDeclaredVariables.GetDeclaredVariables()
+		return nodeWithDeclaredVariables.GetDeclaredVariables(visitedMap)
 	}
 	vars := VariableSet{}
 	for _, child := range node.GetChildren() {
 		if child != nil {
-			vars.Insert(GetAllDeclaredVariables(child))
+			vars.Insert(GetAllDeclaredVariables(child, visitedMap))
 		}
 	}
 	return vars

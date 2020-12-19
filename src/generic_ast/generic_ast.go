@@ -74,6 +74,7 @@ func ReplaceExpressionRecursively(node TraversableNode, oldNode TraversableNode,
 		}
 		e.Visit(e, mapper, NewEmptyVisitorContext())
 	}
+	//fmt.Printf("Replacement done\n")
 	return node
 }
 

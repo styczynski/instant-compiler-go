@@ -357,7 +357,7 @@ func  (ast *Primary)  ExpressionType() hindley_milner.ExpressionType {
 
 ///
 
-func (ast *Primary) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+func (ast *Primary) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	if ast.IsVariable() {
 		return cfg.NewVariableSet(cfg.NewVariable(*ast.Variable, ast))
 	} else if ast.IsSubexpression() {

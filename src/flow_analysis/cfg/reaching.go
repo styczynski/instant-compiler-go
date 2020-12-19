@@ -111,7 +111,7 @@ func genKillBitsets(cfg *CFG) (blocks []generic_ast.NormalNode, gen, kill map[ge
 		for j, block := range blocks {
 			j := uint(j)
 
-			def := GetAllDeclaredVariables(block)
+			def := GetAllDeclaredVariables(block, map[generic_ast.TraversableNode]struct{}{})
 
 			for _, d := range def {
 				if _, ok := okills[d]; !ok {

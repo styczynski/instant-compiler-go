@@ -93,7 +93,7 @@ func (ast *Assignment) ExpressionType() hindley_milner.ExpressionType {
 
 // Validate here this shit
 
-func (ast *Assignment) GetAssignedVariables(wantMembers bool) cfg.VariableSet {
+func (ast *Assignment) GetAssignedVariables(wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	return cfg.NewVariableSet(cfg.NewVariable(ast.TargetName, ast.Value))
 }
 

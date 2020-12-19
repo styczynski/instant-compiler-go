@@ -18,53 +18,6 @@ import (
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
-/**
-`
-
-class x {
-	int a;
-	int b;
-}
-
-class y {
-	int c;
-}
-
-//// iteracyjnie
-//int fact (int n) {
-//  int i,r;
-//  int[] q = new int[2];
-//  //q = (new int[]);
-//  int ff;
-//  ff = 2 + 2;
-//  //for(int c: q) a = q[a] + 9;
-//  return r;
-//}
-//
-//int main (int r) {
-//  printInt(fact(7));
-//  return 0;
-//}
-
-// rekurencyjnie
-int factr (int n) {
-  if (n < 2)
-    return 1 ;
-  else
-    return (n * factr(n-1)) ;
-}
-
-int main() {
-	x inst;
-    int a;
-	string b;
-	a = 2;
-	b = typename main;
-    inst = new x;
-}
-`
- */
-
 func ActionCompile(c *cli.Context) error {
 	pr := printer.CreateLattePrinter()
 	eventsCollector := events_collector.StartEventsCollector()
@@ -82,8 +35,11 @@ func ActionCompile(c *cli.Context) error {
 	checkedProgram := tc.Check(ast, context)
 	analyzedProgram := analyzer.Analyze(checkedProgram, context)
 	compiledProgram := comp.Compile(analyzedProgram, context)
-	//summary := events_collector.CreateCliSummaryShortStatus()
-	summary := events_collector.CreateCliSummary(-1)
+
+	var summary events_collector.Summarizer = events_collector.CreateCliSummary(-1)
+	if c.Bool("short") {
+		summary = events_collector.CreateCliSummaryShortStatus()
+	}
 	message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
 
 	if !ok {
@@ -113,6 +69,11 @@ func main() {
 
 	app := &cli.App{
 		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:        "short",
+				Usage:       "Display only basic success/error information (useful when testing files with glob expression or in bulk)",
+				Value:       false,
+			},
 		},
 		Action: ActionCompile,
 	}

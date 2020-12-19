@@ -53,13 +53,13 @@ func defUseBitsets(cfg *CFG) (vars []string, varsNames map[string]Variable, def,
 		def[block] = new(bitset.BitSet)
 		use[block] = new(bitset.BitSet)
 
-		d := GetAllDeclaredVariables(block).Copy()
-		u := GetAllUsagesVariables(block).Copy()
+		d := GetAllDeclaredVariables(block, map[generic_ast.TraversableNode]struct{}{}).Copy()
+		u := GetAllUsagesVariables(block, map[generic_ast.TraversableNode]struct{}{}).Copy()
 
 		// use[Exit] = use(each d in cfg.Defers)
 		if block == cfg.Exit {
 			for _, dfr := range cfg.Defers {
-				u.Insert(GetAllUsagesVariables(dfr))
+				u.Insert(GetAllUsagesVariables(dfr, map[generic_ast.TraversableNode]struct{}{}))
 			}
 		}
 

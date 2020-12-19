@@ -166,14 +166,14 @@ func (ast *UnaryApplication) RenameVariables(subst cfg.VariableSubstitution) {
 	}
 }
 
-func (ast *UnaryApplication) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+func (ast *UnaryApplication) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	if ast.IsApplication() {
 		vars.Add(cfg.NewVariable(*ast.Target, nil))
 		for _, arg := range ast.Arguments {
-			vars.Insert(cfg.GetAllUsagesVariables(arg))
+			vars.Insert(cfg.GetAllUsagesVariables(arg, visitedMap))
 		}
 	} else if ast.IsIndex() {
-		vars.Insert(cfg.GetAllUsagesVariables(ast.Index))
+		vars.Insert(cfg.GetAllUsagesVariables(ast.Index, visitedMap))
 	}
 	return vars
 }

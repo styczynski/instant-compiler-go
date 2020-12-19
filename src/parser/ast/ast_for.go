@@ -134,10 +134,10 @@ func (ast *For) BuildFlowGraph(builder cfg.CFGBuilder) {
 	builder.UpdatePrev(ctrlExits) // for stmt and any appropriate break statements
 }
 
-func (ast *For) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
-	return cfg.GetAllVariables(ast.Destructor.Target)
+func (ast *For) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	return cfg.GetAllVariables(ast.Destructor.Target, visitedMap)
 }
 
-func (ast *For) GetDeclaredVariables() cfg.VariableSet {
+func (ast *For) GetDeclaredVariables(visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	return cfg.NewVariableSet(cfg.NewVariable(ast.Destructor.ElementVar, ast.Destructor))
 }

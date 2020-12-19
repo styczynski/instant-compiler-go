@@ -52,7 +52,7 @@ func (flow *FlowAnalysisImpl) optimizeConst(node generic_ast.TraversableNode, c 
 			if _, wasVisited := visitedNodes[e]; wasVisited {
 				return
 			}
-			//fmt.Printf("Visit %s\n", e.(generic_ast.PrintableNode).Print(c))
+			////fmt.Printf("Visit %s\n", e.(generic_ast.PrintableNode).Print(c))
 			visitedNodes[e] = struct{}{}
 			e.Visit(parent, mapper, context)
 			if optimizableNode, ok := e.(generic_ast.ConstFoldableNode); ok {
@@ -125,11 +125,15 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 		}
 
 		for _, block := range flow.graph.blocksOrder {
+			//fmt.Printf("Iterate next block: %d/%d", bi, len(flow.graph.blocksOrder))
 			vars := flow.graph.ReferencedVars(block)
+			//fmt.Printf("now A\n")
 			for _, variable := range vars.use {
 
 				var variableDecl *Variable = nil
+				//fmt.Printf("now inner B\n")
 				for _, reachingBlock := range flow.graph.blocksOrder {
+					//fmt.Printf("iter block order\n")
 					if _, hasBlock := flow.reaching.ReachedBlocks(reachingBlock)[block]; hasBlock {
 						for _, defVar := range flow.graph.ReferencedVars(reachingBlock).decl {
 							if defVar.Name() == variable.Name() {
@@ -138,12 +142,16 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 							}
 						}
 					}
+					//fmt.Printf("end iter block order\n")
 				}
+				//fmt.Printf("now inner C\n")
 
 				if variableDecl == nil {
+					//fmt.Printf("continue!\n")
 					continue
 				}
 
+				//fmt.Printf("node opt\n")
 				node := (*variableDecl).Value()
 				if !isNilNode(node) {
 					if constExtractable, ok := node.(generic_ast.ConstExtractableNode); ok {
@@ -158,6 +166,7 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 						}
 					}
 				}
+				//fmt.Printf("node opt end\n")
 			}
 		}
 
@@ -166,6 +175,7 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 		}
 	}
 
+	//fmt.Printf("validate\n")
 	// Validate
 	for _, block := range flow.graph.blocksOrder {
 		if block != nil {
@@ -178,5 +188,7 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 			}
 		}
 	}
+
+	//fmt.Printf("end\n")
 	return nil
 }

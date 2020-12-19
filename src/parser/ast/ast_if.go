@@ -182,6 +182,6 @@ func (ast *If) BuildFlowGraph(builder cfg.CFGBuilder) {
 	builder.UpdatePrev(ctrlExits)
 }
 
-func (ast *If) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
-	return cfg.GetAllUsagesVariables(ast.Condition)
+func (ast *If) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	return cfg.GetAllUsagesVariables(ast.Condition, visitedMap)
 }

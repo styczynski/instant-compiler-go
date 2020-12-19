@@ -148,6 +148,6 @@ func (ast *While) BuildFlowGraph(builder cfg.CFGBuilder) {
 	}
 }
 
-func (ast *While) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
-	return cfg.GetAllVariables(ast.Condition)
+func (ast *While) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	return cfg.GetAllVariables(ast.Condition, visitedMap)
 }

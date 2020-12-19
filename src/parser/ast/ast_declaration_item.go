@@ -85,15 +85,15 @@ func (ast *DeclarationItem) ExpressionType() hindley_milner.ExpressionType {
 
 //
 
-func (ast *DeclarationItem) GetDeclaredVariables() cfg.VariableSet {
+func (ast *DeclarationItem) GetDeclaredVariables(visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	return cfg.NewVariableSet(cfg.NewVariable(ast.Name, ast.Initializer))
 }
 
-func (ast *DeclarationItem) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+func (ast *DeclarationItem) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	if !ast.HasInitializer() {
 		return cfg.NewVariableSet()
 	}
-	return cfg.GetAllUsagesVariables(ast.Initializer)
+	return cfg.GetAllUsagesVariables(ast.Initializer, visitedMap)
 }
 
 

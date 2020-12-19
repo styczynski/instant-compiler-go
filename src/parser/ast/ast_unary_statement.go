@@ -86,16 +86,16 @@ func (ast *UnaryStatement) ExpressionType() hindley_milner.ExpressionType {
 
 ///
 
-func (ast *UnaryStatement) GetAssignedVariables(wantMembers bool) cfg.VariableSet {
+func (ast *UnaryStatement) GetAssignedVariables(wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	return cfg.NewVariableSet(cfg.NewVariable(*ast.TargetName, nil))
 }
 
-func (ast *UnaryStatement) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {
+func (ast *UnaryStatement) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	vars.Add(cfg.NewVariable(*ast.TargetName, nil))
 	return vars
 }
 
-func (ast *UnaryStatement) RenameVariables(subst cfg.VariableSubstitution) {
+func (ast *UnaryStatement) RenameVariables(subst cfg.VariableSubstitution, visitedMap map[generic_ast.TraversableNode]struct{}) {
 	v := subst.Replace(*ast.TargetName)
 	ast.TargetName = &v
 }
