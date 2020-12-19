@@ -71,6 +71,27 @@ func (ast *LatteProgram) Body() generic_ast.Expression {
 	panic(fmt.Errorf("Batch Body() method cannot be called."))
 }
 
+func (ast *LatteProgram) Validate(c *context.ParsingContext) generic_ast.NodeError {
+	fmt.Printf("SUKA BLYAT!\n")
+	hasMain := false
+	for _, def := range ast.Definitions {
+		if def.IsFunction() {
+			if def.Function.Name == "main" {
+				hasMain = true
+			}
+		}
+	}
+	if !hasMain {
+		message := fmt.Sprintf("main() function is missing. Please create a top-level function with signature int main() { ... }")
+		return generic_ast.NewNodeError(
+			"Missing main()",
+			ast,
+			message,
+			message)
+	}
+	return nil
+}
+
 /////
 
 func (ast *LatteProgram) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {

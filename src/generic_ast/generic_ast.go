@@ -78,7 +78,7 @@ func ReplaceExpressionRecursively(node TraversableNode, oldNode TraversableNode,
 }
 
 type NodeWithSyntaxValidation interface {
-	Validate() NodeError
+	Validate(c *context.ParsingContext) NodeError
 }
 
 type NormalNode interface {

@@ -292,6 +292,25 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			textMessage: textMessage,
 			errorName: errorName,
 		}
+	} else if builtinRedef, ok := err.(hindley_milner.BuiltinRedefinedError); ok {
+		src := builtinRedef.Source().(interface{}).(generic_ast.NodeWithPosition)
+		causeInfo := ""
+
+		errorName := "Builtin redefined"
+		message, textMessage := c.FormatParsingError(
+			errorName,
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			fmt.Sprintf("%s%s", builtinRedef.Error(), causeInfo),
+		)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+			errorName: errorName,
+		}
 	}
 	panic(fmt.Sprintf("Unknown error: [%v]\n", err))
 	return &TypeCheckingError{

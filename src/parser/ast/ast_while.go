@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"fmt"
+
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
@@ -47,6 +49,20 @@ func (ast *While) GetChildren() []generic_ast.TraversableNode {
 		ast.Condition,
 		ast.Do,
 	}
+}
+
+func (ast *While) Validate(c *context.ParsingContext) generic_ast.NodeError {
+	if ast.Do != nil {
+		if ast.Do.IsDeclaration() {
+			message := fmt.Sprintf("Declaration as a non-block expression inside while statement is forbidden. Please use { } brackets and create the definition there.")
+			return generic_ast.NewNodeError(
+				"Declaration not allowed",
+				ast,
+				message,
+				message)
+		}
+	}
+	return nil
 }
 
 ///

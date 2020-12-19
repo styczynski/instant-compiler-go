@@ -79,7 +79,6 @@ func (ast *TopDef) IsFunction() bool {
 	return ast.Function != nil
 }
 
-
 ///
 
 

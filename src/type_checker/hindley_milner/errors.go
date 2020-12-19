@@ -134,3 +134,18 @@ func (err VariableRedefinedError) Error() string {
 func (err VariableRedefinedError) Source() generic_ast.Expression {
 	return *(err.Context.Source)
 }
+
+type BuiltinRedefinedError struct {
+	Name string
+	Context CodeContext
+}
+
+func (err BuiltinRedefinedError) Error() string {
+	return fmt.Sprintf("%s is a builin variable, you cannot override it. Please use different name.",
+		err.Name,
+	)
+}
+
+func (err BuiltinRedefinedError) Source() generic_ast.Expression {
+	return *(err.Context.Source)
+}

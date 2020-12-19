@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
@@ -52,6 +53,23 @@ func (ast *Declaration) Print(c *context.ParsingContext) string {
 		declarationItemsList = append(declarationItemsList, item.Print(c))
 	}
 	return printNode(c, ast, "%s %s", ast.DeclarationType.Print(c), strings.Join(declarationItemsList, ", "))
+}
+
+func (ast *Declaration) canBeInputType(t hindley_milner.Type) bool {
+	return !( t.Eq(CreatePrimitive(T_VOID_ARG)) || t.Eq(CreatePrimitive(T_VOID)) )
+}
+
+func (ast *Declaration) Validate(c *context.ParsingContext) generic_ast.NodeError {
+	t, _ := ast.DeclarationType.GetType().Type()
+	if !ast.canBeInputType(t) {
+		message := fmt.Sprintf("Declarations cannot set variable with type %s. Change the type to other possible alternatives.", t.String())
+		return generic_ast.NewNodeError(
+			"Type not allowed",
+			ast,
+			message,
+			message)
+	}
+	return nil
 }
 
 //////

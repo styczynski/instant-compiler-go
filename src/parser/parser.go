@@ -233,7 +233,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 				return
 			}
 			if nodeWithValidation, ok := node.(generic_ast.NodeWithSyntaxValidation); ok {
-				validationError := nodeWithValidation.Validate()
+				validationError := nodeWithValidation.Validate(c)
 				if validationError != nil {
 					syntaxValidationError = validationError
 					return
@@ -246,6 +246,14 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 		output.Visit(output, parentSetterVisitor, generic_ast.NewEmptyVisitorContext())
 		visitedNodes = map[generic_ast.Expression]interface{}{}
 		output.Visit(output, nodeSyntaxValidationVisitor, generic_ast.NewEmptyVisitorContext())
+
+		var out generic_ast.Expression = output
+		if nodeWithValidation, ok := out.(generic_ast.NodeWithSyntaxValidation); ok {
+			validationError := nodeWithValidation.Validate(c)
+			if validationError != nil {
+				syntaxValidationError = validationError
+			}
+		}
 
 		if syntaxValidationError != nil {
 			pos := syntaxValidationError.GetSource().(generic_ast.NodeWithPosition).Begin()

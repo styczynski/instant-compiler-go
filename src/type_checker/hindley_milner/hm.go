@@ -25,6 +25,12 @@ func saveExprContext(t Type, source *generic_ast.Expression) Type {
 
 func wrapEnvError(err error, source *generic_ast.Expression) error {
 	if e, ok := err.(*envError); ok {
+		if e.builtin {
+			return BuiltinRedefinedError{
+				Name:    e.variableName,
+				Context: CreateCodeContext(*source),
+			}
+		}
 		return VariableRedefinedError{
 			Name:               e.variableName,
 			PreviousDefinition: e.oldDef,

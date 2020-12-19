@@ -215,6 +215,7 @@ func (e *SimpleEnv) VarsNames() []string {
 type envError struct {
 	variableName string
 	oldDef CodeContext
+	builtin bool
 }
 
 func (err *envError) Error() string {
@@ -231,9 +232,14 @@ func (e *SimpleEnv) AddPrototype(f Fresher, name string, s *Scheme, blockScopeLe
 
 func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel int, isPrototype bool) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
 	logf("Add %s ==> %v [%d]\n", name, s, blockScopeLevel)
-	if _, ok := e.builtins[name]; ok {
+	if _, ok := e.builtins[name]; ok && blockScopeLevel == 0 {
 		// Do not override builtins
-		return e, nil, nil, nil, nil
+		//return e, nil, nil, nil, nil
+		return e, nil, nil, nil, &envError{
+			variableName: name,
+			oldDef: s.t.GetContext(),
+			builtin: true,
+		}
 	}
 	//logf("Add %s\n", name)
 	if oldLevels, ok := e.levels[name]; ok && len(oldLevels)>0 {

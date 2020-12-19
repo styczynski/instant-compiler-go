@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"fmt"
+
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
@@ -115,6 +117,30 @@ func (ast *If) Body() generic_ast.Expression {
 
 func (ast *If) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_APPLICATION
+}
+
+func (ast *If) Validate(c *context.ParsingContext) generic_ast.NodeError {
+	if ast.Then != nil {
+		if ast.Then.IsDeclaration() {
+			message := fmt.Sprintf("Declaration as a non-block expression inside if statement is forbidden. Please use { } brackets and create the definition there.")
+			return generic_ast.NewNodeError(
+				"Declaration not allowed",
+				ast,
+				message,
+				message)
+		}
+	}
+	if ast.Else != nil {
+		if ast.Else.IsDeclaration() {
+			message := fmt.Sprintf("Declaration as a non-block expression inside if statement else block is forbidden. Please use { } brackets and create the definition there.")
+			return generic_ast.NewNodeError(
+				"Declaration not allowed",
+				ast,
+				message,
+				message)
+		}
+	}
+	return nil
 }
 
 //

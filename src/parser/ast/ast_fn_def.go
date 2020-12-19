@@ -69,7 +69,12 @@ func (ast *FnDef) Print(c *context.ParsingContext) string {
 
 /////
 
-func (ast *FnDef) Validate() generic_ast.NodeError {
+func (ast *FnDef) canBeInputType(t hindley_milner.Type) bool {
+	return !( t.Eq(CreatePrimitive(T_VOID_ARG)) || t.Eq(CreatePrimitive(T_VOID)) )
+}
+
+func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
+	fmt.Printf("Validate! HUJUPIZDO %s\n", ast.Name)
 	if _, ok := ast.Parent().(*TopDef); ok {
 		if ast.Name == "main" {
 			returnedType, _ := ast.ReturnType.GetType().Type()
@@ -91,6 +96,36 @@ func (ast *FnDef) Validate() generic_ast.NodeError {
 					message)
 			}
 		}
+		for _, arg := range ast.Arg {
+			t, _ := arg.ArgumentType.GetType().Type()
+			if !ast.canBeInputType(t) {
+				filteredArgsStrs := []string{}
+				for _, newArg := range ast.Arg {
+					if ast.canBeInputType(t) {
+						filteredArgsStrs = append(filteredArgsStrs, newArg.Print(c))
+					}
+				}
+				message := fmt.Sprintf("Functions cannot accept type %s as a parameter. Did you specified it by a mistake? If so please try: %s %s(%s) { ... }",
+					t.String(),
+					ast.ReturnType.Print(c),
+					ast.Name,
+					strings.Join(filteredArgsStrs, ", "),)
+				return generic_ast.NewNodeError(
+					"Type not allowed",
+					ast,
+					message,
+					message)
+			} else {
+				fmt.Printf("NOPE HUJU %s\n", t.String())
+			}
+		}
+	} else {
+		message := fmt.Sprintf("%s(...) function is defined in inner scope. Inner functions are not supported.", ast.Name)
+		return generic_ast.NewNodeError(
+			"Inner function",
+			ast,
+			message,
+			message)
 	}
 	return nil
 }
