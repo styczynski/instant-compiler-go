@@ -90,8 +90,8 @@ func (ast *Return) ExpressionType() hindley_milner.ExpressionType { return hindl
 //
 
 func (ast *Return) BuildFlowGraph(builder cfg.CFGBuilder) {
-	builder.AddSucc(ast)
+	builder.AddBlockSuccesor(ast)
 	builder.UpdatePrev([]generic_ast.NormalNode{ ast })
-	builder.AddSucc(builder.Exit())
+	builder.AddBlockSuccesor(builder.Exit())
 	builder.UpdatePrev(nil)
 }

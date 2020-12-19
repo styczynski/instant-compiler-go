@@ -10,10 +10,10 @@ func newSolver() *solver {
 }
 
 func (s *solver) solve(cs Constraints) {
-	//logf("solving constraints: %d", len(cs))
-	//enterLoggingContext()
-	//defer leaveLoggingContext()
-	//logf("starting sub %v", s.sub)
+
+
+
+
 	if s.err != nil {
 		return
 	}
@@ -32,6 +32,6 @@ func (s *solver) solve(cs Constraints) {
 		s.solve(cs)
 
 	}
-	//logf("Ending Sub %v", s.sub)
+
 	return
 }

@@ -2,7 +2,6 @@ package hindley_milner
 
 import "fmt"
 
-// A Constraint is well.. a constraint that says a must equal to b. It's used mainly in the constraint generation process.
 type Constraint struct {
 	a, b Type
 	context CodeContext

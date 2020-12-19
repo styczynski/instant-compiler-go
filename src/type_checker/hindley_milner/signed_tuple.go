@@ -6,14 +6,14 @@ import (
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
-// SignedTuple is a basic record/tuple type. It takes an optional name.
+
 type SignedTuple struct {
 	ts   []Type
 	name string
 	context CodeContext
 }
 
-// NewSignedTupleType creates a new SignedTuple Type
+
 func NewSignedTupleType(name string, ts ...Type) *SignedTuple {
 	return &SignedTuple{
 		ts:   ts,
@@ -115,7 +115,7 @@ func (t *SignedTuple) GetContext() CodeContext {
 
 func (t *SignedTuple) String() string { return fmt.Sprintf("%s%v", TypeStringPrefix(t), t) }
 
-// Clone implements Cloner
+
 func (t *SignedTuple) Clone() interface{} {
 	retVal := new(SignedTuple)
 	ts := BorrowTypes(len(t.ts))
@@ -133,7 +133,7 @@ func (t *SignedTuple) Clone() interface{} {
 }
 
 
-//
+
 
 type SignedTupleUnwrapExpr struct {
 	name string
@@ -152,7 +152,7 @@ func ExpressionSignedTupleGet(name string, len int, index int, expr generic_ast.
 }
 
 func (ast *SignedTupleUnwrapExpr) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	// TODO
+
 	return mapper(parent, ast, context, false)
 }
 

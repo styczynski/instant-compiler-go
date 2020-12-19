@@ -126,12 +126,12 @@ func (ast *While) BuildFlowGraph(builder cfg.CFGBuilder) {
 
 	var post generic_ast.NormalNode = ast
 
-	builder.AddSucc(ast)
+	builder.AddBlockSuccesor(ast)
 
 	builder.UpdatePrev([]generic_ast.NormalNode{ ast })
 	builder.BuildNode(ast.Do)
 
-	builder.AddSucc(post)
+	builder.AddBlockSuccesor(post)
 
 	ctrlExits := []generic_ast.NormalNode{ ast }
 

@@ -166,7 +166,7 @@ func (ast *If) BuildFlowGraph(builder cfg.CFGBuilder) {
 		return
 	}
 
-	builder.AddSucc(ast)
+	builder.AddBlockSuccesor(ast)
 
 	builder.UpdatePrev([]generic_ast.NormalNode{ast})
 	builder.BuildNode(ast.Then)

@@ -2,19 +2,19 @@ package hindley_milner
 
 import "fmt"
 
-// Subs is a list of substitution. Internally there are two very basic substitutions - one backed by map and the other a normal slice
+
 type Subs interface {
 	Get(TypeVariable) (Type, bool)
 	Add(TypeVariable, Type) Subs
 	Remove(TypeVariable) Subs
 
-	// Iter() <-chan Substitution
+
 	Iter() []Substitution
 	Size() int
 	Clone() Subs
 }
 
-// A Substitution is a tuple representing the TypeVariable and the replacement Type
+
 type Substitution struct {
 	Tv TypeVariable
 	T  Type
@@ -52,7 +52,7 @@ func (s *sSubs) Add(tv TypeVariable, t Type) Subs {
 
 func (s *sSubs) Remove(tv TypeVariable) Subs {
 	if i := s.index(tv); i >= 0 {
-		// for now we keep the order
+
 		copy(s.s[i:], s.s[i+1:])
 		s.s[len(s.s)-1].T = nil
 		s.s = s.s[:len(s.s)-1]

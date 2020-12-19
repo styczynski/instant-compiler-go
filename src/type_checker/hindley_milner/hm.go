@@ -9,12 +9,12 @@ import (
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
-// Cloner is any type that can clone
+
 type Cloner interface {
 	Clone() interface{}
 }
 
-// Fresher keeps track of all the TypeVariables that has been generated so far. It has one method - Fresh(), which is to create a new TypeVariable
+
 type Fresher interface {
 	Fresh() TypeVariable
 }
@@ -101,7 +101,7 @@ func (infer *inferer) lookup(isLiteral bool, name string, source generic_ast.Exp
 }
 
 func (infer *inferer) resolveProxy(expr generic_ast.Expression, exprType ExpressionType) (generic_ast.Expression, ExpressionType) {
-	// Resolve proxies
+
 	for {
 		if expr == nil {
 			return expr, exprType
@@ -125,42 +125,42 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		return nil
 	}
 
-	// fallbacks
+
 
 	exprType := expr.(HMExpression).ExpressionType()
 	if forceType != E_NONE {
 		exprType = forceType
 	}
 
-	// Resolve unions
+
 	expr, exprType = infer.resolveProxy(expr, exprType)
 
-	// Optionally get ident dependencies
+
 	if exprWithDeps, ok := expr.(ExpressionWithIdentifiersDeps); ok {
 		idents := exprWithDeps.GetIdentifierDeps()
 		for _, name := range idents.GetNames() {
 			if objType := idents.GetTypeOf(name); objType != nil {
-				// Declare identifiers
-				//objTypeTV := infer.Fresh()
+
+
 				/*_, osx1, osx2 :=*/ infer.env.AddPrototype(infer, name,
 					objType,
 					infer.blockScopeLevel)
-				//if osx1 != nil && osx2 != nil {
-				//	infer.cs = append(infer.cs, Constraint{
-				//		a:       Instantiate(infer, osx1),
-				//		b:       Instantiate(infer, osx2),
-				//		context: CreateCodeContext(expr),
-				//	})
-				//}
-				//infer.cs = append(infer.cs, Constraint{
-				//	a:       objTypeTV,
-				//	b:       Instantiate(infer, objType),
-				//	context: CreateCodeContext(expr),
-				//})
-				//logf("HELLO: %v? %s\n", objType, Instantiate(infer, objType))
+
+
+
+
+
+
+
+
+
+
+
+
+
 			} else {
 				tv := infer.Fresh().WithContext(objType.t.GetContext())
-				// Declare identifiers
+
 				_, osx1, osx2, _, err := infer.env.Add(infer, name,
 					NewScheme(nil, tv),
 					infer.blockScopeLevel)
@@ -178,7 +178,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		}
 	}
 
-	// explicit types/inferers - can fail
+
 	switch et := expr.(type) {
 	case Typer:
 		if infer.t = et.Type(); infer.t != nil {
@@ -191,7 +191,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			return nil
 		}
 
-		err = nil // reset errors
+		err = nil
 	}
 
 	switch exprType {
@@ -259,7 +259,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			return fmt.Errorf("Literal entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
 		name := et.Name().GetNames()[0]
-		//logf("GOT %s\n", name)
+
 		if infer.env.IsOverloaded(name) {
 			tv := infer.Fresh().WithContext(CreateCodeContext(expr))
 			infer.t = tv
@@ -297,10 +297,10 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 	case E_TYPE:
 		et := expr.(EmbeddedType)
 		scheme := et.EmbeddedType()
-		//tempName := fmt.Sprintf("__embt_%d", int(rand.Int63()))
-		//infer.env.Add(tempName, scheme)
-		//err = infer.lookup(false, tempName, et)
-		//infer.env.Remove(tempName)
+
+
+
+
 		infer.t = Instantiate(infer, scheme)
 
 	case E_RETURN:
@@ -332,8 +332,8 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		env := []Env{}
 		tv := []TypeVariable{}
 
-		// Clear returns
-		rets := infer.returns // backup
+
+		rets := infer.returns
 		infer.returns = []Type{}
 
 		names := et.Args().GetNames()
@@ -346,10 +346,10 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			}
 			tv = append(tv, newVar)
 
-			env = append(env, infer.env) // backup
+			env = append(env, infer.env)
 
 			infer.env = infer.env.Clone()
-			//infer.env.Remove(name)
+
 			sc := new(Scheme)
 			sc.t = tv[len(tv)-1].WithContext(CreateCodeContext(expr))
 			_, s1, s2, _, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel)
@@ -385,11 +385,11 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			}
 		}
 
-		// here we have an error on zero parameters
+
 		for i:=0; i<len(names); i++ {
 			infer.t = NewFnType(tv[len(tv)-1], infer.t).WithContext(CreateCodeContext(expr))
 
-			infer.env = env[len(env)-1] // restore backup
+			infer.env = env[len(env)-1]
 			env = env[:len(env)-1]
 			tv = tv[:len(tv)-1]
 		}
@@ -485,24 +485,24 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 
 	case E_BLOCK, E_OPAQUE_BLOCK:
 		et := expr.(Block)
-		env := infer.env // backup
+		env := infer.env
 		if exprType != E_OPAQUE_BLOCK {
 			logf("BLOCK_SCOPE level++ (old value: %d)\n", infer.blockScopeLevel)
 			infer.blockScopeLevel++
 		}
-		//t := infer.t
+
 
 		for _, statement := range et.GetContents().Expressions() {
-			//if true { break }
-			//infer.t = t
-			//infer.env = env
+
+
+
 
 			if err = infer.consGen(statement, E_NONE, false, exprType == E_OPAQUE_BLOCK && isOpaqueTop); err != nil {
 				return err
 			}
 
-			//infer.t = t
-			//infer.env = env
+
+
 		}
 
 		tv := infer.Fresh().WithContext(CreateCodeContext(et)).(TypeVariable)
@@ -536,7 +536,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 
 	case E_LET_RECURSIVE, E_DECLARATION, E_FUNCTION_DECLARATION:
 
-		// env := infer.env // backup
+
 
 		et := expr.(LetBase)
 		names := et.Var().GetNames()
@@ -588,17 +588,17 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 				defExpectedType = types[i]
 			}
 
-			//if exprType == E_FUNCTION_DECLARATION {
-			//	def = def.(Lambda)
-			//} else {
-			//	def = def.(Let).Def()
-			//}
 
-			//
-			//if len(et.Var().GetNames()) != 1 {
-			//	return fmt.Errorf("LetRec entity cannot conntain other value than one variable name. You cannot use Names batch here.")
-			//}
-			//name := et.Var().GetNames()[0]
+
+
+
+
+
+
+
+
+
+
 
 			infer.env = infer.env.Clone()
 			has := infer.env.Has(name)
@@ -633,12 +633,12 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 					infer.t = tv
 				}
 			} else if exprType == E_FUNCTION_DECLARATION {
-				//fn := expr.(Lambda)
+
 				if err = infer.consGen(def, E_FUNCTION, false, false); err != nil {
 					return err
 				}
 			} else {
-				//def := expr.(Let).Def()
+
 				if err = infer.consGen(def, E_NONE, false, false); err != nil {
 					return err
 				}
@@ -661,7 +661,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			_, os1, os2, varEnvDef2, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel)
 			if err != nil {
 				if _, isDup := err.(*envError); isDup && varEnvDef.GetUID() == varEnvDef2.GetUID() {
-					// Ignore
+
 				} else {
 					return wrapEnvError(err, &expr)
 				}
@@ -700,13 +700,13 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			}
 
 			infer.cs = append(infer.cs, defCs...)
-			// Add expected type
+
 			if defExpectedType != nil {
 				actualType := defType
 				if exprType == E_LET_RECURSIVE {
 					actualType = sc.t
 				}
-				//logf("Expect %v to be %v\n", sc.t, Instantiate(infer, defExpectedType))
+
 				infer.cs = append(infer.cs, Constraint{
 					a:       actualType,
 					b:       Instantiate(infer, defExpectedType),
@@ -738,7 +738,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		logf("PATRZ CWELU: %v\n", defType.Apply(s.sub).(Type))
 		sc := Generalize(env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 		infer.env = infer.env.Clone()
-		//infer.env.Remove(name)
+
 		_, s1, s2, _, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel)
 		if err != nil {
 			return wrapEnvError(err, &expr)
@@ -768,8 +768,8 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 }
 
 func (inferer *inferer) cleanupConstraintsRemoveDuplicates() {
-	//rand.Seed(time.Now().UnixNano())
-	//rand.Shuffle(len(inferer.cs), func(i, j int) { inferer.cs[i], inferer.cs[j] = inferer.cs[j], inferer.cs[i] })
+
+
 
 	hashtable := map[string]Constraint{}
 	order := []string{}
@@ -800,7 +800,7 @@ func (infer *inferer) cleanupConstraints() {
 		infer.csflag = infer.csflag + 1
 		return
 	}
-	//prevLen := len(infer.cs)
+
 
 	cs := Constraints{}
 	freeVars := map[int16]map[Type]interface{}{}
@@ -847,16 +847,16 @@ func (infer *inferer) cleanupConstraints() {
 
 	infer.cs = cs
 
-	//logf("Cleanup %d => %d\n", prevLen, len(infer.cs))
+
 }
 
-// Instantiate takes a fresh name generator, an a polytype and makes a concrete type out of it.
-//
-// If ...
-// 		  Γ ⊢ e: T1  T1 ⊑ T
-//		----------------------
-//		       Γ ⊢ e: T
-//
+
+
+
+
+
+
+
 func Instantiate(f Fresher, s *Scheme) Type {
 	l := len(s.tvs)
 	tvs := make(TypeVarSet, l)
@@ -877,14 +877,14 @@ func Instantiate(f Fresher, s *Scheme) Type {
 	return s.t.Apply(sub).(Type)
 }
 
-// Generalize takes an env and a type and creates the most general possible type - which is a polytype
-//
-// Generalization
-//
-// If ...
-//		  Γ ⊢ e: T1  T1 ∉ free(Γ)
-//		---------------------------
-//		   Γ ⊢ e: ∀ α.T1
+
+
+
+
+
+
+
+
 func Generalize(env Env, t Type) *Scheme {
 	logf("generalizing %v over %v", t, env)
 	enterLoggingContext()
@@ -904,9 +904,9 @@ func Generalize(env Env, t Type) *Scheme {
 		defer ReturnTypeVarSet(envFree)
 		defer ReturnTypeVarSet(tFree)
 	case len(envFree) > 0 && len(tFree) == 0:
-		// cannot return envFree because envFree will just be sorted and set
+
 	case len(envFree) == 0 && len(tFree) > 0:
-		// return ?
+
 	}
 
 	diff = tFree.Difference(envFree)
@@ -934,7 +934,7 @@ func NewInferConfiguration() *InferConfiguration {
 	}
 }
 
-// Infer takes an env, and an expression, and returns a scheme.
+
 func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*Scheme, Env, error) {
 	if expr == nil {
 		return nil, nil, errors.Errorf("Cannot infer a nil expression")
@@ -968,7 +968,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 		return nil, nil, s.err
 	}
 
-	//logf("SOLVED NOW OCS ARE:\n%#v\n%#v", infer.ocs, infer.cs)
+
 	if config.OnPostprocessingStarted != nil {
 		(*config.OnPostprocessingStarted)()
 	}
@@ -978,7 +978,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 		cs := Constraints{}
 		for _, alt := range ocs.alternatives {
 			cs = Constraints{}
-			//copy(cs, cleanCS)
+
 			for _, c := range cleanCS {
 				cs = append(cs, c)
 			}
@@ -990,7 +990,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 			s2 := newSolver()
 			s2.solve(cs)
 			if s2.err == nil {
-				//logf("\n\nOLDS CS: %#v\nNEW CS: %#v\n\n", cleanCS, cs)
+
 				hasCleanRun = true
 				break
 			}
@@ -1013,9 +1013,9 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 	}
 	infer.cs = cleanCS
 
-	//logf("CONSTRAINTS: %v\n", infer.cs)
+
 	for _, ics := range infer.ics {
-		//logf("GOT INTRO: %v => %v\n", ics.tv, ics.argTV)
+
 		introExpr := (*ics.context.Source).(IntrospectionExpression)
 		introExpr.OnTypeReturned(ics.argTV)
 	}
@@ -1044,11 +1044,11 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 	return ret, retEnv, nil
 }
 
-// Unify unifies the two types and returns a list of substitutions.
+
 func Unify(a, b Type, context Constraint) (sub Subs, err error) {
-	//logf("%v ~ %v", a, b)
-	//enterLoggingContext()
-	//defer leaveLoggingContext()
+
+
+
 
 	switch at := a.(type) {
 	case TypeVariable:
@@ -1083,9 +1083,9 @@ func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 }
 
 func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Subs, err error) {
-	//logf("UnifyMany %v %v", a, b)
-	//enterLoggingContext()
-	//defer leaveLoggingContext()
+
+
+
 
 	if len(a) != len(b) {
 		return nil, UnificationLengthError{
@@ -1125,7 +1125,7 @@ func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Sub
 func bind(tv TypeVariable, t Type, context Constraint, tvt Type) (sub Subs, err error) {
 	logf("Binding %v to %v", tv, t)
 	switch {
-	// case tv == t:
+
 	case occurs(tv, t):
 		if tv.Eq(t) {
 			ssub := BorrowSSubs(1)
@@ -1138,7 +1138,7 @@ func bind(tv TypeVariable, t Type, context Constraint, tvt Type) (sub Subs, err 
 			repr.String(*tv.GetContext().Source),
 				repr.String(*tvt.GetContext().Source),
 					repr.String(*context.context.Source))
-		//panic("BŁAGAM SPIERDALAJ")
+
 		err = UnificationRecurrentTypeError{
 			Type:       t,
 			Variable:   tv,
@@ -1150,7 +1150,7 @@ func bind(tv TypeVariable, t Type, context Constraint, tvt Type) (sub Subs, err 
 		ssub.s[0] = Substitution{tv, t}
 		sub = ssub
 	}
-	//logf("Sub %v", sub)
+
 	return
 }
 
@@ -1165,6 +1165,6 @@ func closeOver(t Type) (sch *Scheme, err error) {
 	logf("PATRZ SPERMA: %v\n", t)
 	sch = Generalize(nil, t)
 	err = sch.Normalize()
-	//logf("closeoversch: %v", sch)
+
 	return
 }

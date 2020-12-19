@@ -6,13 +6,13 @@ import (
 
 type TypeMapper = func(t Type) Type
 
-// Type represents all the possible type constructors.
+
 type Type interface {
 	Substitutable
-	Name() string                                   // Name is the name of the constructor
-	Normalize(TypeVarSet, TypeVarSet) (Type, error) // Normalize normalizes all the type variable names in the type
-	Types() Types                                   // If the type is made up of smaller types, then it will return them
-	Eq(Type) bool                                   // equality operation
+	Name() string
+	Normalize(TypeVarSet, TypeVarSet) (Type, error)
+	Types() Types
+	Eq(Type) bool
 
 	MapTypes(TypeMapper) Type
 	WithContext(CodeContext) Type
@@ -24,18 +24,18 @@ type Type interface {
 
 func TypeStringPrefix(t Type) string {
 	if !t.GetContext().IsEmpty() {
-		//return "@@"
+
 	}
 	return ""
 }
 
-// Substitutable is any type that can have a set of substitutions applied on it, as well as being able to know what its free type variables are
+
 type Substitutable interface {
 	Apply(Subs) Substitutable
 	FreeTypeVar() TypeVarSet
 }
 
-// TypeConst are the default implementation of a constant type. Feel free to implement your own. TypeConsts should be immutable (so no pointer types plz)
+
 type TypeConst struct {
 	value string
 	context CodeContext
@@ -67,14 +67,14 @@ func (t TypeConst) GetContext() CodeContext {
 	return t.context
 }
 
-// Record is a basic record/tuple type. It takes an optional name.
+
 type Record struct {
 	ts   []Type
 	name string
 	context CodeContext
 }
 
-// NewRecordType creates a new Record Type
+
 func NewRecordType(name string, ts ...Type) *Record {
 	return &Record{
 		ts:   ts,
@@ -176,7 +176,7 @@ func (t *Record) GetContext() CodeContext {
 
 func (t *Record) String() string { return fmt.Sprintf("%s%v", TypeStringPrefix(t), t) }
 
-// Clone implements Cloner
+
 func (t *Record) Clone() interface{} {
 	retVal := new(Record)
 	ts := BorrowTypes(len(t.ts))

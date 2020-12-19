@@ -2,16 +2,16 @@ package hindley_milner
 
 import "fmt"
 
-// FunctionType is a type constructor that builds function types.
+
 type FunctionType struct {
 	a, b Type
 	context CodeContext
 }
 
-// NewFnType creates a new FunctionType. Functions are by default right associative. This:
-//		NewFnType(a, a, a)
-// is short hand for this:
-// 		NewFnType(a, NewFnType(a, a))
+
+
+
+
 func NewFnType(ts ...Type) *FunctionType {
 	if len(ts) < 2 {
 		panic("Expected at least 2 input types")
@@ -71,12 +71,12 @@ func (t *FunctionType) Eq(other Type) bool {
 	return false
 }
 
-// Other methods (accessors mainly)
 
-// Arg returns the type of the function argument
+
+
 func (t *FunctionType) Arg() Type { return t.a }
 
-// Ret returns the return type of a function. If recursive is true, it will get the final return type
+
 func (t *FunctionType) Ret(recursive bool) Type {
 	if !recursive {
 		return t.b
@@ -89,9 +89,9 @@ func (t *FunctionType) Ret(recursive bool) Type {
 	return t.b
 }
 
-// FlatTypes returns the types in FunctionTypes as a flat slice of types. This allows for easier iteration in some applications
+
 func (t *FunctionType) FlatTypes() Types {
-	retVal := BorrowTypes(8) // start with 8. Can always grow
+	retVal := BorrowTypes(8)
 	retVal = retVal[:0]
 
 	if a, ok := t.a.(*FunctionType); ok {
@@ -112,7 +112,7 @@ func (t *FunctionType) FlatTypes() Types {
 	return retVal
 }
 
-// Clone implements Cloner
+
 func (t *FunctionType) Clone() interface{} {
 	retVal := new(FunctionType)
 

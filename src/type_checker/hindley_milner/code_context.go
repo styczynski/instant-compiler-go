@@ -51,7 +51,6 @@ func (c CodeContext) String() string {
 
 
 func CopyContextTo(t Type, src ...Type) Type {
-	//return t
 	var context *CodeContext = nil
 	for _, srcT := range src {
 		if !srcT.GetContext().IsEmpty() {

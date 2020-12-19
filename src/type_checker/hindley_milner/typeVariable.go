@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TypeVariable is a variable that ranges over the types - that is to say it can take any type.
+
 type TypeVariable struct {
 	value int16
 	context CodeContext

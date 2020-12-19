@@ -2,7 +2,6 @@ package hindley_milner
 
 import "fmt"
 
-// An Env is essentially a map of names to schemes
 type Env interface {
 	Substitutable
 	SchemeOf(string) (*Scheme, bool)
@@ -60,7 +59,7 @@ func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
 		}
 		if true {
 			builtins[name] = func() []*Scheme {
-				//logf("Get scheme for %s:\n", name)
+
 				ret := []*Scheme{}
 				for _, s := range schemes {
 					ret = append(ret, s.DeepClone())
@@ -99,10 +98,10 @@ func (e *SimpleEnv) Apply(sub Subs) Substitutable {
 
 	for name, v := range e.env {
 		if _, ok := e.builtins[name]; ok {
-			// Skip builtins
+
 			continue
 		}
-		v[0].Apply(sub) // apply mutates Scheme, so no need to set
+		v[0].Apply(sub)
 	}
 	return e
 }
@@ -116,7 +115,7 @@ func (e *SimpleEnv) FreeTypeVar() TypeVarSet {
 	var retVal TypeVarSet
 	for name, v := range e.env {
 		if _, ok := e.builtins[name]; ok {
-			// Do not return tv for builtins
+
 			continue
 		}
 		retVal = v[0].FreeTypeVar().Union(retVal)
@@ -131,9 +130,9 @@ func (e *SimpleEnv) IsBuiltin(name string) bool {
 
 func (e *SimpleEnv) Lookup(f Fresher, name string) (Type, error, bool) {
 	if e.IsBuiltin(name) {
-		//logf("%s IS BUILTIN\n", name)
+
 		scheme, _ := e.SchemeOf(name)
-		//logf("SO TYPE IS %v\n", scheme)
+
 		return Instantiate(f, scheme.Clone()), nil, false
 	}
 
@@ -164,7 +163,7 @@ func (e *SimpleEnv) SchemeOf(name string) (*Scheme, bool) {
 }
 
 func (e *SimpleEnv) Clone() Env {
-	//logf("CLONE ENV\n")
+
 	retVal := &SimpleEnv{
 		env: make(map[string][]*Scheme),
 		builtins: make(map[string]func()[]*Scheme),
@@ -233,20 +232,20 @@ func (e *SimpleEnv) AddPrototype(f Fresher, name string, s *Scheme, blockScopeLe
 func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel int, isPrototype bool) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
 	logf("Add %s ==> %v [%d]\n", name, s, blockScopeLevel)
 	if _, ok := e.builtins[name]; ok && blockScopeLevel == 0 {
-		// Do not override builtins
-		//return e, nil, nil, nil, nil
+
+
 		return e, nil, nil, nil, &envError{
 			variableName: name,
 			oldDef: s.t.GetContext(),
 			builtin: true,
 		}
 	}
-	//logf("Add %s\n", name)
+
 	if oldLevels, ok := e.levels[name]; ok && len(oldLevels)>0 {
 		oldLevel := oldLevels[len(oldLevels)-1]
-		//logf("Oh noes indentifier is redeclared [%s] <%d, %d>\n", name, oldLevel, blockScopeLevel)
+
 		if oldLevel.level == blockScopeLevel {
-			// Do not redefine!
+
 			inf := levelInfo{
 				level:  blockScopeLevel,
 				isProt: isPrototype && oldLevel.isProt,
@@ -262,7 +261,7 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 
 			logf("  -> ADD MERGE %v ~ %v\n", con1, con2)
 			if !oldLevel.isProt && !isPrototype {
-				//fmt.Printf("THROW!\n")
+
 				return e, con1, con2, oldLevel, &envError{
 					variableName: name,
 					oldDef: e.env[name][0].t.GetContext(),
@@ -288,7 +287,7 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 
 func (e *SimpleEnv) Remove(name string) Env {
 	if _, ok := e.builtins[name]; ok {
-		// Do not delete builtins
+
 		return e
 	}
 	logf("Remove %s\n", name)

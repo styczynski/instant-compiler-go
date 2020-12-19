@@ -4,14 +4,14 @@ import (
 	"fmt"
 )
 
-// SignedStruct is a basic record/tuple type. It takes an optional name.
+
 type SignedStruct struct {
 	ts map[string]Type
 	name string
 	context CodeContext
 }
 
-// NewSignedStructType creates a new SignedStruct Type
+
 func NewSignedStructType(name string, ts map[string]Type) *SignedStruct {
 	return &SignedStruct{
 		ts:   ts,
@@ -122,7 +122,7 @@ func (t *SignedStruct) GetContext() CodeContext {
 
 func (t *SignedStruct) String() string { return fmt.Sprintf("%s%v", TypeStringPrefix(t), t) }
 
-// Clone implements Cloner
+
 func (t *SignedStruct) Clone() interface{} {
 	retVal := new(SignedStruct)
 	ts := map[string]Type{}

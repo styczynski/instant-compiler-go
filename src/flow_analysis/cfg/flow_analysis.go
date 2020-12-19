@@ -77,7 +77,7 @@ func (flow *FlowAnalysisImpl) Reaching() ReachingVariablesInfo {
 
 func (flow *FlowAnalysisImpl) Graph() *CFG {
 	if flow.graph == nil {
-		flow.graph = FromStmts(flow.input)
+		flow.graph = CreateCFGFromNodes(flow.input)
 	}
 	return flow.graph
 }

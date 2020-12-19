@@ -1,9 +1,5 @@
 package hindley_milner
 
-//func enterLoggingContext()                      {}
-//func leaveLoggingContext()                      {}
-//func logf(format string, others ...interface{}) {}
-
 import (
 	"fmt"
 	"log"
@@ -12,7 +8,6 @@ import (
 	"sync/atomic"
 )
 
-// DEBUG returns true when it's in debug mode
 const DEBUG = false
 
 var tabcount uint32
@@ -31,6 +26,14 @@ func enterLoggingContext() {
 	replacement = "\n" + strings.Repeat("\t", tabs)
 }
 
+func logf(format string, others ...interface{}) {
+	if DEBUG {
+		s := fmt.Sprintf(format, others...)
+		s = strings.Replace(s, "\n", replacement, -1)
+		_logger_.Println(s)
+	}
+}
+
 func leaveLoggingContext() {
 	tabs := tc()
 	tabs--
@@ -43,14 +46,4 @@ func leaveLoggingContext() {
 	}
 	_logger_.SetPrefix(strings.Repeat("\t", tabs))
 	replacement = "\n" + strings.Repeat("\t", tabs)
-}
-
-func logf(format string, others ...interface{}) {
-	if DEBUG {
-		// format = strings.Replace(format, "\n", replacement, -1)
-		s := fmt.Sprintf(format, others...)
-		s = strings.Replace(s, "\n", replacement, -1)
-		_logger_.Println(s)
-		// _logger_.Printf(format, others...)
-	}
 }

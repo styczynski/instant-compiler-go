@@ -6,10 +6,10 @@ import (
 	"github.com/xtgo/set"
 )
 
-// TypeVarSet is a set of TypeVariable
+
 type TypeVarSet []TypeVariable
 
-// TypeVariables are orderable, so we fulfil the interface for sort.Interface
+
 
 func (s TypeVarSet) Len() int           { return len(s) }
 func (s TypeVarSet) Less(i, j int) bool { return s[i].value < s[j].value }
