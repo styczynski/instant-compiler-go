@@ -1,7 +1,6 @@
 package events_collector
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -71,7 +70,8 @@ func (collector *EventsCollector) insertTimeAggregation(ids []string, t time.Dur
 }
 
 func (collector *EventsCollector) debugOutputEvent(format string, a ...interface{}) {
-	fmt.Printf(format, a...)
+	// Enable on debug
+	//fmt.Printf(format, a...)
 }
 
 func (collector *EventsCollector) runEventsCollectorDeamon() {

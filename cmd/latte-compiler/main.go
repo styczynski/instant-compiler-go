@@ -88,11 +88,12 @@ func ActionCompile(c *cli.Context) error {
 
 	if !ok {
 		os.Stderr.WriteString("ERROR\n")
+		fmt.Print(message)
 		os.Exit(1)
 	} else {
 		os.Stderr.WriteString("OK\n")
+		fmt.Print(message)
 	}
-	fmt.Print(message)
 
 	//f, err := os.Create("compiler.prof")
 	//if err != nil {
