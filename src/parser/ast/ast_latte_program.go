@@ -72,7 +72,7 @@ func (ast *LatteProgram) Body() generic_ast.Expression {
 }
 
 func (ast *LatteProgram) Validate(c *context.ParsingContext) generic_ast.NodeError {
-	fmt.Printf("SUKA BLYAT!\n")
+	//fmt.Printf("SUKA BLYAT!\n")
 	hasMain := false
 	for _, def := range ast.Definitions {
 		if def.IsFunction() {

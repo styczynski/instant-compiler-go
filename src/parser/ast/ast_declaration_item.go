@@ -73,7 +73,9 @@ func (ast *DeclarationItem) Map(parent generic_ast.Expression, mapper generic_as
 }
 
 func (ast *DeclarationItem) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
-	mapper(ast, ast.Initializer, context)
+	if ast.HasInitializer() {
+		mapper(ast, ast.Initializer, context)
+	}
 	mapper(parent, ast, context)
 }
 

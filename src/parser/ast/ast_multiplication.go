@@ -124,6 +124,9 @@ func (ast *Multiplication) ConstFold() generic_ast.TraversableNode {
 			p1 := const1.(*Primary)
 			p2 := const2.(*Primary)
 			v := p1.Mul(p2, ast.Op)
+			if v.IsInvalid() {
+				v.Invalid.Source = ast
+			}
 			// Change pointers
 			ast.Unary.UnaryApplication.Index.Primary = v
 			ast.Op = ast.Next.Op

@@ -111,3 +111,51 @@ func (ast *LogicalOperation) ExpressionType() hindley_milner.ExpressionType {
 	}
 	return hindley_milner.E_APPLICATION
 }
+
+///
+
+func (ast *LogicalOperation) ConstFold() generic_ast.TraversableNode {
+	//fmt.Printf("Optimize cosntFold() LogicalOperation\n")
+	if ast.HasNext() {
+		const1, ok1 := ast.Equality.ExtractConst()
+		if ok1 && ast.Op == "||" && const1.(*Primary).IsBool() {
+			//fmt.Printf("Fold left ||\n")
+			if (*const1.(*Primary).Bool) {
+				v := true
+				ast.Equality.Comparison.Addition.Multiplication.Unary.UnaryApplication.Index.Primary = &Primary{
+					BaseASTNode:   ast.BaseASTNode,
+					Bool: &v,
+				}
+				ast.Next = nil
+				return ast
+			}
+		}
+		if ok1 && ast.Op == "&&" && const1.(*Primary).IsBool() {
+			//fmt.Printf("Fold left &&\n")
+			if !(*const1.(*Primary).Bool) {
+				v := false
+				ast.Equality.Comparison.Addition.Multiplication.Unary.UnaryApplication.Index.Primary = &Primary{
+					BaseASTNode:   ast.BaseASTNode,
+					Bool: &v,
+				}
+				ast.Next = nil
+				return ast
+			}
+		}
+
+		const2, ok2 := ast.Next.Equality.ExtractConst()
+		if ok1 && ok2 {
+			//fmt.Printf("Fold all\n")
+			p1 := const1.(*Primary)
+			p2 := const2.(*Primary)
+			v := p1.And(p2, ast.Op)
+			// Change pointers
+			ast.Equality.Comparison.Addition.Multiplication.Unary.UnaryApplication.Index.Primary = v
+			ast.Op = ast.Next.Op
+			ast.Next = ast.Next.Next
+			return ast
+		}
+	}
+	//fmt.Printf("Fold nothing\n")
+	return ast
+}

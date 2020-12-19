@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
@@ -348,8 +349,28 @@ func (tc *LatteTypeChecker) checkAsync(programPromise parser.LatteParsedProgramP
 	r := make(chan LatteTypecheckedProgram)
 	ctx := c.Copy()
 	go func() {
-		defer close(r)
 		program := programPromise.Resolve()
+		defer errors.GeneralRecovery(ctx, "Typechecking", program.Filename(), func(message string, textMessage string) {
+			r <- LatteTypecheckedProgram{
+				Program: program,
+				TypeCheckingError: &TypeCheckingError{
+					message:     message,
+					textMessage: textMessage,
+					errorName:   "PANIC (Typechecking)",
+				},
+				filename: program.Filename(),
+			}
+		}, func() {
+			close(r)
+		})
+		//fmt.Printf("%#v\n", program)
+		if program.ParsingError() != nil {
+			r <- LatteTypecheckedProgram{
+				Program: program,
+				filename: program.Filename(),
+			}
+			return
+		}
 		if program.Context() != nil {
 			ctx = program.Context()
 		}
@@ -375,13 +396,6 @@ func (tc *LatteTypeChecker) checkAsync(programPromise parser.LatteParsedProgramP
 			c.EventsCollectorStream.End("Postprocessing", c, program)
 		}
 
-		if program.ParsingError() != nil {
-			r <- LatteTypecheckedProgram{
-				Program: program,
-				filename: program.Filename(),
-			}
-			return
-		}
 		config := hindley_milner.NewInferConfiguration()
 		config.CreateDefaultEmptyType = func() *hindley_milner.Scheme { return hindley_milner.NewScheme(nil, ast.CreatePrimitive(ast.T_VOID)) }
 

@@ -5,6 +5,12 @@ import (
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
+type ConstFoldingError interface {
+	GetSource() generic_ast.TraversableNode
+	GetMessage() string
+	Error() string
+}
+
 type BlockLiveVariables interface {
 	BlockIn(block generic_ast.NormalNode) VariableSet
 	BlockOut(block generic_ast.NormalNode) VariableSet
@@ -15,7 +21,7 @@ type FlowAnalysis interface {
 	Liveness() BlockLiveVariables
 	Reaching() ReachingVariablesInfo
 	Print(c *context.ParsingContext) string
-	ConstFold(c *context.ParsingContext)
+	ConstFold(c *context.ParsingContext) ConstFoldingError
 	Output() generic_ast.NormalNode
 	Rebuild()
 }

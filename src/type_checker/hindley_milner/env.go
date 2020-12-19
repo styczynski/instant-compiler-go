@@ -262,7 +262,7 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 
 			logf("  -> ADD MERGE %v ~ %v\n", con1, con2)
 			if !oldLevel.isProt && !isPrototype {
-				fmt.Printf("THROW!\n")
+				//fmt.Printf("THROW!\n")
 				return e, con1, con2, oldLevel, &envError{
 					variableName: name,
 					oldDef: e.env[name][0].t.GetContext(),

@@ -88,6 +88,9 @@ func (ast *Declaration) Map(parent generic_ast.Expression, mapper generic_ast.Ex
 }
 
 func (ast *Declaration) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
+	for _, item := range ast.Items {
+		mapper(ast, item, context)
+	}
 	mapper(parent, ast, context)
 }
 

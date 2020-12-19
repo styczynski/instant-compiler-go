@@ -1,14 +1,30 @@
 package cfg
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
-func (flow *FlowAnalysisImpl) optimizeConst(node generic_ast.TraversableNode) generic_ast.TraversableNode {
+type ConstFoldingErrorImpl struct {
+	Message string
+	Source generic_ast.TraversableNode
+}
+
+func (e *ConstFoldingErrorImpl) GetSource() generic_ast.TraversableNode {
+	return e.Source
+}
+
+func (e *ConstFoldingErrorImpl) GetMessage() string {
+	return e.Message
+}
+
+func (e *ConstFoldingErrorImpl) Error() string {
+	return e.Message
+}
+
+func (flow *FlowAnalysisImpl) optimizeConst(node generic_ast.TraversableNode, c *context.ParsingContext, validate bool) (generic_ast.TraversableNode, error) {
 	//if expr, ok := node.(generic_ast.Expression); ok{
 	//	var mapper generic_ast.ExpressionMapper
 	//	mapper = func (parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext, backwards bool) generic_ast.Expression{
@@ -30,12 +46,15 @@ func (flow *FlowAnalysisImpl) optimizeConst(node generic_ast.TraversableNode) ge
 	//}
 	if expr, ok := node.(generic_ast.Expression); ok{
 		var mapper generic_ast.ExpressionVisitor
+		var invalidChecker generic_ast.ExpressionVisitor
 		visitedNodes := map[generic_ast.Expression]struct{}{}
 		mapper = func (parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
 			if _, wasVisited := visitedNodes[e]; wasVisited {
 				return
 			}
+			//fmt.Printf("Visit %s\n", e.(generic_ast.PrintableNode).Print(c))
 			visitedNodes[e] = struct{}{}
+			e.Visit(parent, mapper, context)
 			if optimizableNode, ok := e.(generic_ast.ConstFoldableNode); ok {
 				//generic_ast.ReplaceExpressionRecursively(e.(generic_ast.TraversableNode), e.(generic_ast.TraversableNode), optimizableNode.ConstFold())
 				optimizedNode := optimizableNode.ConstFold()
@@ -46,29 +65,61 @@ func (flow *FlowAnalysisImpl) optimizeConst(node generic_ast.TraversableNode) ge
 					panic("Wrong type")
 				}
 			}
-				e.Visit(parent, mapper, context)
-
 		}
 		expr.Visit(node.Parent().(generic_ast.Expression), mapper, generic_ast.NewEmptyVisitorContext())
-		return expr.(generic_ast.TraversableNode)
+
+		if validate {
+			var invalidNodeError error = nil
+			var invalidNodeSrc generic_ast.TraversableNode = nil
+			visitedNodes = map[generic_ast.Expression]struct{}{}
+			invalidChecker = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
+				if _, wasVisited := visitedNodes[e]; wasVisited {
+					return
+				}
+				visitedNodes[e] = struct{}{}
+				e.Visit(parent, invalidChecker, context)
+				if nodeWithFoldingValidation, ok := e.(generic_ast.NodeWithFoldingValidation); ok {
+					err, src := nodeWithFoldingValidation.ValidateConstFold()
+					if err != nil {
+						if invalidNodeError == nil {
+							invalidNodeError = err
+							invalidNodeSrc = src
+						}
+						return
+					}
+				}
+			}
+			expr.Visit(node.Parent().(generic_ast.Expression), invalidChecker, generic_ast.NewEmptyVisitorContext())
+			if invalidNodeError != nil {
+				return invalidNodeSrc, invalidNodeError
+			}
+		}
+
+		return expr.(generic_ast.TraversableNode), nil
 	} else {
-		return node
+		return node, nil
 	}
 }
 
-func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) {
+func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingError {
 
 	flow.Graph()
 	flow.Reaching()
 
  	for true {
- 		fmt.Printf("fold() iterate\n")
+ 		//fmt.Printf("fold() iterate\n")
  		change := false
 
 		// Firstly, run const optimization on each node
 		for _, block := range flow.graph.blocksOrder {
 			if block != nil {
-				newNode := flow.optimizeConst(block)
+				newNode, err := flow.optimizeConst(block, c, false)
+				if err != nil {
+					return &ConstFoldingErrorImpl{
+						Message: err.Error(),
+						Source:  newNode,
+					}
+				}
 				generic_ast.ReplaceExpressionRecursively(block, block, newNode)
 			}
 		}
@@ -114,4 +165,18 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) {
 			break
 		}
 	}
+
+	// Validate
+	for _, block := range flow.graph.blocksOrder {
+		if block != nil {
+			newNode, err := flow.optimizeConst(block, c, true)
+			if err != nil {
+				return &ConstFoldingErrorImpl{
+					Message: err.Error(),
+					Source:  newNode,
+				}
+			}
+		}
+	}
+	return nil
 }

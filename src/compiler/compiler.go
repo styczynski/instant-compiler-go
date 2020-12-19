@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
@@ -49,10 +50,21 @@ func CreateLatteCompiler() *LatteCompiler {
 
 func (compiler *LatteCompiler) compileAsync(programPromise flow_analysis.LatteAnalyzedProgramPromise, c *context.ParsingContext) LatteCompiledProgramPromise {
 	ret := make(chan LatteCompiledProgram)
-	//ctx := c.Copy()
+	ctx := c.Copy()
 	go func() {
-		defer close(ret)
 		program := programPromise.Resolve()
+		defer errors.GeneralRecovery(ctx, "Code generation", program.Filename(), func(message string, textMessage string) {
+			ret <- LatteCompiledProgram{
+				Program:          program,
+				CompilationError: &CompilationError{
+					message:     message,
+					textMessage: textMessage,
+				},
+			}
+		}, func() {
+			close(ret)
+		})
+
 		c.EventsCollectorStream.Start("Generate compiled code", c, program)
 		defer c.EventsCollectorStream.End("Generate compiled code", c, program)
 

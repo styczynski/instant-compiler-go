@@ -1,8 +1,6 @@
 package flow_analysis
 
 import (
-	"fmt"
-
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -64,7 +62,24 @@ type FlowAnalyzableNode interface {
 }
 
 func wrapFlowAnalysisError(err error, source generic_ast.NormalNode, c *context.ParsingContext) *FlowAnalysisError {
-	if flowErr, ok := err.(*errors.LocalizedError); ok {
+	if foldingErr, ok := err.(cfg.ConstFoldingError); ok {
+		src := foldingErr.GetSource()
+		errorName := "Constant folding error"
+		message, textMessage := c.FormatParsingError(
+			errorName,
+			foldingErr.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			foldingErr.Error(),
+		)
+		return &FlowAnalysisError{
+			message:     message,
+			textMessage: textMessage,
+			errorName:   errorName,
+		}
+	} else if flowErr, ok := err.(*errors.LocalizedError); ok {
 		src := flowErr.Source()
 		errorName := flowErr.ErrorName()
 		message, textMessage := c.FormatParsingError(
@@ -105,8 +120,21 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 	r := make(chan LatteAnalyzedProgram)
 	ctx := c.Copy()
 	go func() {
-		defer close(r)
 		program := programPromise.Resolve()
+		defer errors.GeneralRecovery(ctx, "Flow analysis", program.Filename(), func(message string, textMessage string) {
+			r <- LatteAnalyzedProgram{
+				Program:  program,
+				FlowAnalysisError: &FlowAnalysisError{
+					message:     message,
+					textMessage: textMessage,
+					errorName:   "PANIC (Flow analysis)",
+					source:      nil,
+				},
+				filename: program.Filename(),
+			}
+		}, func() {
+			close(r)
+		})
 		if program.TypeCheckingError != nil {
 			r <- LatteAnalyzedProgram{
 				Program:  program,
@@ -141,18 +169,24 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				flow := cfg.CreateFlowAnalysis(ast)
 
 
-				fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				fmt.Print(flow.Print(ctx))
-				fmt.Printf("\nPerform fold()\n")
-				flow.ConstFold(c)
+				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
+				//fmt.Print(flow.Print(ctx))
+				//fmt.Printf("\nPerform fold()\n")
+				err := flow.ConstFold(c)
+				if err != nil {
+					if flowErrGlobal == nil {
+						flowErrGlobal = wrapFlowAnalysisError(err, nodeForAnalysis.(generic_ast.NormalNode), ctx)
+					}
+					return
+				}
 				flow.Rebuild()
 				ast = flow.Output()
 
-				fmt.Printf("Fold done.\n")
-				fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
-				fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				fmt.Print(flow.Print(ctx))
-				fmt.Printf("Yeah.\n")
+				//fmt.Printf("Fold done.\n")
+				//fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
+				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
+				//fmt.Print(flow.Print(ctx))
+				//fmt.Printf("Yeah.\n")
 
 				customErr := nodeForAnalysis.OnFlowAnalysis(flow)
 				if customErr != nil {

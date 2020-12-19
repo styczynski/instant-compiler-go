@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"fmt"
+
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
@@ -8,6 +10,11 @@ import (
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
+
+type PrimaryInvalid struct {
+	Reason string
+	Source generic_ast.TraversableNode
+}
 
 type Primary struct {
 	generic_ast.BaseASTNode
@@ -17,10 +24,13 @@ type Primary struct {
 	Bool          *bool       `| @( "true" | "false" )`
 	SubExpression *Expression `| ( "(" @@ ")" )`
 	ParentNode generic_ast.TraversableNode
+	Invalid *PrimaryInvalid
 }
 
 func (ast *Primary) ExtractConst() (generic_ast.TraversableNode, bool) {
-	if ast.IsSubexpression() {
+	if ast.IsInvalid() {
+		return ast, false
+	} else if ast.IsSubexpression() {
 		return ast.SubExpression.ExtractConst()
 	} else if ast.IsVariable() {
 		return nil, false
@@ -29,6 +39,21 @@ func (ast *Primary) ExtractConst() (generic_ast.TraversableNode, bool) {
 }
 
 // Basic arithmetic functions
+
+func (a *Primary) IsInvalid() bool {
+	return a.Invalid != nil
+}
+
+func (a *Primary) ValidateConstFold() (error, generic_ast.TraversableNode) {
+	if a.IsInvalid() {
+		return fmt.Errorf(a.Invalid.Reason), a.Invalid.Source
+	}
+	return nil, nil
+}
+
+func (a *Primary) GetInvalidReason() PrimaryInvalid {
+	return *a.Invalid
+}
 
 func (a *Primary) Add(b *Primary, Op string) *Primary {
 	if a.IsInt() && b.IsInt() {
@@ -116,15 +141,55 @@ func (a *Primary) Compare(b *Primary, Op string) *Primary {
 	panic("Invalid addition")
 }
 
+func (a *Primary) And(b *Primary, Op string) *Primary {
+	if a.IsBool() && b.IsBool() {
+		v := false
+		if Op == "&&" {
+			v = *a.Bool && *b.Bool
+		} else if Op == "||" {
+			v = *a.Bool || *b.Bool
+		} else {
+			panic("Invalid and operator")
+		}
+		return &Primary{
+			BaseASTNode:   a.BaseASTNode,
+			Bool: &v,
+		}
+	}
+	panic("Invalid and")
+}
+
 func (a *Primary) Mul(b *Primary, Op string) *Primary {
 	if a.IsInt() && b.IsInt() {
 		v := int64(0)
 		if Op == "/" {
-			v = *a.Int / *b.Int
+			if *b.Int == 0 {
+				return &Primary{
+					BaseASTNode:   a.BaseASTNode,
+					Invalid: &PrimaryInvalid{
+						Reason: "Detected division by 0.",
+						Source: b,
+					},
+					Int: &v,
+				}
+			} else {
+				v = *a.Int / *b.Int
+			}
 		} else if Op == "*" {
 			v = *a.Int * *b.Int
 		} else if Op == "%" {
-			v = *a.Int % *b.Int
+			if *b.Int == 0 {
+				return &Primary{
+					BaseASTNode:   a.BaseASTNode,
+					Invalid: &PrimaryInvalid{
+						Reason: "Detected modulo operation with 0 base.",
+						Source: b,
+					},
+					Int: &v,
+				}
+			} else {
+				v = *a.Int % *b.Int
+			}
 		} else {
 			panic("Invalid multiplication type")
 		}
@@ -263,7 +328,9 @@ func (ast *Primary) Map(parent generic_ast.Expression, mapper generic_ast.Expres
 	}, context, true)
 }
 func (ast *Primary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
-	// TODO
+	if ast.IsSubexpression() {
+		mapper(ast, ast.SubExpression, context)
+	}
 	mapper(parent, ast, context)
 }
 func (ast *Primary) Type() hindley_milner.Type {

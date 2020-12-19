@@ -1,11 +1,9 @@
 package ast
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"github.com/alecthomas/repr"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -195,7 +193,7 @@ func (ast *Statement) Body() generic_ast.Expression {
 	}
 	ast.BaseASTNode = generic_ast.BaseASTNode{}
 	ast.ParentNode = nil
-	fmt.Printf("Failed for node %s\n", repr.String(ast))
+	//fmt.Printf("Failed for node %s\n", repr.String(ast))
 	panic("Invalid Statement type")
 }
 

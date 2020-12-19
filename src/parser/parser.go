@@ -7,6 +7,7 @@ import (
 
 	"github.com/alecthomas/participle/v2"
 
+	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
@@ -17,10 +18,16 @@ type LatteParser struct {
 	parserInstance *participle.Parser
 }
 
+type AbstractParsingError interface {
+	ErrorName() string
+	Error() string
+	CliMessage() string
+}
+
 type LatteParsedProgram interface {
 	AST() *ast.LatteProgram
 	Filename() string
-	ParsingError() *ParsingError
+	ParsingError() AbstractParsingError
 	Resolve() LatteParsedProgram
 	Context() *context.ParsingContext
 }
@@ -28,7 +35,7 @@ type LatteParsedProgram interface {
 type LatteParsedProgramImpl struct {
 	ast *ast.LatteProgram
 	filename string
-	error *ParsingError
+	error AbstractParsingError
 	context *context.ParsingContext
 }
 
@@ -44,7 +51,7 @@ func (prog *LatteParsedProgramImpl) AST() *ast.LatteProgram {
 	return prog.ast
 }
 
-func (prog *LatteParsedProgramImpl) ParsingError() *ParsingError {
+func (prog *LatteParsedProgramImpl) ParsingError() AbstractParsingError {
 	return prog.error
 }
 
@@ -100,6 +107,23 @@ func (e *ParsingError) CliMessage() string {
 	return e.textMessage
 }
 
+type ParsingPanicError struct {
+	message string
+	textMessage string
+}
+
+func (e *ParsingPanicError) ErrorName() string {
+	return "PANIC (Parsing)"
+}
+
+func (e *ParsingPanicError) Error() string {
+	return fmt.Sprintf("%s", e.message)
+}
+
+func (e *ParsingPanicError) CliMessage() string {
+	return fmt.Sprintf("%s", e.textMessage)
+}
+
 func examineParsingErrorMessage(message string, recommendedBracket string) string {
 	r := regexp.MustCompile(`unexpected token "([^"]*)" (.*)`)
 	matches := r.FindStringSubmatch(message)
@@ -152,7 +176,20 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 		c.EventsCollectorStream.Start("Parse input", c, input)
 		defer c.EventsCollectorStream.End("Parse input", c, input)
 
-		defer close(ret)
+		defer errors.GeneralRecovery(ctx, "Parsing", input.Filename(), func(message string, textMessage string) {
+			ret <- &LatteParsedProgramImpl{
+				ast:      nil,
+				filename: input.Filename(),
+				error:      &ParsingPanicError{
+					message:     message,
+					textMessage: textMessage,
+				},
+				context: ctx,
+			}
+		}, func() {
+			close(ret)
+		})
+
 		var err error = nil
 		output := &ast.LatteProgram{}
 		q, err := input.Read()
