@@ -130,7 +130,7 @@ func examineParsingErrorMessage(message string, recommendedBracket string) strin
 	if len(matches) > 0 {
 		tokenName := matches[1]
 		messageRaw := matches[2]
-		message := strings.Replace(messageRaw[1:len(messageRaw)-1], "expected ", "")
+		message := strings.Replace(messageRaw[1:len(messageRaw)-1], "expected ", "", -1)
 		additionalInfo := ""
 		if len(recommendedBracket) > 0 {
 			if recommendedBracket == "/" {
