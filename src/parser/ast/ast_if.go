@@ -95,7 +95,7 @@ func (ast *If) Fn() generic_ast.Expression {
 		return hindley_milner.NewScheme(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a'), hindley_milner.TVar('b')},
 			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), hindley_milner.TVar('a'), hindley_milner.TVar('b'), CreatePrimitive(T_VOID)))
-	}}
+	}, Source: ast,}
 }
 
 func (ast *If) Body() generic_ast.Expression {

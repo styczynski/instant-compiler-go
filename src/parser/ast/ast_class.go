@@ -103,13 +103,18 @@ func (ast *Class) GetClassInstanceType() hindley_milner.Type {
 	return hindley_milner.NewSignedStructType(ast.Name, fields)
 }
 
+func (ast *Class) GetDeclarationType() *hindley_milner.Scheme {
+	return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("class", hindley_milner.NewFnType(
+		CreatePrimitive(T_VOID),
+		ast.GetClassInstanceType(),
+	)))
+}
+
 func (ast *Class) Def() generic_ast.Expression {
 	return hindley_milner.EmbeddedTypeExpr{
 		GetType: func() *hindley_milner.Scheme {
-			return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("class", hindley_milner.NewFnType(
-				CreatePrimitive(T_VOID),
-				ast.GetClassInstanceType(),
-			)))
+			return ast.GetDeclarationType()
 		},
+		Source: ast,
 	}
 }

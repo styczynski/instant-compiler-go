@@ -71,7 +71,7 @@ func (ast *While) Fn() generic_ast.Expression {
 		return hindley_milner.NewScheme(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), hindley_milner.TVar('a'), CreatePrimitive(T_VOID)))
-	}}
+	}, Source: ast,}
 }
 
 func (ast *While) Body() generic_ast.Expression {
@@ -94,6 +94,20 @@ func (ast *While) BuildFlowGraph(builder cfg.CFGBuilder) {
 	// flows as such (range same w/o init & post):
 	// previous -> [ init -> ] for -> body -> [ post -> ] for -> next
 
+	skipJumpOut := false
+	skipBody := false
+	if constCond, hasConstCond := ast.Condition.ExtractConst(); hasConstCond {
+		if *(constCond.(*Primary).Bool) {
+			skipJumpOut = true
+		} else {
+			skipBody = true
+		}
+	}
+
+	if skipBody {
+		return
+	}
+
 	var post generic_ast.NormalNode = ast
 
 	builder.AddSucc(ast)
@@ -111,7 +125,11 @@ func (ast *While) BuildFlowGraph(builder cfg.CFGBuilder) {
 		// Deal with continue/break here if such thing will be implemented
 	}
 
-	builder.UpdatePrev(ctrlExits) // for stmt and any appropriate break statements
+	if skipJumpOut {
+		builder.UpdatePrev([]generic_ast.NormalNode{})
+	} else {
+		builder.UpdatePrev(ctrlExits) // for stmt and any appropriate break statements
+	}
 }
 
 func (ast *While) GetUsedVariables(vars cfg.VariableSet) cfg.VariableSet {

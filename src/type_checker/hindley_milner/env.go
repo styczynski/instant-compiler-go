@@ -1,17 +1,17 @@
 package hindley_milner
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // An Env is essentially a map of names to schemes
 type Env interface {
 	Substitutable
 	SchemeOf(string) (*Scheme, bool)
+	Lookup(f Fresher, name string) (Type, error, bool)
 	Clone() Env
 
 	Has(string) bool
-	Add(string, *Scheme, int) (Env, *Scheme, *Scheme)
+	AddPrototype(Fresher, string, *Scheme, int) (Env, *Scheme, *Scheme, DeclarationInfo, error)
+	Add(Fresher, string, *Scheme, int) (Env, *Scheme, *Scheme, DeclarationInfo, error)
 	Remove(string) Env
 	VarsNames() []string
 	IsOverloaded(string) bool
@@ -19,10 +19,32 @@ type Env interface {
 	IsBuiltin(name string) bool
 }
 
+type levelInfo struct {
+	level int
+	isProt bool
+	hasAnyProt bool
+	uid int
+	baseTV TypeVariable
+}
+
+func (i levelInfo) GetUID() int {
+	return i.uid
+}
+
+func (i levelInfo) GetTV() TypeVariable {
+	return i.baseTV
+}
+
+type DeclarationInfo interface {
+	GetUID() int
+	GetTV() TypeVariable
+}
+
 type SimpleEnv struct {
 	env map[string][]*Scheme
 	builtins map[string]func()[]*Scheme
-	levels map[string][]int
+	levels map[string][]levelInfo
+	uid int
 }
 
 func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
@@ -38,7 +60,7 @@ func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
 		}
 		if true {
 			builtins[name] = func() []*Scheme {
-				//fmt.Printf("Get scheme for %s:\n", name)
+				//logf("Get scheme for %s:\n", name)
 				ret := []*Scheme{}
 				for _, s := range schemes {
 					ret = append(ret, s.DeepClone())
@@ -52,7 +74,7 @@ func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
 	return &SimpleEnv{
 		env: newEnv,
 		builtins: builtins,
-		levels: map[string][]int{},
+		levels: map[string][]levelInfo{},
 	}
 }
 
@@ -61,12 +83,12 @@ func SingleDef(tvs TypeVarSet, t Type) []*Scheme {
 }
 
 func PrintEnv(env Env) {
-	fmt.Printf("====== Environment ======\n")
+	logf("====== Environment ======\n")
 	for _, v := range env.VarsNames() {
 		scheme, _ := env.SchemeOf(v)
-		fmt.Printf("%s => %v\n", v, scheme)
+		logf("%s => %v\n", v, scheme)
 	}
-	fmt.Printf("=========================\n")
+	logf("=========================\n")
 }
 
 func (e *SimpleEnv) Apply(sub Subs) Substitutable {
@@ -107,6 +129,29 @@ func (e *SimpleEnv) IsBuiltin(name string) bool {
 	return ok
 }
 
+func (e *SimpleEnv) Lookup(f Fresher, name string) (Type, error, bool) {
+	if e.IsBuiltin(name) {
+		//logf("%s IS BUILTIN\n", name)
+		scheme, _ := e.SchemeOf(name)
+		//logf("SO TYPE IS %v\n", scheme)
+		return Instantiate(f, scheme.Clone()), nil, false
+	}
+
+	s, ok := e.SchemeOf(name)
+	if !ok {
+		return nil, fmt.Errorf("Unknwon symbol: %s", name), false
+	}
+
+	if oldLevels, ok := e.levels[name]; ok && len(oldLevels) > 0 {
+		oldLevel := oldLevels[len(oldLevels)-1]
+		if oldLevel.hasAnyProt {
+			return oldLevel.baseTV, nil, true
+		}
+	}
+
+	return Instantiate(f, s), nil, false
+}
+
 func (e *SimpleEnv) SchemeOf(name string) (*Scheme, bool) {
 	if b, ok := e.builtins[name]; ok {
 		return b()[0], true
@@ -117,12 +162,14 @@ func (e *SimpleEnv) SchemeOf(name string) (*Scheme, bool) {
 	}
 	return nil, false
 }
+
 func (e *SimpleEnv) Clone() Env {
-	//fmt.Printf("CLONE ENV\n")
+	//logf("CLONE ENV\n")
 	retVal := &SimpleEnv{
 		env: make(map[string][]*Scheme),
 		builtins: make(map[string]func()[]*Scheme),
-		levels: map[string][]int{},
+		levels: map[string][]levelInfo{},
+		uid: e.uid,
 	}
 	for k, v := range e.env {
 		retVal.env[k] = []*Scheme{}
@@ -142,9 +189,15 @@ func (e *SimpleEnv) Clone() Env {
 		}
 	}
 	for k, v := range e.levels {
-		newLevels := []int{}
+		newLevels := []levelInfo{}
 		for _, i := range v {
-			newLevels = append(newLevels, i)
+			newLevels = append(newLevels, levelInfo{
+				level:  i.level,
+				isProt: i.isProt,
+				hasAnyProt: i.hasAnyProt,
+				uid: i.uid,
+				baseTV: i.baseTV,
+			})
 		}
 		retVal.levels[k] = newLevels
 	}
@@ -159,26 +212,72 @@ func (e *SimpleEnv) VarsNames() []string {
 	return names
 }
 
-func (e *SimpleEnv) Add(name string, s *Scheme, blockScopeLevel int) (Env, *Scheme, *Scheme) {
+type envError struct {
+	variableName string
+	oldDef CodeContext
+}
+
+func (err *envError) Error() string {
+	return fmt.Sprintf("Variable redefined: %s", err.variableName)
+}
+
+func (e *SimpleEnv) Add(f Fresher, name string, s *Scheme, blockScopeLevel int) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
+	return e.addVar(f, name, s, blockScopeLevel, false)
+}
+
+func (e *SimpleEnv) AddPrototype(f Fresher, name string, s *Scheme, blockScopeLevel int) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
+	return e.addVar(f, name, s, blockScopeLevel,  true)
+}
+
+func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel int, isPrototype bool) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
+	logf("Add %s ==> %v [%d]\n", name, s, blockScopeLevel)
 	if _, ok := e.builtins[name]; ok {
 		// Do not override builtins
-		return e, nil, nil
+		return e, nil, nil, nil, nil
 	}
-	//fmt.Printf("Add %s\n", name)
+	//logf("Add %s\n", name)
 	if oldLevels, ok := e.levels[name]; ok && len(oldLevels)>0 {
 		oldLevel := oldLevels[len(oldLevels)-1]
-		//fmt.Printf("Oh noes indentifier is redeclared [%s] <%d, %d>\n", name, oldLevel, blockScopeLevel)
-		if oldLevel == blockScopeLevel {
+		//logf("Oh noes indentifier is redeclared [%s] <%d, %d>\n", name, oldLevel, blockScopeLevel)
+		if oldLevel.level == blockScopeLevel {
 			// Do not redefine!
-			e.levels[name] = append(e.levels[name], blockScopeLevel)
-			//fmt.Printf("Constrin %v ~ %v\n", e.env[name][0], s)
-			return e, e.env[name][0], s
+			inf := levelInfo{
+				level:  blockScopeLevel,
+				isProt: isPrototype && oldLevel.isProt,
+				hasAnyProt: isPrototype || oldLevel.hasAnyProt,
+				uid: e.uid,
+				baseTV: oldLevel.baseTV,
+			}
+			e.uid++
+			e.levels[name] = append(e.levels[name], inf)
+
+			con1 := NewScheme(nil, inf.baseTV)
+			con2 := s
+
+			logf("  -> ADD MERGE %v ~ %v\n", con1, con2)
+			if !oldLevel.isProt && !isPrototype {
+				fmt.Printf("THROW!\n")
+				return e, con1, con2, oldLevel, &envError{
+					variableName: name,
+					oldDef: e.env[name][0].t.GetContext(),
+				}
+			}
+			return e, con1, con2, inf, nil
 		}
 	}
 	e.env[name] = []*Scheme{ s }
-	e.levels[name] = append(e.levels[name], blockScopeLevel)
-	//fmt.Printf("ADD %s => %v\n", name, s)
-	return e, nil, nil
+	tv := f.Fresh()
+	inf := levelInfo{
+		level:  blockScopeLevel,
+		isProt: isPrototype,
+		hasAnyProt: isPrototype,
+		uid: e.uid,
+		baseTV: tv,
+	}
+	e.uid++
+	e.levels[name] = append(e.levels[name], inf)
+	logf("  -> ADD OVERRIDE %s => %v\n", name, s)
+	return e, nil, nil, inf, nil
 }
 
 func (e *SimpleEnv) Remove(name string) Env {
@@ -186,7 +285,7 @@ func (e *SimpleEnv) Remove(name string) Env {
 		// Do not delete builtins
 		return e
 	}
-	//fmt.Printf("Remove %s\n", name)
+	logf("Remove %s\n", name)
 	if len(e.levels[name])>0 {
 		e.levels[name] = e.levels[name][:len(e.levels[name])-1]
 	}

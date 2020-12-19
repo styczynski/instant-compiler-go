@@ -45,6 +45,51 @@ func centeredText(text string) string {
 	return fmt.Sprintf(fmt.Sprintf("%%-%ds", lineWidth), fmt.Sprintf(fmt.Sprintf("%%%ds", rightAlign+len(text)), text))
 }
 
+func substr(input string, start int, length int) string {
+	if start < 0 {
+		start = 0
+	}
+	end := start + length
+	if end < 0 {
+		end = 0
+	}
+	if end > len(input) {
+		end = len(input)
+	}
+	if start > end {
+		start = end
+	}
+	return input[start:end]
+}
+
+func fillStringPostfix(input string, maxLength int) string {
+	size := len(input)
+	if size < maxLength {
+		return input + strings.Repeat(" ", maxLength-size)
+	}
+	return input[:maxLength]
+}
+
+func cutFormatFilename(path string, maxLength int) string {
+	i := strings.LastIndex(path, "/")
+
+	if len(path) <= maxLength {
+		return fillStringPostfix(path, maxLength)
+	}
+
+	tokenRight := substr(path, i, len(path) - i)
+	if len(tokenRight) > maxLength-3 {
+		ret := "..." + substr(path, len(path)-maxLength+3, maxLength-3)
+		return fillStringPostfix(ret, maxLength)
+	}
+
+	tokenCenter := "..."
+	tokenLeft := substr(path, 0, maxLength-3-(len(tokenRight) + len(tokenCenter)))
+
+	ret := tokenLeft + tokenCenter + tokenRight
+	return fillStringPostfix(ret, maxLength)
+}
+
 func (s CliSummaryShortStatus) Summarize(metricsPromise CollectedMetricsPromise) (string, bool) {
 	metrics := metricsPromise.Resolve()
 	errors := metrics.GetAllErrors()
@@ -62,9 +107,9 @@ func (s CliSummaryShortStatus) Summarize(metricsPromise CollectedMetricsPromise)
 		if inputErr != nil {
 			errMessage = formatShortStatusErrFg(formatShortStatusErrBg(centeredText(inputErr.ErrorName())))
 		}
-		lines = append(lines, fmt.Sprintf(" %3d: %10s - %s",
+		lines = append(lines, fmt.Sprintf(" %3d: %50s - %s",
 			i+1,
-			formatShortStatusInputFilenameFg(input.Filename()),
+			formatShortStatusInputFilenameFg(cutFormatFilename(input.Filename(), 50)),
 			errMessage))
 	}
 

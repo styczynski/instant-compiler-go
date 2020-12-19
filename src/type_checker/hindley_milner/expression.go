@@ -47,11 +47,7 @@ func NamesWithTypes(names []string, types map[string]*Scheme) NameGroup {
 	return NameGroup{names, types, true}
 }
 
-func NamesWithTypesFromMap(args map[string]*Scheme) NameGroup {
-	names := []string{}
-	for name, _ := range args {
-		names = append(names, name)
-	}
+func NamesWithTypesFromMap(names []string, args map[string]*Scheme) NameGroup {
 	return NameGroup{names, args, true}
 }
 
@@ -71,6 +67,7 @@ const (
 	E_VAR ExpressionType = iota
 	E_LITERAL
 	E_APPLICATION
+	E_TYPE_EQUALITY
 	E_LAMBDA
 	E_FUNCTION
 	E_TYPE
@@ -91,6 +88,10 @@ const (
 type HMExpression interface {
 	generic_ast.Expression
 	ExpressionType() ExpressionType
+}
+
+type HMExpressionWithCustomMismatchErrorDescription interface {
+	OnTypeMismatch(generic_ast.NodeWithPosition, generic_ast.NodeWithPosition) []string
 }
 
 type Batch struct {
@@ -236,7 +237,7 @@ type CustomExpression interface {
 //}
 
 type ExpressionWithIdentifiersDeps interface {
-	GetIdentifierDeps() []string
+	GetIdentifierDeps() NameGroup
 }
 
 type IntrospectionExpression interface {

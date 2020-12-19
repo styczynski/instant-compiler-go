@@ -88,7 +88,7 @@ func (ast *Assignment) Body() generic_ast.Expression {
 }
 
 func (ast *Assignment) ExpressionType() hindley_milner.ExpressionType {
-	return hindley_milner.E_APPLICATION
+	return hindley_milner.E_TYPE_EQUALITY
 }
 
 // Validate here this shit

@@ -12,6 +12,7 @@ const (
 	T_BOOL Primitive = iota
 	T_INT
 	T_VOID
+	T_VOID_ARG
 	T_STRING
 )
 
@@ -25,6 +26,8 @@ func CreatePrimitive(p Primitive) PrimitiveType {
 		name = "int"
 	} else if p == T_VOID {
 		name = "void"
+	} else if p == T_VOID_ARG {
+		name = "void_arg"
 	}
 	return PrimitiveType{
 		name:    name,

@@ -134,8 +134,9 @@ func (ast *UnaryApplication) Body() generic_ast.Expression {
 			Exp: []generic_ast.Expression{
 				hindley_milner.EmbeddedTypeExpr{
 					GetType: func() *hindley_milner.Scheme {
-						return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
+						return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID_ARG))
 					},
+					Source: ast,
 				},
 			},
 		}

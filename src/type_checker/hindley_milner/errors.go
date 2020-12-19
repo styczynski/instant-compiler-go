@@ -47,7 +47,7 @@ func (err UnificationWrongTypeError) GetCauseName() string {
 
 func (err UnificationWrongTypeError) Source() generic_ast.Expression {
 	if err.Constraint.context.Source == nil {
-		fmt.Printf("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
+		logf("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
 	}
 	return *(err.Constraint.context.Source)
 }
@@ -116,5 +116,21 @@ func (err InvalidOverloadCandidatesError) Error() string {
 }
 
 func (err InvalidOverloadCandidatesError) Source() generic_ast.Expression {
+	return *(err.Context.Source)
+}
+
+type VariableRedefinedError struct {
+	Name string
+	PreviousDefinition CodeContext
+	Context CodeContext
+}
+
+func (err VariableRedefinedError) Error() string {
+	return fmt.Sprintf("Variable %s has second definition in the current scope.",
+		err.Name,
+	)
+}
+
+func (err VariableRedefinedError) Source() generic_ast.Expression {
 	return *(err.Context.Source)
 }

@@ -3,6 +3,7 @@ package hindley_milner
 import (
 	"fmt"
 
+	"github.com/alecthomas/repr"
 	"github.com/pkg/errors"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -20,6 +21,17 @@ type Fresher interface {
 
 func saveExprContext(t Type, source *generic_ast.Expression) Type {
 	return t.WithContext(CreateCodeContext(*source))
+}
+
+func wrapEnvError(err error, source *generic_ast.Expression) error {
+	if e, ok := err.(*envError); ok {
+		return VariableRedefinedError{
+			Name:               e.variableName,
+			PreviousDefinition: e.oldDef,
+			Context:            CreateCodeContext(*source),
+		}
+	}
+	return err
 }
 
 type IntrospectionConstraint struct {
@@ -66,15 +78,8 @@ func (infer *inferer) Fresh() TypeVariable {
 }
 
 func (infer *inferer) lookup(isLiteral bool, name string, source generic_ast.Expression) error {
-	if infer.env.IsBuiltin(name) {
-		//fmt.Printf("%s IS BUILTIN\n", name)
-		scheme, _ := infer.env.SchemeOf(name)
-		//fmt.Printf("SO TYPE IS %v\n", scheme)
-		infer.t = Instantiate(infer, scheme.Clone())
-		return nil
-	}
-	s, ok := infer.env.SchemeOf(name)
-	if !ok {
+	t, err, isInstance := infer.env.Lookup(infer, name)
+	if err != nil {
 		return UndefinedSymbol{
 			Name: name,
 			Source: source,
@@ -82,7 +87,10 @@ func (infer *inferer) lookup(isLiteral bool, name string, source generic_ast.Exp
 			IsVariable: !isLiteral,
 		}
 	}
-	infer.t = Instantiate(infer, s)
+	if isInstance {
+		t = t.WithContext(CreateCodeContext(source))
+	}
+	infer.t = t
 	return nil
 }
 
@@ -124,18 +132,42 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 	// Optionally get ident dependencies
 	if exprWithDeps, ok := expr.(ExpressionWithIdentifiersDeps); ok {
 		idents := exprWithDeps.GetIdentifierDeps()
-		for _, name := range idents {
-			tv := infer.Fresh()
-			// Declare identifiers
-			_, osx1, osx2 := infer.env.Add(name,
-				NewScheme(nil, tv),
-				infer.blockScopeLevel)
-			if osx1 != nil && osx2 != nil {
-				infer.cs = append(infer.cs, Constraint{
-					a: Instantiate(infer, osx1),
-					b: Instantiate(infer, osx2),
-					context: CreateCodeContext(expr),
-				})
+		for _, name := range idents.GetNames() {
+			if objType := idents.GetTypeOf(name); objType != nil {
+				// Declare identifiers
+				//objTypeTV := infer.Fresh()
+				/*_, osx1, osx2 :=*/ infer.env.AddPrototype(infer, name,
+					objType,
+					infer.blockScopeLevel)
+				//if osx1 != nil && osx2 != nil {
+				//	infer.cs = append(infer.cs, Constraint{
+				//		a:       Instantiate(infer, osx1),
+				//		b:       Instantiate(infer, osx2),
+				//		context: CreateCodeContext(expr),
+				//	})
+				//}
+				//infer.cs = append(infer.cs, Constraint{
+				//	a:       objTypeTV,
+				//	b:       Instantiate(infer, objType),
+				//	context: CreateCodeContext(expr),
+				//})
+				//logf("HELLO: %v? %s\n", objType, Instantiate(infer, objType))
+			} else {
+				tv := infer.Fresh().WithContext(objType.t.GetContext())
+				// Declare identifiers
+				_, osx1, osx2, _, err := infer.env.Add(infer, name,
+					NewScheme(nil, tv),
+					infer.blockScopeLevel)
+				if err != nil {
+					return wrapEnvError(err, &expr)
+				}
+				if osx1 != nil && osx2 != nil {
+					infer.cs = append(infer.cs, Constraint{
+						a:       Instantiate(infer, osx1),
+						b:       Instantiate(infer, osx2),
+						context: CreateCodeContext(expr),
+					})
+				}
 			}
 		}
 	}
@@ -221,13 +253,13 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			return fmt.Errorf("Literal entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
 		name := et.Name().GetNames()[0]
-		//fmt.Printf("GOT %s\n", name)
+		//logf("GOT %s\n", name)
 		if infer.env.IsOverloaded(name) {
-			tv := infer.Fresh()
+			tv := infer.Fresh().WithContext(CreateCodeContext(expr))
 			infer.t = tv
 			infer.ocs = append(infer.ocs, OverloadConstraint{
 				name: name,
-				tv:           tv,
+				tv:           tv.(TypeVariable),
 				alternatives: infer.env.OverloadedAlternatives(name),
 				context: CreateCodeContext(expr),
 			})
@@ -242,7 +274,10 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		}
 		name := et.Name().GetNames()[0]
 		if err = infer.lookup(false, name, et); err != nil {
-			_, s1, s2 := infer.env.Add(name, &Scheme{t: et.Type()}, infer.blockScopeLevel)
+			_, s1, s2, _, err := infer.env.Add(infer, name, &Scheme{t: et.Type()}, infer.blockScopeLevel)
+			if err != nil {
+				return wrapEnvError(err, &expr)
+			}
 			if s1 != nil && s2 != nil {
 				infer.cs = append(infer.cs, Constraint{
 					a: Instantiate(infer, s1),
@@ -299,14 +334,22 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		for _, name := range names {
 			varType := et.Args().GetTypeOf(name)
 
-			tv = append(tv, infer.Fresh())
+			newVar := infer.Fresh()
+			if varType != nil {
+				newVar = newVar.WithContext(varType.t.GetContext()).(TypeVariable)
+			}
+			tv = append(tv, newVar)
+
 			env = append(env, infer.env) // backup
 
 			infer.env = infer.env.Clone()
 			//infer.env.Remove(name)
 			sc := new(Scheme)
 			sc.t = tv[len(tv)-1].WithContext(CreateCodeContext(expr))
-			_, s1, s2 := infer.env.Add(name, sc, infer.blockScopeLevel)
+			_, s1, s2, _, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel)
+			if err != nil {
+				return wrapEnvError(err, &expr)
+			}
 			if s1 != nil && s2 != nil {
 				infer.cs = append(infer.cs, Constraint{
 					a: Instantiate(infer, s1),
@@ -328,7 +371,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			if err = infer.consGen(et.Body(), E_NONE, false, false); err != nil {
 				return err
 			}
-			bodyType := infer.Fresh()
+			bodyType := infer.Fresh().WithContext(CreateCodeContext(et.Body())).(TypeVariable)
 			infer.t = bodyType
 		} else {
 			if err = infer.consGen(et.Body(), E_NONE, false, false); err != nil {
@@ -378,9 +421,30 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 
 		infer.returns = rets
 
+	case E_TYPE_EQUALITY:
+		et := expr.Body().(Batch).Expressions()
+		if err = infer.consGen(et[0], E_NONE, false, false); err != nil {
+			return err
+		}
+		aType, aCs := infer.t, infer.cs
+		if err = infer.consGen(et[1], E_NONE, false, false); err != nil {
+			return err
+		}
+		bType, bCs := infer.t, infer.cs
+		cs := append(aCs, bCs...)
+		cs = append(cs, Constraint{
+			a:       aType,
+			b:       bType,
+			context: CreateCodeContext(expr),
+		})
+		infer.cs = cs
+		infer.t = aType
+		return nil
+
 	case E_APPLICATION:
 		et := expr.(Apply)
 		firstExec := true
+		logf("\n\nAPPLICATION START %v\n", expr)
 		batchErr := ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
 			if firstExec {
 				if err = infer.consGen(et.Fn(), E_NONE, false, false); err != nil {
@@ -395,16 +459,20 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			}
 			bodyType, bodyCs := infer.t, infer.cs
 
-			tv := infer.Fresh()
+			tv := infer.Fresh().WithContext(CreateCodeContext(body)).(TypeVariable)
+			applyCs := Constraint{fnType, saveExprContext(NewFnType(bodyType, tv), &expr), CreateCodeContext(expr)}
 			cs := append(fnCs, bodyCs...)
-			cs = append(cs, Constraint{fnType, saveExprContext(NewFnType(bodyType, tv), &expr), CreateCodeContext(expr)})
+			cs = append(cs, applyCs)
 
 			infer.t = tv
 			infer.t = saveExprContext(infer.t, &expr)
 			infer.cs = cs
 
+			logf("  -> [%v] (%v) bodyType is (%v) and fn type is (%v) --> %v\n", tv, infer.t, bodyType, fnType, applyCs)
+
 			return nil
 		})
+		logf("\n\nAPPLICATION END %v\n\n", expr)
 		if batchErr != nil {
 			return batchErr
 		}
@@ -413,6 +481,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		et := expr.(Block)
 		env := infer.env // backup
 		if exprType != E_OPAQUE_BLOCK {
+			logf("BLOCK_SCOPE level++ (old value: %d)\n", infer.blockScopeLevel)
 			infer.blockScopeLevel++
 		}
 		//t := infer.t
@@ -430,7 +499,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			//infer.env = env
 		}
 
-		tv := infer.Fresh()
+		tv := infer.Fresh().WithContext(CreateCodeContext(et)).(TypeVariable)
 		if defaultTyper, ok := et.(DefaultTyper); ok {
 			infer.cs = append(infer.cs, Constraint{
 				a:       tv,
@@ -450,6 +519,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		}
 
 		if exprType != E_OPAQUE_BLOCK {
+			logf("BLOCK_SCOPE level-- (old value: %d)\n", infer.blockScopeLevel)
 			infer.blockScopeLevel--
 		}
 		infer.t = tv
@@ -505,7 +575,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			name := names[i]
 			def := definitions[i]
 			body := expr.Body()
-			tv := infer.Fresh()
+			tv := infer.Fresh().WithContext(CreateCodeContext(expr)).(TypeVariable)
 
 			var defExpectedType *Scheme = nil
 			if len(types) > 0 {
@@ -529,7 +599,10 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			if !has {
 				infer.env.Remove(name)
 			}
-			_, s1, s2 := infer.env.Add(name, &Scheme{tvs: TypeVarSet{tv}, t: tv}, infer.blockScopeLevel)
+			_, s1, s2, varEnvDef, err := infer.env.Add(infer, name, &Scheme{tvs: TypeVarSet{tv}, t: tv}, infer.blockScopeLevel)
+			if err != nil {
+				return wrapEnvError(err, &expr)
+			}
 			if s1 != nil && s2 != nil {
 				infer.cs = append(infer.cs, Constraint{
 					a: Instantiate(infer, s1),
@@ -550,7 +623,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 				if defExpectedType != nil {
 					infer.t = Instantiate(infer, defExpectedType)
 				} else {
-					tv := infer.Fresh()
+					tv := infer.Fresh().WithContext(CreateCodeContext(expr)).(TypeVariable)
 					infer.t = tv
 				}
 			} else if exprType == E_FUNCTION_DECLARATION {
@@ -571,13 +644,22 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			if s.err != nil {
 				return err
 			}
+			logf("\nPATRZ CIPO ROZJEBAE [%s]: %v\n", name, saveExprContext(defType.Apply(s.sub).(Type), &expr))
+
 
 			sc := Generalize(infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 
 			if !has {
 				infer.env.Remove(name)
 			}
-			_, os1, os2 := infer.env.Add(name, sc, infer.blockScopeLevel)
+			_, os1, os2, varEnvDef2, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel)
+			if err != nil {
+				if _, isDup := err.(*envError); isDup && varEnvDef.GetUID() == varEnvDef2.GetUID() {
+					// Ignore
+				} else {
+					return wrapEnvError(err, &expr)
+				}
+			}
 			if os1 != nil && os2 != nil {
 				infer.cs = append(infer.cs, Constraint{
 					a: Instantiate(infer, os1),
@@ -587,7 +669,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			}
 
 			if exprType == E_DECLARATION || exprType == E_FUNCTION_DECLARATION {
-				retType := infer.Fresh()
+				retType := infer.Fresh().WithContext(CreateCodeContext(expr)).(TypeVariable)
 				if defaultTyper, ok := expr.(DefaultTyper); ok {
 					infer.cs = append(infer.cs, Constraint{
 						a:       retType,
@@ -618,7 +700,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 				if exprType == E_LET_RECURSIVE {
 					actualType = sc.t
 				}
-				//fmt.Printf("Expect %v to be %v\n", sc.t, Instantiate(infer, defExpectedType))
+				//logf("Expect %v to be %v\n", sc.t, Instantiate(infer, defExpectedType))
 				infer.cs = append(infer.cs, Constraint{
 					a:       actualType,
 					b:       Instantiate(infer, defExpectedType),
@@ -647,10 +729,14 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			return err
 		}
 
+		logf("PATRZ CWELU: %v\n", defType.Apply(s.sub).(Type))
 		sc := Generalize(env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 		infer.env = infer.env.Clone()
 		//infer.env.Remove(name)
-		_, s1, s2 := infer.env.Add(name, sc, infer.blockScopeLevel)
+		_, s1, s2, _, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel)
+		if err != nil {
+			return wrapEnvError(err, &expr)
+		}
 		if s1 != nil && s2 != nil {
 			infer.cs = append(infer.cs, Constraint{
 				a: Instantiate(infer, s1),
@@ -676,25 +762,31 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 }
 
 func (inferer *inferer) cleanupConstraintsRemoveDuplicates() {
+	//rand.Seed(time.Now().UnixNano())
+	//rand.Shuffle(len(inferer.cs), func(i, j int) { inferer.cs[i], inferer.cs[j] = inferer.cs[j], inferer.cs[i] })
+
 	hashtable := map[string]Constraint{}
+	order := []string{}
 	for _, cs := range inferer.cs {
 		key := fmt.Sprintf("%v", cs)
 		if entry, ok := hashtable[key]; ok {
 			if entry.context.Source == nil && cs.context.Source != nil {
-				hashtable[fmt.Sprintf("%v", cs)] = cs
+				hashtable[key] = cs
 			}
 		} else {
-			hashtable[fmt.Sprintf("%v", cs)] = cs
+			hashtable[key] = cs
+			order = append(order, key)
 		}
 	}
 	inferer.cs = []Constraint{}
-	for _, v := range hashtable {
-		inferer.cs = append(inferer.cs, v)
+	for _, key := range order {
+		inferer.cs = append(inferer.cs, hashtable[key])
 	}
 }
 
 func (infer *inferer) cleanupConstraints() {
 	infer.cleanupConstraintsRemoveDuplicates()
+	return
 
 	if infer.csflag >= 1 {
 		infer.csflag = 0
@@ -749,7 +841,7 @@ func (infer *inferer) cleanupConstraints() {
 
 	infer.cs = cs
 
-	//fmt.Printf("Cleanup %d => %d\n", prevLen, len(infer.cs))
+	//logf("Cleanup %d => %d\n", prevLen, len(infer.cs))
 }
 
 // Instantiate takes a fresh name generator, an a polytype and makes a concrete type out of it.
@@ -870,7 +962,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 		return nil, nil, s.err
 	}
 
-	//fmt.Printf("SOLVED NOW OCS ARE:\n%#v\n%#v", infer.ocs, infer.cs)
+	//logf("SOLVED NOW OCS ARE:\n%#v\n%#v", infer.ocs, infer.cs)
 	if config.OnPostprocessingStarted != nil {
 		(*config.OnPostprocessingStarted)()
 	}
@@ -892,7 +984,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 			s2 := newSolver()
 			s2.solve(cs)
 			if s2.err == nil {
-				//fmt.Printf("\n\nOLDS CS: %#v\nNEW CS: %#v\n\n", cleanCS, cs)
+				//logf("\n\nOLDS CS: %#v\nNEW CS: %#v\n\n", cleanCS, cs)
 				hasCleanRun = true
 				break
 			}
@@ -915,9 +1007,9 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 	}
 	infer.cs = cleanCS
 
-	//fmt.Printf("CONSTRAINTS: %v\n", infer.cs)
+	//logf("CONSTRAINTS: %v\n", infer.cs)
 	for _, ics := range infer.ics {
-		//fmt.Printf("GOT INTRO: %v => %v\n", ics.tv, ics.argTV)
+		//logf("GOT INTRO: %v => %v\n", ics.tv, ics.argTV)
 		introExpr := (*ics.context.Source).(IntrospectionExpression)
 		introExpr.OnTypeReturned(ics.argTV)
 	}
@@ -1025,15 +1117,21 @@ func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Sub
 }
 
 func bind(tv TypeVariable, t Type, context Constraint, tvt Type) (sub Subs, err error) {
-	//fmt.Printf("Binding %v to %v", tv, t)
+	logf("Binding %v to %v", tv, t)
 	switch {
 	// case tv == t:
 	case occurs(tv, t):
-		//fmt.Printf("KURWA 1\n%v\nKURWA 2\n%v\nKURWA 3\n%v\nKURWA 4\n%v\n",
-		//	repr.String(*t.GetContext().Source),
-		//	repr.String(*tv.GetContext().Source),
-		//		repr.String(*tvt.GetContext().Source),
-		//			repr.String(*context.context.Source))
+		if tv.Eq(t) {
+			ssub := BorrowSSubs(1)
+			ssub.s[0] = Substitution{tv, t}
+			sub = ssub
+			return
+		}
+		logf("KURWA 1\n%v\nKURWA 2\n%v\nKURWA 3\n%v\nKURWA 4\n%v\n",
+			repr.String(*t.GetContext().Source),
+			repr.String(*tv.GetContext().Source),
+				repr.String(*tvt.GetContext().Source),
+					repr.String(*context.context.Source))
 		//panic("BŁAGAM SPIERDALAJ")
 		err = UnificationRecurrentTypeError{
 			Type:       t,
@@ -1058,6 +1156,7 @@ func occurs(tv TypeVariable, s Substitutable) bool {
 }
 
 func closeOver(t Type) (sch *Scheme, err error) {
+	logf("PATRZ SPERMA: %v\n", t)
 	sch = Generalize(nil, t)
 	err = sch.Normalize()
 	//logf("closeoversch: %v", sch)

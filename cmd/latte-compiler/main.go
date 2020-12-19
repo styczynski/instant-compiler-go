@@ -80,8 +80,8 @@ func ActionCompile(c *cli.Context) error {
 	checkedProgram := tc.Check(ast, context)
 	analyzedProgram := analyzer.Analyze(checkedProgram, context)
 	compiledProgram := comp.Compile(analyzedProgram, context)
-	//summary := events_collector.CreateCliSummaryShortStatus()
-	summary := events_collector.CreateCliSummary(-1)
+	summary := events_collector.CreateCliSummaryShortStatus()
+	//summary := events_collector.CreateCliSummary(-1)
 	message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
 	fmt.Print(message)
 	if !ok {

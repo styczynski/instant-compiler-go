@@ -337,6 +337,9 @@ func (b *builder) Branches() []generic_ast.NormalNode {
 }
 
 func (b *builder) BuildNode(node generic_ast.NormalNode) {
+	if isNilNode(node) {
+		return
+	}
 	if nodeWithControlInformation, ok := node.(NodeWithControlInformation); ok {
 		nodeWithControlInformation.BuildFlowGraph(b)
 	} else {

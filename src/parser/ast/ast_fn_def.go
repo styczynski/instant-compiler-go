@@ -97,17 +97,41 @@ func (ast *FnDef) Validate() generic_ast.NodeError {
 
 //////
 
+func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
+	//if len(ast.Arg) == 0 {
+	//	hindley_milner.NewScheme(hindley_milner.TypeVarSet{hindley_milner.TVar('a')})
+	//	return hindley_milner.NamesWithTypesFromMap([]string{""}, map[string]*hindley_milner.Scheme{
+	//		"void": hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID)),
+	//	})
+	//}
+
+	argCount := int16(len(ast.Arg))
+	if argCount == 0 {
+		argCount = 1
+	}
+	signature := []hindley_milner.Type{}
+	vars := []hindley_milner.TypeVariable{}
+	for i:=int16(0); i<argCount+1; i++ {
+		signature = append(signature, hindley_milner.TVar(i))
+		vars = append(vars, hindley_milner.TVar(i))
+	}
+	s := hindley_milner.NewScheme(hindley_milner.TypeVarSet(vars), hindley_milner.NewFnType(signature...))
+	return s
+}
+
 func (ast *FnDef) Args() hindley_milner.NameGroup {
 	if len(ast.Arg) == 0 {
-		return hindley_milner.NamesWithTypesFromMap(map[string]*hindley_milner.Scheme{
-			"void": hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID)),
+		return hindley_milner.NamesWithTypesFromMap([]string{""}, map[string]*hindley_milner.Scheme{
+			"void": hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID_ARG)),
 		})
 	}
 	argsTypes := map[string]*hindley_milner.Scheme{}
+	names := []string{}
 	for _, arg := range ast.Arg {
 		argsTypes[arg.Name] = arg.ArgumentType.GetType()
+		names = append(names, arg.Name)
 	}
-	return hindley_milner.NamesWithTypesFromMap(argsTypes)
+	return hindley_milner.NamesWithTypesFromMap(names, argsTypes)
 }
 
 func (ast *FnDef) Var() hindley_milner.NameGroup {

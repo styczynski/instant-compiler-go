@@ -114,6 +114,7 @@ func (ast *New) Body() generic_ast.Expression {
 				GetType: func() *hindley_milner.Scheme {
 					return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID),)
 				},
+				Source: ast,
 			},
 		},
 	}

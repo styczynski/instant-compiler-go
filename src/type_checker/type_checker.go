@@ -2,10 +2,12 @@ package type_checker
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
+
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
@@ -86,10 +88,10 @@ func (tc *LatteTypeChecker) GetEnv() *hindley_milner.SimpleEnv {
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_BOOL),
 		)),
 		"readInt":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
-			ast.CreatePrimitive(ast.T_VOID), ast.CreatePrimitive(ast.T_INT),
+			ast.CreatePrimitive(ast.T_VOID_ARG), ast.CreatePrimitive(ast.T_INT),
 		)),
 		"readString":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
-			ast.CreatePrimitive(ast.T_VOID), ast.CreatePrimitive(ast.T_STRING),
+			ast.CreatePrimitive(ast.T_VOID_ARG), ast.CreatePrimitive(ast.T_STRING),
 		)),
 		"printInt":      hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_VOID),
@@ -151,14 +153,35 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 		}
 	} else if wrongType, ok := err.(hindley_milner.UnificationWrongTypeError); ok {
 		src := wrongType.Source().(interface{}).(generic_ast.NodeWithPosition)
-		causeInfo := ""
+		causeInfo := []string{}
 
 		if wrongType.IsCausedByBuiltin() {
-			causeInfo = fmt.Sprintf("Caused by internal definition: %s", wrongType.GetCauseName())
+			causeInfo = []string{ fmt.Sprintf("Caused by internal definition: %s", wrongType.GetCauseName()) }
 		} else {
-			//sourceA := (*wrongType.TypeA.GetContext().Source).(interface{}).(ast.PrintableNode)
-			//sourceB := (*wrongType.TypeB.GetContext().Source).(interface{}).(ast.PrintableNode)
-			//causeInfo = fmt.Sprintf("First type comes from: %s and the second one from: N/A.", sourceA.Print(c))
+			var sourceA *generic_ast.NodeWithPosition = nil
+			var sourceB *generic_ast.NodeWithPosition = nil
+
+			if wrongType.TypeA.GetContext().Source == nil || wrongType.TypeB.GetContext().Source == nil {
+				causeInfo = append(causeInfo, fmt.Sprintf("The type mismatch occured in %s", (*wrongType.Constraint.Context().Source).(interface{}).(generic_ast.NodeWithPosition).Begin().String()))
+			}
+			if wrongType.TypeA.GetContext().Source != nil {
+				v := (*wrongType.TypeA.GetContext().Source).(interface{}).(generic_ast.NodeWithPosition)
+				sourceA = &v
+				causeInfo = append(causeInfo, fmt.Sprintf("First type comes from: %s.", v.Begin().String()))
+			}
+			if wrongType.TypeB.GetContext().Source != nil {
+				v := (*wrongType.TypeB.GetContext().Source).(interface{}).(generic_ast.NodeWithPosition)
+				sourceB = &v
+				causeInfo = append(causeInfo, fmt.Sprintf("Second type from: %s.", v.Begin().String()))
+			}
+
+			if sourceA != nil && sourceB != nil {
+				if custA, ok := (*sourceA).(hindley_milner.HMExpressionWithCustomMismatchErrorDescription); ok {
+					causeInfo = append(causeInfo, custA.OnTypeMismatch(*sourceA, *sourceB)...)
+				} else if custB, ok := (*sourceB).(hindley_milner.HMExpressionWithCustomMismatchErrorDescription); ok {
+					causeInfo = append(causeInfo, custB.OnTypeMismatch(*sourceB, *sourceA)...)
+				}
+			}
 		}
 
 		errorName := "Type Mismatch"
@@ -169,7 +192,7 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			src.Begin().Column,
 			src.Begin().Filename,
 			"",
-			fmt.Sprintf("%s%s", wrongType.Error(), causeInfo),
+			fmt.Sprintf("%s %s", wrongType.Error(), strings.Join(causeInfo, "\n                  ")),
 		)
 		return &TypeCheckingError{
 			message:     message,
@@ -237,6 +260,32 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			"", //src.Begin().Filename,
 			"",
 			fmt.Sprintf("%s%s", reccurentTypeError.Error(), causeInfo),
+		)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+			errorName: errorName,
+		}
+	} else if varRedef, ok := err.(hindley_milner.VariableRedefinedError); ok {
+		src := varRedef.Source().(interface{}).(generic_ast.NodeWithPosition)
+		causeInfo := ""
+
+		previousDef := varRedef.PreviousDefinition.Source
+
+		if previousDef != nil {
+			pos := (*previousDef).(interface{}).(generic_ast.NodeWithPosition).Begin()
+			causeInfo = fmt.Sprintf("Previous definition can be found at %s.", pos.String())
+		}
+
+		errorName := "Variable redefined"
+		message, textMessage := c.FormatParsingError(
+			errorName,
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			fmt.Sprintf("%s%s", varRedef.Error(), causeInfo),
 		)
 		return &TypeCheckingError{
 			message:     message,

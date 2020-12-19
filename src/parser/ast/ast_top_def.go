@@ -27,17 +27,21 @@ func (ast *TopDef) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
-func (ast *TopDef) GetDefinedIdentifier() []string {
+func (ast *TopDef) GetDefinedIdentifier() ([]string, []*hindley_milner.Scheme) {
 	if ast.IsFunction() {
 		return []string{
 			ast.Function.Name,
+		}, []*hindley_milner.Scheme{
+			ast.Function.GetDeclarationType(),
 		}
 	} else if ast.IsClass() {
 		return []string{
 			ast.Class.Name,
+		}, []*hindley_milner.Scheme{
+			ast.Class.GetDeclarationType(),
 		}
 	}
-	return []string{}
+	return []string{}, []*hindley_milner.Scheme{}
 }
 
 func (ast *TopDef) Begin() lexer.Position {
@@ -149,7 +153,11 @@ func (ast *TopDef) OnFlowAnalysis(flow cfg.FlowAnalysis) error {
 		// Validate flow graph
 		retType, _ := ast.Function.ReturnType.GetType().Type()
 		if !retType.Eq(CreatePrimitive(T_VOID)) {
+
 			gateways := flow.Graph().GetAllEndGateways()
+			if len(flow.Graph().Blocks()) <= 3 {
+				return errors.CreateLocalizedError("Missing return", "Non-void function is missing return.", ast)
+			}
 			for _, gateway := range gateways {
 				if returnNode, isRet := gateway.(*Return); isRet {
 					if !returnNode.HasExpression() {

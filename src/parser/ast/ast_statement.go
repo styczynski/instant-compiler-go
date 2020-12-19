@@ -15,7 +15,8 @@ import (
 
 type Statement struct {
 	generic_ast.BaseASTNode
-	BlockStatement *Block `@@`
+	Empty *string `";"`
+	BlockStatement *Block `| @@`
 	Declaration *Declaration `| @@`
 	Assignment *Assignment `| @@`
 	UnaryStatement *UnaryStatement `| @@`
@@ -49,6 +50,7 @@ func (ast *Statement) GetNode() interface{} {
 
 func (ast *Statement) IsEmpty() bool {
 	return (
+		ast.Empty != nil || (
 		!ast.IsBlockStatement() &&
 		!ast.IsDeclaration() &&
 		!ast.IsAssignment() &&
@@ -57,7 +59,7 @@ func (ast *Statement) IsEmpty() bool {
 		!ast.IsIf() &&
 		!ast.IsWhile() &&
 		!ast.IsFor() &&
-		!ast.IsExpression())
+		!ast.IsExpression()))
 }
 
 func (ast *Statement) IsBlockStatement() bool {
@@ -98,7 +100,7 @@ func (ast *Statement) IsExpression() bool {
 
 func (ast *Statement) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsEmpty() {
-		panic("HUJ!")
+		return []generic_ast.TraversableNode{}
 		//return []generic_ast.TraversableNode{ generic_ast.MakeTraversableNodeToken(ast, *ast.Empty, ast.Pos, ast.EndPos) }
 	} else if ast.IsBlockStatement() {
 		return []generic_ast.TraversableNode{ ast.BlockStatement }
@@ -170,7 +172,8 @@ func (ast *Statement) Print(c *context.ParsingContext) string {
 
 func (ast *Statement) Body() generic_ast.Expression {
 	if ast.IsEmpty() {
-		return hindley_milner.Batch{Exp: []generic_ast.Expression{}}
+		return &Empty{}
+		//return hindley_milner.Batch{Exp: []generic_ast.Expression{}}
 	} else if ast.IsBlockStatement() {
 		return ast.BlockStatement
 	} else if ast.IsDeclaration() {

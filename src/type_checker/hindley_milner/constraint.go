@@ -8,6 +8,10 @@ type Constraint struct {
 	context CodeContext
 }
 
+func (c Constraint) Context() CodeContext {
+	return c.context
+}
+
 func (c Constraint) Apply(sub Subs) Substitutable {
 	c.a = c.a.Apply(sub).(Type)
 	c.b = c.b.Apply(sub).(Type)
