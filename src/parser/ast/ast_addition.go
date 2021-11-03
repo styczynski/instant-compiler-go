@@ -112,23 +112,3 @@ func (ast *Addition) ExpressionType() hindley_milner.ExpressionType {
 	}
 	return hindley_milner.E_APPLICATION
 }
-
-//
-
-func (ast *Addition) ConstFold() generic_ast.TraversableNode {
-	if ast.HasNext() {
-		const1, ok1 := ast.Multiplication.ExtractConst()
-		const2, ok2 := ast.Next.Multiplication.ExtractConst()
-		if ok1 && ok2 {
-			p1 := const1.(*Primary)
-			p2 := const2.(*Primary)
-			v := p1.Add(p2, ast.Op)
-			// Change pointers
-			ast.Multiplication.Unary.Primary = v
-			ast.Op = ast.Next.Op
-			ast.Next = ast.Next.Next
-			return ast
-		}
-	}
-	return ast
-}

@@ -51,7 +51,7 @@ func printUnaryOperation(c *context.ParsingContext, ast generic_ast.TraversableN
 }
 
 func (ast *Expression) Print(c *context.ParsingContext) string {
-	return ast.Addition.Print(c)
+	return ast.Addition.Print(c) + ";"
 }
 
 ////

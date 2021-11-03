@@ -1,8 +1,6 @@
 package ast
 
 import (
-	"fmt"
-
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -41,13 +39,6 @@ func (ast *Primary) ExtractConst() (generic_ast.TraversableNode, bool) {
 
 func (a *Primary) IsInvalid() bool {
 	return a.Invalid != nil
-}
-
-func (a *Primary) ValidateConstFold() (error, generic_ast.TraversableNode) {
-	if a.IsInvalid() {
-		return fmt.Errorf(a.Invalid.Reason), a.Invalid.Source
-	}
-	return nil, nil
 }
 
 func (a *Primary) GetInvalidReason() PrimaryInvalid {

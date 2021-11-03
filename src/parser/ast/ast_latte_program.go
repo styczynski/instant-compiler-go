@@ -3,6 +3,7 @@ package ast
 import (
 	"fmt"
 	"strings"
+
 	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -12,7 +13,7 @@ import (
 type LatteProgram struct {
 	generic_ast.BaseASTNode
 	Definitions []*Statement `@@*`
-	ParentNode generic_ast.TraversableNode
+	ParentNode  generic_ast.TraversableNode
 }
 
 func (ast *LatteProgram) Parent() generic_ast.TraversableNode {
@@ -65,7 +66,7 @@ func (ast *LatteProgram) Map(parent generic_ast.Expression, mapper generic_ast.E
 	return mapper(parent, &LatteProgram{
 		BaseASTNode: ast.BaseASTNode,
 		Definitions: mappedDef,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true).(*LatteProgram)
 }
 

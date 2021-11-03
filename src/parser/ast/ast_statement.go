@@ -12,10 +12,10 @@ import (
 
 type Statement struct {
 	generic_ast.BaseASTNode
-	Empty          *string         `";"`
-	Assignment     *Assignment     `| @@`
-	Expression     *Expression     `| @@ ";"`
-	ParentNode     generic_ast.TraversableNode
+	Empty      *string     `";"`
+	Assignment *Assignment `| @@`
+	Expression *Expression `| @@ ";"`
+	ParentNode generic_ast.TraversableNode
 }
 
 func (ast *Statement) Parent() generic_ast.TraversableNode {
@@ -39,8 +39,7 @@ func (ast *Statement) GetNode() interface{} {
 }
 
 func (ast *Statement) IsEmpty() bool {
-	return (ast.Empty != nil || (
-		!ast.IsAssignment() &&
+	return (ast.Empty != nil || (!ast.IsAssignment() &&
 		!ast.IsExpression()))
 }
 

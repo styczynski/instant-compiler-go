@@ -87,14 +87,6 @@ type NormalNode interface {
 	TraversableNode
 }
 
-type ConstFoldableNode interface {
-	ConstFold() TraversableNode
-}
-
-type NodeWithFoldingValidation interface {
-	ValidateConstFold() (error, TraversableNode)
-}
-
 type ConstExtractableNode interface {
 	ExtractConst() (TraversableNode, bool)
 }

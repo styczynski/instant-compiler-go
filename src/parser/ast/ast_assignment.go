@@ -9,8 +9,8 @@ import (
 
 type Assignment struct {
 	generic_ast.BaseASTNode
-	TargetName string `@Ident`
-	Value *Expression `"=" @@ ";"`
+	TargetName string      `@Ident`
+	Value      *Expression `"=" @@ ";"`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -50,9 +50,9 @@ func (ast *Assignment) Print(c *context.ParsingContext) string {
 func (ast *Assignment) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Assignment{
 		BaseASTNode: ast.BaseASTNode,
-		Value:    mapper(ast, ast.Value, context, false).(*Expression),
-		TargetName: ast.TargetName,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		Value:       mapper(ast, ast.Value, context, false).(*Expression),
+		TargetName:  ast.TargetName,
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -61,16 +61,12 @@ func (ast *Assignment) Visit(parent generic_ast.Expression, mapper generic_ast.E
 	mapper(parent, ast, context)
 }
 
-func (ast *Assignment) Fn() generic_ast.Expression {
-	//return &BuiltinFunction{
-	//	BaseASTNode: ast.BaseASTNode,
-	//	name: "=",
-	//}
-	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
-		return hindley_milner.NewScheme(
-			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
-			hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a')))
-	}}
+func (ast *Assignment) Var() hindley_milner.NameGroup {
+	return hindley_milner.Names([]string{ast.TargetName})
+}
+
+func (ast *Assignment) Def() generic_ast.Expression {
+	return ast.Value
 }
 
 func (ast *Assignment) Body() generic_ast.Expression {
@@ -78,7 +74,7 @@ func (ast *Assignment) Body() generic_ast.Expression {
 		Exp: []generic_ast.Expression{
 			&VarName{
 				BaseASTNode: ast.BaseASTNode,
-				name: ast.TargetName,
+				name:        ast.TargetName,
 			},
 			ast.Value,
 		},
@@ -86,5 +82,5 @@ func (ast *Assignment) Body() generic_ast.Expression {
 }
 
 func (ast *Assignment) ExpressionType() hindley_milner.ExpressionType {
-	return hindley_milner.E_TYPE_EQUALITY
+	return hindley_milner.E_LET
 }
