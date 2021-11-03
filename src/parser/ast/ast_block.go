@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
-
-	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -73,7 +71,7 @@ func (ast *Block) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 	return mapper(parent, &Block{
 		BaseASTNode: ast.BaseASTNode,
 		Statements:  mappedStmts,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -100,10 +98,4 @@ func (ast *Block) Expressions() []generic_ast.Expression {
 
 func (ast *Block) Body() generic_ast.Expression {
 	panic(fmt.Errorf("Batch Body() method cannot be called."))
-}
-
-//
-
-func (ast *Block) BuildFlowGraph(builder cfg.CFGBuilder) {
-	builder.BuildBlock(ast)
 }

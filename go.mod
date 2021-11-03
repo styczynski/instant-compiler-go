@@ -1,6 +1,6 @@
 module github.com/styczynski/latte-compiler
 
-go 1.11.6
+go 1.23
 
 require (
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
@@ -18,7 +18,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
-	github.com/urfave/cli/v2 v2.3.0 // indirect
+	github.com/urfave/cli/v2 v2.3.0
 	github.com/willf/bitset v1.1.11
 	github.com/xtgo/set v1.0.0
 )

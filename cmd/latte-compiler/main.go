@@ -10,7 +10,6 @@ import (
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/events_collector"
-	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser"
 	context2 "github.com/styczynski/latte-compiler/src/parser/context"
@@ -29,12 +28,10 @@ func ActionCompile(c *cli.Context) error {
 	inputPaths := c.Args().Slice()
 	reader := input_reader.CreateLatteInputReader(inputPaths)
 	comp := compiler.CreateLatteCompiler()
-	analyzer := flow_analysis.CreateLatteFlowAnalyzer()
 	ast := p.ParseInput(reader, context)
 
 	checkedProgram := tc.Check(ast, context)
-	analyzedProgram := analyzer.Analyze(checkedProgram, context)
-	compiledProgram := comp.Compile(analyzedProgram, context)
+	compiledProgram := comp.Compile(checkedProgram, context)
 
 	var summary events_collector.Summarizer = events_collector.CreateCliSummary(-1)
 	if c.Bool("short") {
@@ -70,9 +67,9 @@ func main() {
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
-				Name:        "short",
-				Usage:       "Display only basic success/error information (useful when testing files with glob expression or in bulk)",
-				Value:       false,
+				Name:  "short",
+				Usage: "Display only basic success/error information (useful when testing files with glob expression or in bulk)",
+				Value: false,
 			},
 		},
 		Action: ActionCompile,
