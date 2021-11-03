@@ -20,21 +20,6 @@ var SUGGESTED_KEYWORDS = []string{
 	"else",
 }
 
-func makeBlockFromStatement(statement *Statement) *Block {
-	if statement.IsBlockStatement() {
-		return statement.BlockStatement
-	}
-	return &Block{
-		Statements: []*Statement{ statement },
-	}
-}
-
-func makeBlockFromExpression(expression *Expression) *Block {
-	return makeBlockFromStatement(&Statement{
-		Expression: expression,
-	})
-}
-
 func printNode(c *context.ParsingContext, ast generic_ast.TraversableNode,format string, args ...interface{}) string {
 	if c.PrinterConfiguration.MaxPrintPosition != nil {
 		if ast.Begin().Line > c.PrinterConfiguration.MaxPrintPosition.Line {

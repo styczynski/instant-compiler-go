@@ -124,7 +124,7 @@ func (ast *Addition) ConstFold() generic_ast.TraversableNode {
 			p2 := const2.(*Primary)
 			v := p1.Add(p2, ast.Op)
 			// Change pointers
-			ast.Multiplication.Unary.UnaryApplication.Index.Primary = v
+			ast.Multiplication.Unary.Primary = v
 			ast.Op = ast.Next.Op
 			ast.Next = ast.Next.Next
 			return ast

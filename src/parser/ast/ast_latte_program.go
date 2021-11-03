@@ -3,10 +3,7 @@ package ast
 import (
 	"fmt"
 	"strings"
-
 	"github.com/alecthomas/participle/v2/lexer"
-
-	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -14,7 +11,7 @@ import (
 
 type LatteProgram struct {
 	generic_ast.BaseASTNode
-	Definitions []*TopDef `@@*`
+	Definitions []*Statement `@@*`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -24,19 +21,6 @@ func (ast *LatteProgram) Parent() generic_ast.TraversableNode {
 
 func (ast *LatteProgram) OverrideParent(node generic_ast.TraversableNode) {
 	// No-op
-}
-
-func (ast *LatteProgram) GetIdentifierDeps() hindley_milner.NameGroup {
-	idents := []string{}
-	nameMapping := map[string]*hindley_milner.Scheme{}
-	for _, def := range ast.Definitions {
-		names, types := def.GetDefinedIdentifier()
-		for i, name := range names {
-			idents = append(idents, name)
-			nameMapping[name] = types[i]
-		}
-	}
-	return hindley_milner.NamesWithTypesFromMap(idents, nameMapping)
 }
 
 func (ast *LatteProgram) Begin() lexer.Position {
@@ -71,33 +55,12 @@ func (ast *LatteProgram) Body() generic_ast.Expression {
 	panic(fmt.Errorf("Batch Body() method cannot be called."))
 }
 
-func (ast *LatteProgram) Validate(c *context.ParsingContext) generic_ast.NodeError {
-	//fmt.Printf("SUKA BLYAT!\n")
-	hasMain := false
-	for _, def := range ast.Definitions {
-		if def.IsFunction() {
-			if def.Function.Name == "main" {
-				hasMain = true
-			}
-		}
-	}
-	if !hasMain {
-		message := fmt.Sprintf("main() function is missing. Please create a top-level function with signature int main() { ... }")
-		return generic_ast.NewNodeError(
-			"Missing main()",
-			ast,
-			message,
-			message)
-	}
-	return nil
-}
-
 /////
 
 func (ast *LatteProgram) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
-	mappedDef := []*TopDef{}
+	mappedDef := []*Statement{}
 	for _, def := range ast.Definitions {
-		mappedDef = append(mappedDef, mapper(ast, def, context, false).(*TopDef))
+		mappedDef = append(mappedDef, mapper(ast, def, context, false).(*Statement))
 	}
 	return mapper(parent, &LatteProgram{
 		BaseASTNode: ast.BaseASTNode,
@@ -125,10 +88,4 @@ func (ast *LatteProgram) GetContents() hindley_milner.Batch {
 	return hindley_milner.Batch{
 		Exp: exp,
 	}
-}
-
-//
-
-func (ast *LatteProgram) BuildFlowGraph(builder cfg.CFGBuilder) {
-	builder.BuildBlock(ast)
 }

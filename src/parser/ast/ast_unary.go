@@ -12,13 +12,13 @@ type Unary struct {
 	 generic_ast.BaseASTNode
 	Op      string   `  ( @( "!" | "-" )`
 	Unary   *Unary   `    @@ )`
-	UnaryApplication *UnaryApplication `| @@`
+	Primary *Primary `| @@`
 	ParentNode generic_ast.TraversableNode
 }
 
 func (ast *Unary) ExtractConst() (generic_ast.TraversableNode, bool) {
-	if ast.IsUnaryApplication() {
-		return ast.UnaryApplication.ExtractConst()
+	if ast.IsPrimary() {
+		return ast.Primary.ExtractConst()
 	}
 	return nil, false
 }
@@ -49,9 +49,9 @@ func (ast *Unary) GetChildren() []generic_ast.TraversableNode {
 			generic_ast.MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 			ast.Unary,
 		}
-	} else if ast.IsUnaryApplication() {
+	} else if ast.IsPrimary() {
 		return []generic_ast.TraversableNode{
-			ast.UnaryApplication,
+			ast.Primary,
 		}
 	}
 	return []generic_ast.TraversableNode{}
@@ -61,15 +61,15 @@ func (ast *Unary) IsOperation() bool {
 	return ast.Unary != nil
 }
 
-func (ast *Unary) IsUnaryApplication() bool {
-	return ast.UnaryApplication != nil
+func (ast *Unary) IsPrimary() bool {
+	return ast.Primary != nil
 }
 
 func (ast *Unary) Print(c *context.ParsingContext) string {
 	if ast.IsOperation() {
 		return printUnaryOperation(c, ast, ast.Op, ast.Unary.Print(c))
-	} else if ast.IsUnaryApplication() {
-		return ast.UnaryApplication.Print(c)
+	} else if ast.IsPrimary() {
+		return ast.Primary.Print(c)
 	}
 	panic("Unvalid Unary value")
 }
@@ -85,10 +85,10 @@ func (ast *Unary) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 			Unary:            mapper(ast, ast.Unary, context, false).(*Unary),
 			ParentNode: parent.(generic_ast.TraversableNode),
 		}, context, true)
-	} else if ast.IsUnaryApplication() {
+	} else if ast.IsPrimary() {
 		return mapper(parent, &Unary{
 			BaseASTNode:      ast.BaseASTNode,
-			UnaryApplication: mapper(ast, ast.UnaryApplication, context, false).(*UnaryApplication),
+			Primary: mapper(ast, ast.Primary, context, false).(*Primary),
 			ParentNode: parent.(generic_ast.TraversableNode),
 		}, context, true)
 	}
@@ -98,8 +98,8 @@ func (ast *Unary) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 func (ast *Unary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
 	if ast.IsOperation() {
 		mapper(ast, ast.Unary, context)
-	} else if ast.IsUnaryApplication() {
-		mapper(ast, ast.UnaryApplication, context)
+	} else if ast.IsPrimary() {
+		mapper(ast, ast.Primary, context)
 	}
 	mapper(parent, ast, context)
 }
@@ -112,8 +112,8 @@ func (ast *Unary) Fn() generic_ast.Expression {
 }
 
 func (ast *Unary) Body() generic_ast.Expression {
-	if ast.IsUnaryApplication() {
-		return ast.UnaryApplication
+	if ast.IsPrimary() {
+		return ast.Primary
 	}
 	return hindley_milner.Batch{
 		Exp: []generic_ast.Expression{
@@ -123,7 +123,7 @@ func (ast *Unary) Body() generic_ast.Expression {
 }
 
 func (ast *Unary) ExpressionType() hindley_milner.ExpressionType {
-	if ast.IsUnaryApplication() {
+	if ast.IsPrimary() {
 		return hindley_milner.E_PROXY
 	}
 	return hindley_milner.E_APPLICATION

@@ -3,7 +3,6 @@ package ast
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 
-	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -82,20 +81,4 @@ func (ast *UnaryStatement) Body() generic_ast.Expression {
 
 func (ast *UnaryStatement) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_APPLICATION
-}
-
-///
-
-func (ast *UnaryStatement) GetAssignedVariables(wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
-	return cfg.NewVariableSet(cfg.NewVariable(*ast.TargetName, nil))
-}
-
-func (ast *UnaryStatement) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
-	vars.Add(cfg.NewVariable(*ast.TargetName, nil))
-	return vars
-}
-
-func (ast *UnaryStatement) RenameVariables(subst cfg.VariableSubstitution, visitedMap map[generic_ast.TraversableNode]struct{}) {
-	v := subst.Replace(*ast.TargetName)
-	ast.TargetName = &v
 }
