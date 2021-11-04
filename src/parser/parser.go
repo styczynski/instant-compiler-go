@@ -33,10 +33,10 @@ type LatteParsedProgram interface {
 }
 
 type LatteParsedProgramImpl struct {
-	ast *ast.LatteProgram
+	ast      *ast.LatteProgram
 	filename string
-	error AbstractParsingError
-	context *context.ParsingContext
+	error    AbstractParsingError
+	context  *context.ParsingContext
 }
 
 func (prog *LatteParsedProgramImpl) Context() *context.ParsingContext {
@@ -76,7 +76,7 @@ type LatteParsedProgramPromise interface {
 type LatteParsedProgramPromiseChanel <-chan LatteParsedProgram
 
 func (p LatteParsedProgramPromiseChanel) Resolve() LatteParsedProgram {
-	return <- p
+	return <-p
 }
 
 func CreateLatteParser() *LatteParser {
@@ -91,7 +91,7 @@ func CreateLatteParser() *LatteParser {
 }
 
 type ParsingError struct {
-	message string
+	message     string
 	textMessage string
 }
 
@@ -108,7 +108,7 @@ func (e *ParsingError) CliMessage() string {
 }
 
 type ParsingPanicError struct {
-	message string
+	message     string
 	textMessage string
 }
 
@@ -144,6 +144,9 @@ func examineParsingErrorMessage(message string, recommendedBracket string) strin
 		} else if message == "\")\" Statement" {
 			return fmt.Sprintf("Parser encountered invalid syntax. The closing bracket \")\" and a statement was expected in place of \"%s\"", tokenName)
 		} else if message == "\";\"" {
+			if tokenName == "<EOF>" {
+				return fmt.Sprintf("The parser encountered unexpected keyword. The semicolon was expected ath the end of the input. Please make sure you have semicolons in right places.")
+			}
 			return fmt.Sprintf("The parser encountered unexpected keyword. The semicolon was expected in place of \"%s\". Please make sure you have semicolons in right places.", tokenName)
 		}
 
@@ -180,7 +183,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 			ret <- &LatteParsedProgramImpl{
 				ast:      nil,
 				filename: input.Filename(),
-				error:      &ParsingPanicError{
+				error: &ParsingPanicError{
 					message:     message,
 					textMessage: textMessage,
 				},
@@ -198,7 +201,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 			ret <- &LatteParsedProgramImpl{
 				ast:      nil,
 				filename: input.Filename(),
-				error:      &ParsingError{
+				error: &ParsingError{
 					message:     err.Error(),
 					textMessage: err.Error(),
 				},
@@ -222,7 +225,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 			ret <- &LatteParsedProgramImpl{
 				ast:      nil,
 				filename: input.Filename(),
-				error:      &ParsingError{
+				error: &ParsingError{
 					message:     message,
 					textMessage: textMessage,
 				},
@@ -305,7 +308,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 			ret <- &LatteParsedProgramImpl{
 				ast:      nil,
 				filename: input.Filename(),
-				error:      &ParsingError{
+				error: &ParsingError{
 					message:     message,
 					textMessage: textMessage,
 				},
@@ -317,7 +320,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 		ret <- &LatteParsedProgramImpl{
 			ast:      output,
 			filename: input.Filename(),
-			context: ctx,
+			context:  ctx,
 		}
 	}()
 
@@ -332,7 +335,7 @@ func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *conte
 			&LatteParsedProgramImpl{
 				ast:      nil,
 				filename: "<unknown input>",
-				error:    &ParsingError{
+				error: &ParsingError{
 					message:     err.Error(),
 					textMessage: err.Error(),
 				},

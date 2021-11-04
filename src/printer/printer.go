@@ -2,14 +2,15 @@ package printer
 
 import (
 	"bytes"
+
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
-	"github.com/styczynski/latte-compiler/src/printer/chroma/styles"
 	"github.com/styczynski/latte-compiler/src/printer/chroma/formatters"
 	"github.com/styczynski/latte-compiler/src/printer/chroma/lexers"
+	"github.com/styczynski/latte-compiler/src/printer/chroma/styles"
 )
 
-type LattePrinter struct {}
+type LattePrinter struct{}
 
 func CreateLattePrinter() *LattePrinter {
 	return &LattePrinter{}
@@ -21,7 +22,7 @@ func (p *LattePrinter) Raw(program *ast.LatteProgram, c *context.ParsingContext)
 
 func (p *LattePrinter) FormatRaw(input string) (string, error) {
 	lexer := lexers.Get("latte")
-	style := styles.Get("colorful")
+	style := styles.Get("vim")
 	formatter := formatters.Get("terminal16m")
 	if formatter == nil {
 		formatter = formatters.Fallback

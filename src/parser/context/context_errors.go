@@ -13,7 +13,6 @@ var formatErrorFg = color.New(color.FgHiWhite).SprintFunc()
 var formatErrorMessageFg = color.New(color.FgRed).SprintFunc()
 var formatErrorMetaInfoFg = color.New(color.FgHiBlue).SprintFunc()
 
-
 func indentCodeLines(message string, errorLine int, lineStart int) string {
 	lines := strings.Split(message, "\n")
 	newLines := []string{}

@@ -23,7 +23,7 @@ type CodeFormatter interface {
 
 type PrinterConfiguration struct {
 	SkipStatementIdent bool
-	MaxPrintPosition *lexer.Position
+	MaxPrintPosition   *lexer.Position
 }
 
 func (p PrinterConfiguration) Copy() PrinterConfiguration {
@@ -39,7 +39,7 @@ func (p PrinterConfiguration) Copy() PrinterConfiguration {
 
 type ProcessingStage struct {
 	Start *time.Time
-	End *time.Time
+	End   *time.Time
 }
 
 func (stage *ProcessingStage) Copy() *ProcessingStage {
@@ -59,12 +59,12 @@ type EventsCollectorStream interface {
 }
 
 type ParsingContext struct {
-	BlockDepth int
-	PrinterConfiguration PrinterConfiguration
-	ParserInput []byte
-	Printer CodeFormatter
-	Start *time.Time
-	End *time.Time
+	BlockDepth            int
+	PrinterConfiguration  PrinterConfiguration
+	ParserInput           []byte
+	Printer               CodeFormatter
+	Start                 *time.Time
+	End                   *time.Time
 	EventsCollectorStream EventsCollectorStream
 }
 
@@ -79,12 +79,12 @@ func copyTimePtr(val *time.Time) *time.Time {
 func (c *ParsingContext) Copy() *ParsingContext {
 	input := c.ParserInput
 	return &ParsingContext{
-		BlockDepth:           c.BlockDepth,
-		PrinterConfiguration: c.PrinterConfiguration.Copy(),
-		ParserInput:          input,
-		Printer:              c.Printer,
-		Start:                copyTimePtr(c.Start),
-		End:                  copyTimePtr(c.End),
+		BlockDepth:            c.BlockDepth,
+		PrinterConfiguration:  c.PrinterConfiguration.Copy(),
+		ParserInput:           input,
+		Printer:               c.Printer,
+		Start:                 copyTimePtr(c.Start),
+		End:                   copyTimePtr(c.End),
 		EventsCollectorStream: c.EventsCollectorStream,
 	}
 }
@@ -96,7 +96,7 @@ func Abs(x int) int {
 	return x
 }
 
-func Max(x int, y int ) int {
+func Max(x int, y int) int {
 	if x < y {
 		return y
 	}
@@ -110,7 +110,6 @@ func TraverseAST(node TraversableNode, visitor func(ast TraversableNode)) {
 		TraverseAST(child, visitor)
 	}
 }
-
 
 func (c *ParsingContext) GetFileContext(program TraversableNode, line int, column int) (string, int, int) {
 	lineOffset := 3
@@ -180,12 +179,12 @@ func (c *ParsingContext) Close() {
 func NewParsingContext(printer CodeFormatter, eventsColelctorStream EventsCollectorStream) *ParsingContext {
 	start := time.Now()
 	return &ParsingContext{
-		Printer: printer,
+		Printer:    printer,
 		BlockDepth: 0,
 		PrinterConfiguration: PrinterConfiguration{
 			SkipStatementIdent: false,
 		},
-		Start: &start,
+		Start:                 &start,
 		EventsCollectorStream: eventsColelctorStream,
 	}
 }

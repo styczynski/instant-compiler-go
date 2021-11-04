@@ -1,0 +1,183 @@
+package jvm
+
+import (
+	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/compiler"
+	"github.com/styczynski/latte-compiler/src/compiler/jvm/jasmine"
+	"github.com/styczynski/latte-compiler/src/generic_ast"
+	"github.com/styczynski/latte-compiler/src/parser/ast"
+	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/type_checker"
+)
+
+type CompilerJVMBackend struct {
+	state *compiler.CompilerState
+}
+
+func (backend CompilerJVMBackend) optimizeStackBiAlloc(left generic_ast.Expression, right generic_ast.Expression, supportsSwap bool) ([]jasmine.JasmineInstruction, int64) {
+	cl, dl := backend.compileExpression(left)
+	cr, dr := backend.compileExpression(right)
+
+	d1 := dl + 1
+	if d1 < dr {
+		d1 = dr
+	}
+
+	d2 := dr + 1
+	if d2 < dl {
+		d2 = dl
+	}
+
+	d12 := d1
+	if d2 < d12 {
+		d12 = d2
+	}
+
+	ret := []jasmine.JasmineInstruction{}
+	if d1 <= d2 {
+		ret = append(ret, cl...)
+		ret = append(ret, cr...)
+		return ret, d12
+	} else {
+		ret = append(ret, cr...)
+		ret = append(ret, cl...)
+		if supportsSwap {
+			ret = append(ret, &jasmine.JasmineSwap{})
+		}
+		return ret, d12
+	}
+}
+
+func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression) ([]jasmine.JasmineInstruction, int64) {
+	if expr, ok := (expr.(*ast.LatteProgram)); ok {
+		ret := []jasmine.JasmineInstruction{}
+		maxDepth := int64(0)
+		for _, stmt := range expr.Definitions {
+			compiledValue, s := backend.compileExpression(stmt)
+			if s > maxDepth {
+				maxDepth = s
+			}
+			ret = append(ret, compiledValue...)
+		}
+		return ret, int64(maxDepth + 1)
+	}
+	if expr, ok := (expr.(*ast.Statement)); ok {
+		ret := []jasmine.JasmineInstruction{}
+		if expr.IsAssignment() {
+			compiledValue, s := backend.compileExpression(expr.Assignment.Value)
+			_, loc := backend.state.DefineAndAlloc(expr.Assignment.TargetName)
+
+			ret = append(ret, compiledValue...)
+			ret = append(ret, &jasmine.JasmineStoreInt{
+				Index: loc,
+			})
+			return ret, s
+		} else if expr.IsExpression() {
+			compiledValue, s := backend.compileExpression(expr.Expression)
+			ret = append(ret, compiledValue...)
+			ret = append(ret, &jasmine.JasmineInvokeStatic{
+				Target: "Runtime/printInt(I)V",
+			})
+			return ret, s
+		}
+	}
+	if expr, ok := (expr.(*ast.Addition)); ok {
+		if !expr.HasNext() {
+			return backend.compileExpression(expr.Multiplication)
+		}
+		ret, s := backend.optimizeStackBiAlloc(expr.Multiplication, expr.Next, expr.Op == "-")
+		ret = append(ret, jasmine.CreateJasmineIntOp(expr.Op))
+		return ret, s
+	}
+	if expr, ok := (expr.(*ast.Expression)); ok {
+		return backend.compileExpression(&expr.Addition)
+	}
+	if expr, ok := (expr.(*ast.Multiplication)); ok {
+		if !expr.HasNext() {
+			return backend.compileExpression(expr.Primary)
+		}
+		ret, s := backend.optimizeStackBiAlloc(expr.Primary, expr.Next, expr.Op == "/")
+		ret = append(ret, jasmine.CreateJasmineIntOp(expr.Op))
+		return ret, s
+	}
+	if expr, ok := (expr.(*ast.Primary)); ok {
+		if expr.IsVariable() {
+			loc := backend.state.GetLocationFromScope(*expr.Variable)
+			return []jasmine.JasmineInstruction{
+				&jasmine.JasmineLoadInt{
+					Index: loc,
+				},
+			}, 1
+		} else if expr.IsInt() {
+			return []jasmine.JasmineInstruction{
+				&jasmine.JasmineConstInt{
+					Index: *expr.Int,
+				},
+			}, 1
+		}
+	}
+	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", expr))
+}
+
+func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext) compiler.LatteCompiledProgramPromiseChan {
+	ret := make(chan compiler.LatteCompiledProgram)
+	go func() {
+
+		ast := program.Program.AST()
+		outputCode, maxStack := backend.compileExpression(ast)
+
+		// output := jasmine.JasmineProgram{
+		// 	StackLimit:   maxStack,
+		// 	LocalsLimit:  int64(backend.state.ScopeSize()),
+		// 	Instructions: outputCode,
+		// }
+
+		output := jasmine.JasmineProgram{
+			StackLimit:  maxStack,
+			LocalsLimit: int64(backend.state.ScopeSize()),
+			Instructions: []jasmine.JasmineInstruction{
+				&jasmine.JasmineClass{
+					Super: "java/lang/Object",
+					Methods: []jasmine.JasmineMethod{
+						{
+							Name: "<init>()V",
+							Body: []jasmine.JasmineInstruction{
+								&jasmine.JasmineReferenceLoad{
+									Index: 0,
+								},
+								&jasmine.JasmineInvokeStatic{
+									Target:  "java/lang/Object/<init>()V",
+									Special: true,
+								},
+								&jasmine.JasmineReturn{},
+							},
+						},
+						{
+							Name: "public static main([Ljava/lang/String;)V",
+							Body: append(outputCode, &jasmine.JasmineReturn{}),
+						},
+					},
+				},
+			},
+		}
+
+		ret <- compiler.LatteCompiledProgram{
+			Program:          program,
+			CompiledProgram:  &output,
+			CompilationError: nil,
+		}
+	}()
+
+	return ret
+}
+
+func (CompilerJVMBackend) BackendName() string {
+	return "JVM Jasmine backend"
+}
+
+func CreateCompilerJVMBackend() compiler.CompilerBackend {
+	return CompilerJVMBackend{
+		state: compiler.CreateCompilerState(),
+	}
+}

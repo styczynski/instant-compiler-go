@@ -1,17 +1,19 @@
 package compiler
 
 import (
+	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
 type CompilationError struct {
-	message string
+	message     string
 	textMessage string
 }
 
-func  (e CompilationError) ErrorName() string {
+func (e CompilationError) ErrorName() string {
 	return "Code Generation Error"
 }
 
@@ -23,10 +25,18 @@ func (e CompilationError) CliMessage() string {
 	return e.textMessage
 }
 
-type LatteCompiler struct {}
+type LatteCompiler struct {
+	backend CompilerBackend
+}
+
+type CompilerBackend interface {
+	Compile(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext) LatteCompiledProgramPromiseChan
+	BackendName() string
+}
 
 type LatteCompiledProgram struct {
 	Program          type_checker.LatteTypecheckedProgram
+	CompiledProgram  CompiledProgram
 	CompilationError *CompilationError
 }
 
@@ -44,8 +54,10 @@ func (p LatteCompiledProgramPromiseChan) Resolve() LatteCompiledProgram {
 	return <-p
 }
 
-func CreateLatteCompiler() *LatteCompiler {
-	return &LatteCompiler{}
+func CreateLatteCompiler(Backend CompilerBackend) *LatteCompiler {
+	return &LatteCompiler{
+		backend: Backend,
+	}
 }
 
 func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTypecheckedProgramPromise, c *context.ParsingContext) LatteCompiledProgramPromise {
@@ -55,7 +67,7 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 		program := programPromise.Resolve()
 		defer errors.GeneralRecovery(ctx, "Code generation", program.Filename(), func(message string, textMessage string) {
 			ret <- LatteCompiledProgram{
-				Program:          program,
+				Program: program,
 				CompilationError: &CompilationError{
 					message:     message,
 					textMessage: textMessage,
@@ -65,12 +77,18 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 			close(ret)
 		})
 
-		c.EventsCollectorStream.Start("Generate compiled code", c, program)
-		defer c.EventsCollectorStream.End("Generate compiled code", c, program)
+		backendProcessDescription := fmt.Sprintf("Generate compiled code using backend: %s", compiler.backend.BackendName())
+
+		c.EventsCollectorStream.Start(backendProcessDescription, c, program)
+		defer c.EventsCollectorStream.End(backendProcessDescription, c, program)
+
+		compiled := <-compiler.backend.Compile(program, c)
+		fmt.Print(compiled.CompiledProgram.ProgramToText())
 
 		ret <- LatteCompiledProgram{
-			Program:          program,
-			CompilationError: nil,
+			Program:          compiled.Program,
+			CompiledProgram:  compiled.CompiledProgram,
+			CompilationError: compiled.CompilationError,
 		}
 	}()
 	return LatteCompiledProgramPromiseChan(ret)

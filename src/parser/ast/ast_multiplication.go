@@ -10,9 +10,9 @@ import (
 
 type Multiplication struct {
 	generic_ast.BaseASTNode
-	Unary *Unary          `@@`
-	Op    string          `[ @( "/" | "*" | "%" )`
-	Next  *Multiplication `  @@ ]`
+	Primary    *Primary        `@@`
+	Op         string          `[ @( "/" | "*" | "%" )`
+	Next       *Multiplication `  @@ ]`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -20,7 +20,7 @@ func (ast *Multiplication) ExtractConst() (generic_ast.TraversableNode, bool) {
 	if ast.HasNext() {
 		return nil, false
 	}
-	return ast.Unary.ExtractConst()
+	return ast.Primary.ExtractConst()
 }
 
 func (ast *Multiplication) Parent() generic_ast.TraversableNode {
@@ -45,7 +45,7 @@ func (ast *Multiplication) GetNode() interface{} {
 
 func (ast *Multiplication) GetChildren() []generic_ast.TraversableNode {
 	return []generic_ast.TraversableNode{
-		ast.Unary,
+		ast.Primary,
 		generic_ast.MakeTraversableNodeToken(ast, ast.Op, ast.Pos, ast.EndPos),
 		ast.Next,
 	}
@@ -57,14 +57,12 @@ func (ast *Multiplication) HasNext() bool {
 
 func (ast *Multiplication) Print(c *context.ParsingContext) string {
 	if ast.HasNext() {
-		return printBinaryOperation(c, ast, ast.Unary.Print(c), ast.Op, ast.Next.Print(c))
+		return printBinaryOperation(c, ast, ast.Primary.Print(c), ast.Op, ast.Next.Print(c))
 	}
-	return ast.Unary.Print(c)
+	return ast.Primary.Print(c)
 }
 
-
 ////
-
 
 func (ast *Multiplication) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	next := ast.Next
@@ -73,15 +71,15 @@ func (ast *Multiplication) Map(parent generic_ast.Expression, mapper generic_ast
 	}
 	return mapper(parent, &Multiplication{
 		BaseASTNode: ast.BaseASTNode,
-		Unary:    mapper(ast, ast.Unary, context, false).(*Unary),
+		Primary:     mapper(ast, ast.Primary, context, false).(*Primary),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
 func (ast *Multiplication) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
-	mapper(ast, ast.Unary, context)
+	mapper(ast, ast.Primary, context)
 	if ast.HasNext() {
 		mapper(ast, ast.Next, context)
 	}
@@ -91,17 +89,17 @@ func (ast *Multiplication) Visit(parent generic_ast.Expression, mapper generic_a
 func (ast *Multiplication) Fn() generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: ast.Op,
+		name:        ast.Op,
 	}
 }
 
 func (ast *Multiplication) Body() generic_ast.Expression {
 	if !ast.HasNext() {
-		return ast.Unary
+		return ast.Primary
 	}
 	return hindley_milner.Batch{
 		Exp: []generic_ast.Expression{
-			ast.Unary,
+			ast.Primary,
 			ast.Next,
 		},
 	}
@@ -113,4 +111,3 @@ func (ast *Multiplication) ExpressionType() hindley_milner.ExpressionType {
 	}
 	return hindley_milner.E_APPLICATION
 }
-
