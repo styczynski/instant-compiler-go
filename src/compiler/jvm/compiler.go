@@ -19,33 +19,28 @@ func (backend CompilerJVMBackend) optimizeStackBiAlloc(left generic_ast.Expressi
 	cl, dl := backend.compileExpression(left)
 	cr, dr := backend.compileExpression(right)
 
-	d1 := dl + 1
+	d1 := dl + 1 // d1 = max(dl+1, dr) - swapped
 	if d1 < dr {
 		d1 = dr
 	}
 
-	d2 := dr + 1
+	d2 := dr + 1 // d2 = max(dl, dr+1) - normal
 	if d2 < dl {
 		d2 = dl
 	}
 
-	d12 := d1
-	if d2 < d12 {
-		d12 = d2
-	}
-
 	ret := []jasmine.JasmineInstruction{}
-	if d1 <= d2 {
+	if d1 > d2 {
 		ret = append(ret, cl...)
 		ret = append(ret, cr...)
-		return ret, d12
+		return ret, d2
 	} else {
 		ret = append(ret, cr...)
 		ret = append(ret, cl...)
 		if supportsSwap {
 			ret = append(ret, &jasmine.JasmineSwap{})
 		}
-		return ret, d12
+		return ret, d1
 	}
 }
 
@@ -77,7 +72,9 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 			compiledValue, s := backend.compileExpression(expr.Expression)
 			ret = append(ret, compiledValue...)
 			ret = append(ret, &jasmine.JasmineInvokeStatic{
-				Target: "Runtime/printInt(I)V",
+				Target: "Runtime/printInt",
+				Args:   []string{"I"},
+				Return: "V",
 			})
 			return ret, s
 		}
@@ -147,8 +144,9 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 									Index: 0,
 								},
 								&jasmine.JasmineInvokeStatic{
-									Target:  "java/lang/Object/<init>()V",
+									Target:  "java/lang/Object/<init>",
 									Special: true,
+									Return:  "V",
 								},
 								&jasmine.JasmineReturn{},
 							},

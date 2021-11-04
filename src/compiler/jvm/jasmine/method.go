@@ -26,8 +26,10 @@ func (p *JasmineMethod) ToText(emitter EmitterConfig) string {
 		subemitter.Emit(".limit stack %d", p.StackLimit),
 		subemitter.Emit(".limit locals %d", p.LocalsLimit),
 	}
+	s := 0
 	for _, ins := range p.Body {
-		methodContents = append(methodContents, ins.ToText(subemitter))
+		s = ins.StackSize(s)
+		methodContents = append(methodContents, ins.ToText(subemitter)+fmt.Sprintf(" // %d", s))
 	}
 	methodContents = append(methodContents, emitter.Emit(".end"))
 	return strings.Join(methodContents, "\n")

@@ -16,17 +16,17 @@ type JasmineIntOp struct {
 }
 
 func CreateJasmineIntOp(Operation string) *JasmineIntOp {
-	if (Operation == "+") {
-		return &JasmineIntOp{ Operation: Add, }
+	if Operation == "+" {
+		return &JasmineIntOp{Operation: Add}
 	}
-	if (Operation == "-") {
-		return &JasmineIntOp{ Operation: Sub, }
+	if Operation == "-" {
+		return &JasmineIntOp{Operation: Sub}
 	}
-	if (Operation == "*") {
-		return &JasmineIntOp{ Operation: Mul, }
+	if Operation == "*" {
+		return &JasmineIntOp{Operation: Mul}
 	}
-	if (Operation == "/") {
-		return &JasmineIntOp{ Operation: Div, }
+	if Operation == "/" {
+		return &JasmineIntOp{Operation: Div}
 	}
 	panic(fmt.Sprintf("Unknown operation symbol in CreateJasmineIntOp(): %s", Operation))
 }
@@ -52,5 +52,5 @@ func (p *JasmineIntOp) ToText(emitter EmitterConfig) string {
 }
 
 func (p *JasmineIntOp) StackSize(previousStackSize int) int {
-	return previousStackSize
+	return previousStackSize - 1
 }

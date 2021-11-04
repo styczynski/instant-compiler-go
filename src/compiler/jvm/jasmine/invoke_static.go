@@ -1,8 +1,12 @@
 package jasmine
 
+import "strings"
+
 type JasmineInvokeStatic struct {
 	Target  string
 	Special bool
+	Args    []string
+	Return  string
 }
 
 func (p *JasmineInvokeStatic) Type() JasmineInstructionType {
@@ -10,12 +14,13 @@ func (p *JasmineInvokeStatic) Type() JasmineInstructionType {
 }
 
 func (p *JasmineInvokeStatic) ToText(emitter EmitterConfig) string {
+	keyword := "invokestatic"
 	if p.Special {
-		return emitter.Emit("invokespecial %s", p.Target)
+		keyword = "invokespecial"
 	}
-	return emitter.Emit("invokestatic %s", p.Target)
+	return emitter.Emit("%s %s(%s)%s", keyword, p.Target, strings.Join(p.Args, ";"), p.Return)
 }
 
 func (p *JasmineInvokeStatic) StackSize(previousStackSize int) int {
-	return previousStackSize
+	return previousStackSize - len(p.Args)
 }
