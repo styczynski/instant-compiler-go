@@ -13,5 +13,5 @@ func (p *JasmineReferenceLoad) ToText(emitter EmitterConfig) string {
 }
 
 func (p *JasmineReferenceLoad) StackSize(previousStackSize int) int {
-	return previousStackSize
+	return previousStackSize + 1
 }

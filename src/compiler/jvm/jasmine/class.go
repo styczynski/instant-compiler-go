@@ -2,6 +2,8 @@ package jasmine
 
 import (
 	"strings"
+
+	"github.com/styczynski/latte-compiler/src/compiler"
 )
 
 type JasmineClass struct {
@@ -30,4 +32,14 @@ func (p *JasmineClass) StackSize(previousStackSize int) int {
 		s = ins.StackSize(s)
 	}
 	return s
+}
+
+func (p *JasmineClass) Validate() *compiler.CompilationError {
+	for _, method := range p.Methods {
+		err := method.Validate()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

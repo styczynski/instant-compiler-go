@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 
+	"github.com/fatih/color"
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker"
@@ -11,6 +12,24 @@ import (
 type CompilationError struct {
 	message     string
 	textMessage string
+}
+
+var formatErrorBg = color.New(color.BgRed).SprintFunc()
+var formatErrorFg = color.New(color.FgHiWhite).SprintFunc()
+
+var formatErrorMessageFg = color.New(color.FgRed).SprintFunc()
+var formatErrorMetaInfoFg = color.New(color.FgHiBlue).SprintFunc()
+
+func CreateCompilationError(errorMessage string, details string) *CompilationError {
+
+	textMessage := fmt.Sprintf("%s: %s\n%s\n",
+		formatErrorFg(formatErrorBg(fmt.Sprintf(" %s ", "Code Generation Error"))),
+		formatErrorMessageFg(errorMessage), formatErrorMessageFg(details))
+
+	return &CompilationError{
+		message:     errorMessage,
+		textMessage: textMessage,
+	}
 }
 
 func (e CompilationError) ErrorName() string {

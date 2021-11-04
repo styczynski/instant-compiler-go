@@ -2,11 +2,11 @@ package jasmine
 
 import (
 	"strings"
+
+	"github.com/styczynski/latte-compiler/src/compiler"
 )
 
 type JasmineProgram struct {
-	StackLimit   int64
-	LocalsLimit  int64
 	Instructions []JasmineInstruction
 }
 
@@ -34,6 +34,10 @@ type JasmineInstruction interface {
 	StackSize(previousStackSize int) int
 }
 
+type JasmineValidableInstruction interface {
+	Validate() *compiler.CompilationError 
+}
+
 func (p *JasmineProgram) Type() JasmineInstructionType {
 	return Program
 }
@@ -45,23 +49,17 @@ func (p *JasmineProgram) ProgramToText() string {
 }
 
 func (p *JasmineProgram) ToText(emitter EmitterConfig) string {
-	return strings.Join(p.ToLines(emitter, true), "\n")
+	return strings.Join(p.ToLines(emitter), "\n")
 }
 
-func (p *JasmineProgram) ToLines(emitter EmitterConfig, isTop bool) []string {
+func (p *JasmineProgram) ToLines(emitter EmitterConfig) []string {
 	output := []string{}
-	if isTop {
-		output = append(output, []string{
-			emitter.Emit(".limit stack %d", p.StackLimit),
-			emitter.Emit(".limit locals %d", p.LocalsLimit),
-		}...)
-	}
 	for _, v := range p.Instructions {
 		if v.Type() == Method {
 
 		} else if v.Type() == Program {
 			// Embedded program
-			output = append(output, v.(*JasmineProgram).ToLines(emitter, false)...)
+			output = append(output, v.(*JasmineProgram).ToLines(emitter)...)
 		} else {
 			output = append(output, v.ToText(emitter))
 		}
@@ -74,4 +72,16 @@ func (p *JasmineProgram) StackSize(previousStackSize int) int {
 		previousStackSize = v.StackSize(previousStackSize)
 	}
 	return previousStackSize
+}
+
+func (p *JasmineProgram) Validate() *compiler.CompilationError {
+	for _, ins := range p.Instructions {
+		if val, ok := ins.(JasmineValidableInstruction); ok {
+			err := val.Validate()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

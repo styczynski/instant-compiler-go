@@ -60,7 +60,7 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 			}
 			ret = append(ret, compiledValue...)
 		}
-		return ret, int64(maxDepth + 1)
+		return ret, int64(maxDepth)
 	}
 	if expr, ok := (expr.(*ast.Statement)); ok {
 		ret := []jasmine.JasmineInstruction{}
@@ -134,14 +134,14 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 		// }
 
 		output := jasmine.JasmineProgram{
-			StackLimit:  maxStack,
-			LocalsLimit: int64(backend.state.ScopeSize()),
 			Instructions: []jasmine.JasmineInstruction{
 				&jasmine.JasmineClass{
 					Super: "java/lang/Object",
 					Methods: []jasmine.JasmineMethod{
 						{
-							Name: "<init>()V",
+							Name:        "<init>()V",
+							StackLimit:  1,
+							LocalsLimit: 1,
 							Body: []jasmine.JasmineInstruction{
 								&jasmine.JasmineReferenceLoad{
 									Index: 0,
@@ -154,18 +154,22 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 							},
 						},
 						{
-							Name: "public static main([Ljava/lang/String;)V",
-							Body: append(outputCode, &jasmine.JasmineReturn{}),
+							Name:        "public static main([Ljava/lang/String;)V",
+							StackLimit:  maxStack,
+							LocalsLimit: int64(backend.state.ScopeSize()),
+							Body:        append(outputCode, &jasmine.JasmineReturn{}),
 						},
 					},
 				},
 			},
 		}
 
+		validationErr := output.Validate()
+
 		ret <- compiler.LatteCompiledProgram{
 			Program:          program,
 			CompiledProgram:  &output,
-			CompilationError: nil,
+			CompilationError: validationErr,
 		}
 	}()
 
