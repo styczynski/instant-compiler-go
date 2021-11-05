@@ -216,7 +216,9 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 
 		outputJVMBytecode := b.ReadBuildFile("out/%s.class", className)
 		b.WriteOutput("JVM bytecode file", "class", outputJVMBytecode)
-		b.WriteOutput("Jasmine source", "jasmine", []byte(output.ProgramToText()))
+
+		// Output Jasmine source for debgging
+		//b.WriteOutput("Jasmine source", "jasmine", []byte(output.ProgramToText()))
 
 		ret <- compiler.LatteCompiledProgram{
 			Program:          program,

@@ -9,7 +9,7 @@ import (
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/compiler"
-	"github.com/styczynski/latte-compiler/src/compiler/jvm"
+	"github.com/styczynski/latte-compiler/src/compiler/llvm"
 	"github.com/styczynski/latte-compiler/src/events_collector"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser"
@@ -30,9 +30,10 @@ func ActionCompile(c *cli.Context) error {
 	inputPaths := c.Args().Slice()
 	reader := input_reader.CreateLatteInputReader(inputPaths)
 
-	jvmBackend := jvm.CreateCompilerJVMBackend()
+	//jvmBackend := jvm.CreateCompilerJVMBackend()
+	llvmBackend := llvm.CreateCompilerLLVMBackend()
 
-	comp := compiler.CreateLatteCompiler(jvmBackend)
+	comp := compiler.CreateLatteCompiler(llvmBackend)
 	run := runner.CreateLatteCompiledCodeRunner()
 	ast := p.ParseInput(reader, context)
 
