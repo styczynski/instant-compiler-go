@@ -26,6 +26,7 @@ const (
 	ReferenceLoad
 	Method
 	Class
+	GetStatic
 )
 
 type JasmineInstruction interface {
@@ -35,7 +36,7 @@ type JasmineInstruction interface {
 }
 
 type JasmineValidableInstruction interface {
-	Validate() *compiler.CompilationError 
+	Validate() *compiler.CompilationError
 }
 
 func (p *JasmineProgram) Type() JasmineInstructionType {

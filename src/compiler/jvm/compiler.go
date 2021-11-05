@@ -69,14 +69,19 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 			})
 			return ret, s
 		} else if expr.IsExpression() {
+			ret = append(ret, &jasmine.JasmineGetStatic{
+				Source: "java/lang/System/out",
+				Object: "Ljava/io/PrintStream;",
+			})
 			compiledValue, s := backend.compileExpression(expr.Expression)
 			ret = append(ret, compiledValue...)
 			ret = append(ret, &jasmine.JasmineInvokeStatic{
-				Target: "Runtime/printInt",
-				Args:   []string{"I"},
-				Return: "V",
+				Target:  "java/io/PrintStream/println",
+				Args:    []string{"I"},
+				Return:  "V",
+				Virtual: true,
 			})
-			return ret, s
+			return ret, s + 1
 		}
 	}
 	if expr, ok := (expr.(*ast.Addition)); ok {
@@ -130,10 +135,12 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 		// 	Instructions: outputCode,
 		// }
 
+		className := "Main"
+
 		output := jasmine.JasmineProgram{
 			Instructions: []jasmine.JasmineInstruction{
 				&jasmine.JasmineClass{
-					Name:  "public Hello",
+					Name:  fmt.Sprintf("public %s", className),
 					Super: "java/lang/Object",
 					Methods: []jasmine.JasmineMethod{
 						{
@@ -186,8 +193,9 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 			return
 		}
 
-		outputJVMBytecode := b.ReadBuildFile("out/Hello.class")
+		outputJVMBytecode := b.ReadBuildFile("out/%s.class", className)
 		b.WriteOutput("JVM bytecode file", "class", outputJVMBytecode)
+		b.WriteOutput("Jasmine source", "jasmine", []byte(output.ProgramToText()))
 
 		ret <- compiler.LatteCompiledProgram{
 			Program:          program,

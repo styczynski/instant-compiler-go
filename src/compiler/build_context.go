@@ -99,8 +99,8 @@ func (c *BuildContext) GetOutputFiles() map[string]map[string]string {
 	}
 }
 
-func (c *BuildContext) ReadBuildFile(name string) []byte {
-	out, err := afero.ReadFile(c.Fs, name)
+func (c *BuildContext) ReadBuildFile(name string, args ...interface{}) []byte {
+	out, err := afero.ReadFile(c.Fs, fmt.Sprintf(name, args...))
 	if err != nil {
 		panic(err)
 	}
