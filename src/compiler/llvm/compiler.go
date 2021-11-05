@@ -41,7 +41,7 @@ func (backend CompilerLLVMBackend) getLastInstrTarget(instr []llvm_ast.LLVMInstr
 		}
 		return instr, tgtOp.GetTarget(withType)
 	}
-	panic(fmt.Sprintf("getLastInstrTarget() last instruction must be implementing llvm_ast.LLVMTargetableInstruction: %v", lastInstr))
+	panic(fmt.Sprintf("getLastInstrTarget() last instruction must be implementing llvm_ast.LLVMTargetableInstruction: %v", reflect.TypeOf(lastInstr)))
 }
 
 func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression) ([]llvm_ast.LLVMInstruction, int64) {
@@ -167,7 +167,8 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 				},
 			}, 1
 		} else if expr.IsSubexpression() {
-			return backend.compileExpression(expr.SubExpression)
+			ret, s := backend.compileExpression(expr.SubExpression)
+			return ret[:len(ret)-1], s
 		}
 	}
 	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", expr))
