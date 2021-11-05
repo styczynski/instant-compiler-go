@@ -65,6 +65,22 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 			return
 		}
 
+		if program.Program.TypeCheckingError != nil {
+			r <- LatteRunnedProgram{
+				Program:  program,
+				filename: program.Filename(),
+			}
+			return
+		}
+
+		if program.Program.Program.ParsingError() != nil {
+			r <- LatteRunnedProgram{
+				Program:  program,
+				filename: program.Filename(),
+			}
+			return
+		}
+
 		backendProcessDescription := "Running compiled program"
 
 		c.EventsCollectorStream.Start(backendProcessDescription, c, program)

@@ -144,6 +144,22 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 			close(ret)
 		})
 
+		if program.TypeCheckingError != nil {
+			ret <- LatteCompiledProgram{
+				Program: program,
+				Backend: compiler.backend,
+			}
+			return
+		}
+
+		if program.Program.ParsingError() != nil {
+			ret <- LatteCompiledProgram{
+				Program: program,
+				Backend: compiler.backend,
+			}
+			return
+		}
+
 		backendProcessDescription := fmt.Sprintf("Generate compiled code using backend: %s", compiler.backend.BackendName())
 
 		c.EventsCollectorStream.Start(backendProcessDescription, c, program)
