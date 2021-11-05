@@ -117,7 +117,7 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", expr))
 }
 
-func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext) compiler.LatteCompiledProgramPromiseChan {
+func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext, b *compiler.BuildContext) compiler.LatteCompiledProgramPromiseChan {
 	ret := make(chan compiler.LatteCompiledProgram)
 	go func() {
 
@@ -133,6 +133,7 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 		output := jasmine.JasmineProgram{
 			Instructions: []jasmine.JasmineInstruction{
 				&jasmine.JasmineClass{
+					Name:  "public Hello",
 					Super: "java/lang/Object",
 					Methods: []jasmine.JasmineMethod{
 						{
@@ -163,6 +164,30 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 		}
 
 		validationErr := output.Validate()
+
+		if validationErr != nil {
+			ret <- compiler.LatteCompiledProgram{
+				Program:          program,
+				CompiledProgram:  &output,
+				CompilationError: validationErr,
+			}
+			return
+		}
+
+		b.WriteBuildFile("code.jasmine", []byte(output.ProgramToText()))
+
+		validationErr = b.Call("java", "rror", "-jar", "$ROOT/lib/jasmin.jar", "-d", "$BUILD_DIR/out", "$BUILD_DIR/code.jasmine")
+		if validationErr != nil {
+			ret <- compiler.LatteCompiledProgram{
+				Program:          program,
+				CompiledProgram:  &output,
+				CompilationError: validationErr,
+			}
+			return
+		}
+
+		outputJVMBytecode := b.ReadBuildFile("out/Hello.class")
+		b.WriteOutput("JVM bytecode file", "class", outputJVMBytecode)
 
 		ret <- compiler.LatteCompiledProgram{
 			Program:          program,

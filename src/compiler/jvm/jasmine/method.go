@@ -29,9 +29,9 @@ func (p *JasmineMethod) ToText(emitter EmitterConfig) string {
 	s := 0
 	for _, ins := range p.Body {
 		s = ins.StackSize(s)
-		methodContents = append(methodContents, ins.ToText(subemitter)+fmt.Sprintf(" // %d", s))
+		methodContents = append(methodContents, ins.ToText(subemitter)) //+fmt.Sprintf(" // %d", s))
 	}
-	methodContents = append(methodContents, emitter.Emit(".end"))
+	methodContents = append(methodContents, emitter.Emit(".end method"))
 	return strings.Join(methodContents, "\n")
 }
 

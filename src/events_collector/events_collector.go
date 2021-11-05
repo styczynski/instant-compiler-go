@@ -41,8 +41,6 @@ func (collector *EventsCollector) Start(processName string, c *context.ParsingCo
 		c:           c,
 		input:       input,
 	}
-
-	time.Sleep(time.Second * 3)
 }
 
 func (collector *EventsCollector) End(processName string, c *context.ParsingContext, input context.EventCollectorMessageInput) {

@@ -49,7 +49,7 @@ type LatteCompiler struct {
 }
 
 type CompilerBackend interface {
-	Compile(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext) LatteCompiledProgramPromiseChan
+	Compile(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext, b *BuildContext) LatteCompiledProgramPromiseChan
 	BackendName() string
 }
 
@@ -84,6 +84,9 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 	ctx := c.Copy()
 	go func() {
 		program := programPromise.Resolve()
+
+		buildContext := CreateBuildContext(program, c)
+
 		defer errors.GeneralRecovery(ctx, "Code generation", program.Filename(), func(message string, textMessage string) {
 			ret <- LatteCompiledProgram{
 				Program: program,
@@ -101,8 +104,9 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 		c.EventsCollectorStream.Start(backendProcessDescription, c, program)
 		defer c.EventsCollectorStream.End(backendProcessDescription, c, program)
 
-		compiled := <-compiler.backend.Compile(program, c)
-		fmt.Print(compiled.CompiledProgram.ProgramToText())
+		compiled := <-compiler.backend.Compile(program, c, buildContext)
+
+		//fmt.Printf("%s", buildContext.DescribeOutputFiles())
 
 		ret <- LatteCompiledProgram{
 			Program:          compiled.Program,

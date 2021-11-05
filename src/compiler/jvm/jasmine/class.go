@@ -7,6 +7,7 @@ import (
 )
 
 type JasmineClass struct {
+	Name    string
 	Super   string
 	Methods []JasmineMethod
 }
@@ -17,12 +18,13 @@ func (p *JasmineClass) Type() JasmineInstructionType {
 
 func (p *JasmineClass) ToText(emitter EmitterConfig) string {
 	methodContents := []string{
+		emitter.Emit(".class %s", p.Name),
 		emitter.Emit(".super %s", p.Super),
 	}
 	for _, ins := range p.Methods {
 		methodContents = append(methodContents, ins.ToText(emitter.ApplyIdent(1)))
 	}
-	methodContents = append(methodContents, emitter.Emit(".end"))
+	//methodContents = append(methodContents, emitter.Emit(".end"))
 	return strings.Join(methodContents, "\n")
 }
 
