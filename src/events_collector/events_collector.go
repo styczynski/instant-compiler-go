@@ -2,6 +2,7 @@ package events_collector
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
@@ -19,6 +20,7 @@ type EventsCollector struct {
 	timingsLabels      []string
 	updater            StatusUpdater
 	outputFiles        map[string]map[string]string
+	outputFilsMutex    sync.Mutex
 }
 
 type InputStatus struct {
@@ -37,6 +39,8 @@ type EventMessage struct {
 }
 
 func (collector *EventsCollector) EmitOutputFiles(processName string, c *context.ParsingContext, outputFiles map[string]map[string]string) {
+	collector.outputFilsMutex.Lock()
+	defer collector.outputFilsMutex.Unlock()
 	for path, files := range outputFiles {
 		if _, ok := collector.outputFiles[path]; !ok {
 			collector.outputFiles[path] = map[string]string{}
