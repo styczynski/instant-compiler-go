@@ -8,6 +8,7 @@ require (
 	github.com/alecthomas/kong v0.2.4
 	github.com/alecthomas/participle/v2 v2.0.0-alpha3
 	github.com/alecthomas/repr v0.0.0-20201120212035-bb82daffcca2
+	github.com/briandowns/spinner v1.16.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/dlclark/regexp2 v1.2.0

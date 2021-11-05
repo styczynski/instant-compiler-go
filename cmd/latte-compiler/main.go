@@ -20,7 +20,7 @@ import (
 
 func ActionCompile(c *cli.Context) error {
 	pr := printer.CreateLattePrinter()
-	eventsCollector := events_collector.StartEventsCollector()
+	eventsCollector := events_collector.StartEventsCollector(events_collector.CreateStatusUpdater(false))
 	context := context2.NewParsingContext(pr, eventsCollector)
 
 	tc := type_checker.CreateLatteTypeChecker()
