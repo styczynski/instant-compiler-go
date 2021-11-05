@@ -10,7 +10,7 @@ type Env interface {
 
 	Has(string) bool
 	AddPrototype(Fresher, string, *Scheme, int) (Env, *Scheme, *Scheme, DeclarationInfo, error)
-	Add(Fresher, string, *Scheme, int) (Env, *Scheme, *Scheme, DeclarationInfo, error)
+	Add(Fresher, string, *Scheme, int, bool) (Env, *Scheme, *Scheme, DeclarationInfo, error)
 	Remove(string) Env
 	VarsNames() []string
 	IsOverloaded(string) bool
@@ -19,11 +19,11 @@ type Env interface {
 }
 
 type levelInfo struct {
-	level int
-	isProt bool
+	level      int
+	isProt     bool
 	hasAnyProt bool
-	uid int
-	baseTV TypeVariable
+	uid        int
+	baseTV     TypeVariable
 }
 
 func (i levelInfo) GetUID() int {
@@ -40,14 +40,14 @@ type DeclarationInfo interface {
 }
 
 type SimpleEnv struct {
-	env map[string][]*Scheme
-	builtins map[string]func()[]*Scheme
-	levels map[string][]levelInfo
-	uid int
+	env      map[string][]*Scheme
+	builtins map[string]func() []*Scheme
+	levels   map[string][]levelInfo
+	uid      int
 }
 
 func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
-	builtins := map[string]func()[]*Scheme{}
+	builtins := map[string]func() []*Scheme{}
 	newEnv := map[string][]*Scheme{}
 	for k, v := range env {
 		name := k
@@ -71,14 +71,14 @@ func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
 		}
 	}
 	return &SimpleEnv{
-		env: newEnv,
+		env:      newEnv,
 		builtins: builtins,
-		levels: map[string][]levelInfo{},
+		levels:   map[string][]levelInfo{},
 	}
 }
 
 func SingleDef(tvs TypeVarSet, t Type) []*Scheme {
-	return []*Scheme{ NewScheme(tvs, t) }
+	return []*Scheme{NewScheme(tvs, t)}
 }
 
 func PrintEnv(env Env) {
@@ -124,7 +124,7 @@ func (e *SimpleEnv) FreeTypeVar() TypeVarSet {
 }
 
 func (e *SimpleEnv) IsBuiltin(name string) bool {
-	_, ok := e.builtins[name];
+	_, ok := e.builtins[name]
 	return ok
 }
 
@@ -165,10 +165,10 @@ func (e *SimpleEnv) SchemeOf(name string) (*Scheme, bool) {
 func (e *SimpleEnv) Clone() Env {
 
 	retVal := &SimpleEnv{
-		env: make(map[string][]*Scheme),
-		builtins: make(map[string]func()[]*Scheme),
-		levels: map[string][]levelInfo{},
-		uid: e.uid,
+		env:      make(map[string][]*Scheme),
+		builtins: make(map[string]func() []*Scheme),
+		levels:   map[string][]levelInfo{},
+		uid:      e.uid,
 	}
 	for k, v := range e.env {
 		retVal.env[k] = []*Scheme{}
@@ -191,11 +191,11 @@ func (e *SimpleEnv) Clone() Env {
 		newLevels := []levelInfo{}
 		for _, i := range v {
 			newLevels = append(newLevels, levelInfo{
-				level:  i.level,
-				isProt: i.isProt,
+				level:      i.level,
+				isProt:     i.isProt,
 				hasAnyProt: i.hasAnyProt,
-				uid: i.uid,
-				baseTV: i.baseTV,
+				uid:        i.uid,
+				baseTV:     i.baseTV,
 			})
 		}
 		retVal.levels[k] = newLevels
@@ -213,45 +213,44 @@ func (e *SimpleEnv) VarsNames() []string {
 
 type envError struct {
 	variableName string
-	oldDef CodeContext
-	builtin bool
+	oldDef       CodeContext
+	builtin      bool
 }
 
 func (err *envError) Error() string {
 	return fmt.Sprintf("Variable redefined: %s", err.variableName)
 }
 
-func (e *SimpleEnv) Add(f Fresher, name string, s *Scheme, blockScopeLevel int) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
-	return e.addVar(f, name, s, blockScopeLevel, false)
+func (e *SimpleEnv) Add(f Fresher, name string, s *Scheme, blockScopeLevel int, isRedefinable bool) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
+	return e.addVar(f, name, s, blockScopeLevel, false, isRedefinable)
 }
 
 func (e *SimpleEnv) AddPrototype(f Fresher, name string, s *Scheme, blockScopeLevel int) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
-	return e.addVar(f, name, s, blockScopeLevel,  true)
+	return e.addVar(f, name, s, blockScopeLevel, true, false)
 }
 
-func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel int, isPrototype bool) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
+func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel int, isPrototype bool, isRedefinable bool) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
 	logf("Add %s ==> %v [%d]\n", name, s, blockScopeLevel)
-	if _, ok := e.builtins[name]; ok && blockScopeLevel == 0 {
-
+	if _, ok := e.builtins[name]; ok && blockScopeLevel == 0 && !isRedefinable {
 
 		return e, nil, nil, nil, &envError{
 			variableName: name,
-			oldDef: s.t.GetContext(),
-			builtin: true,
+			oldDef:       s.t.GetContext(),
+			builtin:      true,
 		}
 	}
 
-	if oldLevels, ok := e.levels[name]; ok && len(oldLevels)>0 {
+	if oldLevels, ok := e.levels[name]; ok && len(oldLevels) > 0 && !isRedefinable {
 		oldLevel := oldLevels[len(oldLevels)-1]
 
 		if oldLevel.level == blockScopeLevel {
 
 			inf := levelInfo{
-				level:  blockScopeLevel,
-				isProt: isPrototype && oldLevel.isProt,
+				level:      blockScopeLevel,
+				isProt:     isPrototype && oldLevel.isProt,
 				hasAnyProt: isPrototype || oldLevel.hasAnyProt,
-				uid: e.uid,
-				baseTV: oldLevel.baseTV,
+				uid:        e.uid,
+				baseTV:     oldLevel.baseTV,
 			}
 			e.uid++
 			e.levels[name] = append(e.levels[name], inf)
@@ -264,20 +263,20 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 
 				return e, con1, con2, oldLevel, &envError{
 					variableName: name,
-					oldDef: e.env[name][0].t.GetContext(),
+					oldDef:       e.env[name][0].t.GetContext(),
 				}
 			}
 			return e, con1, con2, inf, nil
 		}
 	}
-	e.env[name] = []*Scheme{ s }
+	e.env[name] = []*Scheme{s}
 	tv := f.Fresh()
 	inf := levelInfo{
-		level:  blockScopeLevel,
-		isProt: isPrototype,
+		level:      blockScopeLevel,
+		isProt:     isPrototype,
 		hasAnyProt: isPrototype,
-		uid: e.uid,
-		baseTV: tv,
+		uid:        e.uid,
+		baseTV:     tv,
 	}
 	e.uid++
 	e.levels[name] = append(e.levels[name], inf)
@@ -291,7 +290,7 @@ func (e *SimpleEnv) Remove(name string) Env {
 		return e
 	}
 	logf("Remove %s\n", name)
-	if len(e.levels[name])>0 {
+	if len(e.levels[name]) > 0 {
 		e.levels[name] = e.levels[name][:len(e.levels[name])-1]
 	}
 	delete(e.env, name)

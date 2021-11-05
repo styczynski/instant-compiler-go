@@ -196,6 +196,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 		var err error = nil
 		output := &ast.LatteProgram{}
 		q, err := input.Read()
+		q = append(q, byte(';'))
 		ctx.ParserInput = q
 		if err != nil {
 			ret <- &LatteParsedProgramImpl{

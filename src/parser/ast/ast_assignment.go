@@ -82,5 +82,5 @@ func (ast *Assignment) Body() generic_ast.Expression {
 }
 
 func (ast *Assignment) ExpressionType() hindley_milner.ExpressionType {
-	return hindley_milner.E_LET
+	return hindley_milner.E_REDEFINABLE_LET
 }

@@ -2,6 +2,7 @@ package jvm
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
@@ -46,6 +47,9 @@ func (backend CompilerJVMBackend) optimizeStackBiAlloc(left generic_ast.Expressi
 }
 
 func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression) ([]jasmine.JasmineInstruction, int64) {
+	if _, ok := (expr.(*ast.Empty)); ok {
+		return []jasmine.JasmineInstruction{}, 0
+	}
 	if expr, ok := (expr.(*ast.LatteProgram)); ok {
 		ret := []jasmine.JasmineInstruction{}
 		maxDepth := int64(0)
@@ -62,7 +66,7 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 		ret := []jasmine.JasmineInstruction{}
 		if expr.IsAssignment() {
 			compiledValue, s := backend.compileExpression(expr.Assignment.Value)
-			_, loc := backend.state.DefineAndAlloc(expr.Assignment.TargetName)
+			loc := backend.state.Define(expr.Assignment.TargetName)
 
 			ret = append(ret, compiledValue...)
 			ret = append(ret, &jasmine.JasmineStoreInt{
@@ -83,6 +87,8 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 				Virtual: true,
 			})
 			return ret, s + 1
+		} else if expr.IsEmpty() {
+			return ret, 0
 		}
 	}
 	if expr, ok := (expr.(*ast.Addition)); ok {
@@ -106,7 +112,7 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 	}
 	if expr, ok := (expr.(*ast.Primary)); ok {
 		if expr.IsVariable() {
-			loc := backend.state.GetLocationFromScope(*expr.Variable)
+			loc := backend.state.GetVariableFromScope(*expr.Variable)
 			return []jasmine.JasmineInstruction{
 				&jasmine.JasmineLoadInt{
 					Index: loc,
@@ -120,7 +126,7 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 			}, 1
 		}
 	}
-	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", expr))
+	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", reflect.TypeOf(expr)))
 }
 
 func (backend CompilerJVMBackend) RunCompiledCode(runContext compiler.CompiledCodeRunContext, c *context.ParsingContext) ([]string, *compiler.RunError) {

@@ -40,7 +40,16 @@ func (s *CompilerState) AllocateAt(v Variable, loc Location) Location {
 	return loc
 }
 
+func (s *CompilerState) Redefine(name string) Variable {
+	v := s.nextFreeVar()
+	s.scope[name] = v
+	return v
+}
+
 func (s *CompilerState) Define(name string) Variable {
+	if v, ok := s.scope[name]; ok {
+		return v
+	}
 	v := s.nextFreeVar()
 	s.scope[name] = v
 	return v

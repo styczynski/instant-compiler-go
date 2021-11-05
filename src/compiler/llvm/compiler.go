@@ -45,6 +45,9 @@ func (backend CompilerLLVMBackend) getLastInstrTarget(instr []llvm_ast.LLVMInstr
 }
 
 func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression) ([]llvm_ast.LLVMInstruction, int64) {
+	if _, ok := (expr.(*ast.Empty)); ok {
+		return []llvm_ast.LLVMInstruction{}, 0
+	}
 	if expr, ok := (expr.(*ast.LatteProgram)); ok {
 		ret := []llvm_ast.LLVMInstruction{}
 		maxDepth := int64(0)
@@ -61,7 +64,7 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 	if expr, ok := (expr.(*ast.Statement)); ok {
 		if expr.IsAssignment() {
 			compiledValue, s := backend.compileExpression(&expr.Assignment.Value.Addition)
-			v := backend.state.Define(expr.Assignment.TargetName)
+			v := backend.state.Redefine(expr.Assignment.TargetName)
 
 			//_, loc := backend.state.DefineAndAlloc(expr.Assignment.TargetName)
 
@@ -87,6 +90,8 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 			compiledValue, s := backend.compileExpression(expr.Expression)
 			ret = append(ret, compiledValue...)
 			return ret, s + 1
+		} else if expr.IsEmpty() {
+			return ret, 0
 		}
 	}
 	if expr, ok := (expr.(*ast.Addition)); ok {
@@ -96,7 +101,7 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 		l, sl := backend.compileExpression(expr.Multiplication)
 		r, sr := backend.compileExpression(expr.Next)
 
-		v := backend.state.Define(backend.state.NextUniqueVariableName())
+		v := backend.state.Redefine(backend.state.NextUniqueVariableName())
 
 		l, tl := backend.getLastInstrTarget(l, false)
 		r, tr := backend.getLastInstrTarget(r, false)
@@ -132,7 +137,7 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 		l, tl := backend.getLastInstrTarget(l, false)
 		r, tr := backend.getLastInstrTarget(r, false)
 
-		v := backend.state.Define(backend.state.NextUniqueVariableName())
+		v := backend.state.Redefine(backend.state.NextUniqueVariableName())
 
 		ret = append(ret, l...)
 		ret = append(ret, r...)
@@ -178,7 +183,7 @@ func (backend CompilerLLVMBackend) Compile(program type_checker.LatteTypechecked
 		}
 
 		output.NormalizeVariables()
-		//b.WriteOutput("LLVM source", "ll", []byte(output.ProgramToText()))
+		b.WriteOutput("LLVM source", "ll", []byte(output.ProgramToText()))
 
 		b.WriteBuildFile("code.ll", []byte(output.ProgramToText()))
 		validationErr := b.Call("llvm-as", "rror", "-o", "$BUILD_DIR/code.bc", "$BUILD_DIR/code.ll")
