@@ -3,6 +3,7 @@ package llvm
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/compiler/llvm/llvm_ast"
@@ -17,7 +18,19 @@ type CompilerLLVMBackend struct {
 }
 
 func (backend CompilerLLVMBackend) RunCompiledCode(runContext compiler.CompiledCodeRunContext, c *context.ParsingContext) ([]string, *compiler.RunError) {
-	return nil, nil
+	callOut, err := runContext.Call("lli", "rror", "$OUTPUT_PATH_BC")
+	if err != nil {
+		return nil, err
+	}
+
+	out := []string{}
+	for _, line := range callOut {
+		if len(line) > 0 && !strings.Contains(line, "_JAVA_OPTIONS") {
+			out = append(out, line)
+		}
+	}
+
+	return out, nil
 }
 
 func (backend CompilerLLVMBackend) getLastInstrTarget(instr []llvm_ast.LLVMInstruction, withType bool) ([]llvm_ast.LLVMInstruction, string) {
@@ -48,7 +61,7 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 	if expr, ok := (expr.(*ast.Statement)); ok {
 		if expr.IsAssignment() {
 			compiledValue, s := backend.compileExpression(&expr.Assignment.Value.Addition)
-			_, v := backend.state.DefineAndAlloc(expr.Assignment.TargetName)
+			v := backend.state.Define(expr.Assignment.TargetName)
 
 			//_, loc := backend.state.DefineAndAlloc(expr.Assignment.TargetName)
 
@@ -83,7 +96,7 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 		l, sl := backend.compileExpression(expr.Multiplication)
 		r, sr := backend.compileExpression(expr.Next)
 
-		_, v := backend.state.DefineAndAlloc(backend.state.NextUniqueVariableName())
+		v := backend.state.Define(backend.state.NextUniqueVariableName())
 
 		l, tl := backend.getLastInstrTarget(l, false)
 		r, tr := backend.getLastInstrTarget(r, false)
@@ -102,7 +115,7 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 	}
 	if expr, ok := (expr.(*ast.Expression)); ok {
 		a, sa := backend.compileExpression(&expr.Addition)
-		a, ta := backend.getLastInstrTarget(a, true)
+		a, ta := backend.getLastInstrTarget(a, false)
 		ret = append(ret, a...)
 		ret = append(ret, &llvm_ast.LLVMPrintInt{
 			Target: ta,
@@ -119,7 +132,7 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 		l, tl := backend.getLastInstrTarget(l, false)
 		r, tr := backend.getLastInstrTarget(r, false)
 
-		_, v := backend.state.DefineAndAlloc(backend.state.NextUniqueVariableName())
+		v := backend.state.Define(backend.state.NextUniqueVariableName())
 
 		ret = append(ret, l...)
 		ret = append(ret, r...)
@@ -135,7 +148,7 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 	}
 	if expr, ok := (expr.(*ast.Primary)); ok {
 		if expr.IsVariable() {
-			loc := backend.state.GetLocationFromScope(*expr.Variable)
+			loc := backend.state.GetVariableFromScope(*expr.Variable)
 			return []llvm_ast.LLVMInstruction{
 				&llvm_ast.LLVMVar{
 					ID: loc,
@@ -164,8 +177,11 @@ func (backend CompilerLLVMBackend) Compile(program type_checker.LatteTypechecked
 			Instructions: outputCode,
 		}
 
+		output.NormalizeVariables()
+		//b.WriteOutput("LLVM source", "ll", []byte(output.ProgramToText()))
+
 		b.WriteBuildFile("code.ll", []byte(output.ProgramToText()))
-		validationErr := b.Call("llvm-as", "rror", "-o", "$BUILD_DIR/code.o", "$BUILD_DIR/code.ll")
+		validationErr := b.Call("llvm-as", "rror", "-o", "$BUILD_DIR/code.bc", "$BUILD_DIR/code.ll")
 		if validationErr != nil {
 			ret <- compiler.LatteCompiledProgram{
 				Program:          program,
@@ -175,7 +191,7 @@ func (backend CompilerLLVMBackend) Compile(program type_checker.LatteTypechecked
 			return
 		}
 
-		validationErr = b.Call("llvm-link", "rror", "-o", "$BUILD_DIR/code.exe", "$BUILD_DIR/code.o")
+		validationErr = b.Call("llvm-link", "rror", "-o", "$BUILD_DIR/code.exe", "$BUILD_DIR/code.bc")
 		if validationErr != nil {
 			ret <- compiler.LatteCompiledProgram{
 				Program:          program,
@@ -186,9 +202,7 @@ func (backend CompilerLLVMBackend) Compile(program type_checker.LatteTypechecked
 		}
 
 		outputLLVMExecutable := b.ReadBuildFile("code.exe")
-		b.WriteOutput("Binary executable", "class", outputLLVMExecutable)
-
-		//b.WriteOutput("LLVM source", "ll", []byte(output.ProgramToText()))
+		b.WriteOutput("Binary executable", "bc", outputLLVMExecutable)
 
 		ret <- compiler.LatteCompiledProgram{
 			Program:          program,

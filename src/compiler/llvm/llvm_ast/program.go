@@ -24,6 +24,9 @@ const (
 type LLVMInstruction interface {
 	Type() LLVMInstructionType
 	ToText(emitter EmitterConfig) string
+	GetDeclaredVariables() []string
+	GetUsedVariables() []string
+	ReplaceVariable(oldName string, newName string)
 }
 
 type LLVMTargetableInstruction interface {
@@ -85,4 +88,34 @@ func (p *LLVMProgram) Validate() *compiler.CompilationError {
 		}
 	}
 	return nil
+}
+
+func (p *LLVMProgram) ReplaceVariable(oldName string, newName string) {
+	panic("Operation not supported")
+}
+
+func (p *LLVMProgram) GetDeclaredVariables() []string {
+	panic("Operation not supported")
+}
+
+func (p *LLVMProgram) GetUsedVariables() []string {
+	panic("Operation not supported")
+}
+
+func (p *LLVMProgram) NormalizeVariables() {
+	freeVar := 1
+	varMap := map[string]string{}
+	for _, stmt := range p.Instructions {
+		allVars := stmt.GetUsedVariables()
+		allVars = append(allVars, stmt.GetDeclaredVariables()...)
+		for _, v := range allVars {
+			if _, ok := varMap[v]; !ok {
+				varMap[v] = fmt.Sprintf("%%%d", freeVar)
+				freeVar++
+			}
+		}
+		for _, v := range allVars {
+			stmt.ReplaceVariable(v, varMap[v])
+		}
+	}
 }

@@ -29,3 +29,15 @@ func (p *LLVMVal) IsMovable() bool {
 func (p *LLVMVal) MoveTarget(newTarget string) {
 	panic("Operation not supported")
 }
+
+func (p *LLVMVal) GetDeclaredVariables() []string {
+	return []string{}
+}
+
+func (p *LLVMVal) GetUsedVariables() []string {
+	return []string{}
+}
+
+func (p *LLVMVal) ReplaceVariable(oldName string, newName string) {
+
+}

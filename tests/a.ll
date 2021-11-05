@@ -7,8 +7,8 @@ define void @printInt(i32 %x) {
    ret void
 }
 define i32 @main() {
-   %2 = div i32 8, 2
-   %3 = add i32 %2, 2
-   call void @printInt(%3)
+   %1 = sdiv i32 8, 2
+   %2 = add i32 %1, 2
+   call void @printInt(i32 %2)
 	ret i32 0
 }

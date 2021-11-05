@@ -30,10 +30,10 @@ func ActionCompile(c *cli.Context) error {
 	inputPaths := c.Args().Slice()
 	reader := input_reader.CreateLatteInputReader(inputPaths)
 
-	//jvmBackend := jvm.CreateCompilerJVMBackend()
-	llvmBackend := llvm.CreateCompilerLLVMBackend()
+	//backend := jvm.CreateCompilerJVMBackend()
+	backend := llvm.CreateCompilerLLVMBackend()
 
-	comp := compiler.CreateLatteCompiler(llvmBackend)
+	comp := compiler.CreateLatteCompiler(backend)
 	run := runner.CreateLatteCompiledCodeRunner()
 	ast := p.ParseInput(reader, context)
 
