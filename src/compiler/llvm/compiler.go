@@ -164,7 +164,31 @@ func (backend CompilerLLVMBackend) Compile(program type_checker.LatteTypechecked
 			Instructions: outputCode,
 		}
 
-		b.WriteOutput("LLVM source", "ll", []byte(output.ProgramToText()))
+		b.WriteBuildFile("code.ll", []byte(output.ProgramToText()))
+		validationErr := b.Call("llvm-as", "rror", "-o", "$BUILD_DIR/code.o", "$BUILD_DIR/code.ll")
+		if validationErr != nil {
+			ret <- compiler.LatteCompiledProgram{
+				Program:          program,
+				CompiledProgram:  output,
+				CompilationError: validationErr,
+			}
+			return
+		}
+
+		validationErr = b.Call("llvm-link", "rror", "-o", "$BUILD_DIR/code.exe", "$BUILD_DIR/code.o")
+		if validationErr != nil {
+			ret <- compiler.LatteCompiledProgram{
+				Program:          program,
+				CompiledProgram:  output,
+				CompilationError: validationErr,
+			}
+			return
+		}
+
+		outputLLVMExecutable := b.ReadBuildFile("code.exe")
+		b.WriteOutput("Binary executable", "class", outputLLVMExecutable)
+
+		//b.WriteOutput("LLVM source", "ll", []byte(output.ProgramToText()))
 
 		ret <- compiler.LatteCompiledProgram{
 			Program:          program,
