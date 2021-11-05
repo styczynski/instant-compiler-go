@@ -22,7 +22,7 @@ func (p *JasmineInvokeStatic) ToText(emitter EmitterConfig) string {
 	if p.Virtual {
 		keyword = "invokevirtual"
 	}
-	return emitter.Emit("%s %s(%s)%s", keyword, p.Target, strings.Join(p.Args, ";"), p.Return)
+	return emitter.Emit("%s %s(%s)%s", keyword, p.Target, strings.Join(p.Args, ""), p.Return)
 }
 
 func (p *JasmineInvokeStatic) StackSize(previousStackSize int) int {

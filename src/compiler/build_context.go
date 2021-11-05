@@ -30,6 +30,7 @@ type BuildContext struct {
 	tmpBuildDir string
 	outLoc      string
 	outputFiles map[string]string
+	meta        map[string]interface{}
 }
 
 func CreateBuildContext(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext) *BuildContext {
@@ -75,6 +76,7 @@ func CreateBuildContext(program type_checker.LatteTypecheckedProgram, c *context
 		variables:   variables,
 		outLoc:      filepath.Join(rootPath, fileLoc),
 		outputFiles: map[string]string{},
+		meta:        map[string]interface{}{},
 	}
 }
 
@@ -91,6 +93,30 @@ func (c *BuildContext) WriteBuildFile(name string, content []byte) {
 func (c *BuildContext) WriteOutput(description string, extension string, content []byte) {
 	afero.WriteFile(c.Out, fmt.Sprintf("%s.%s", c.variables["INPUT_FILE_BASE"], extension), content, 0644)
 	c.outputFiles[fmt.Sprintf("%s.%s", c.variables["INPUT_FILE_BASE"], extension)] = description
+}
+
+func (c *BuildContext) GetOutputFilesByExt() map[string]string {
+	files := map[string]string{}
+	for path, _ := range c.outputFiles {
+		files[filepath.Ext(path)] = filepath.Join(c.outLoc, path)
+	}
+	return files
+}
+
+func (c *BuildContext) SetCompilerMeta(key string, value interface{}) *BuildContext {
+	c.meta[key] = value
+	return c
+}
+
+func (c *BuildContext) GetCompilerMeta() map[string]interface{} {
+	meta := map[string]interface{}{}
+	for k, v := range c.variables {
+		meta[k] = v
+	}
+	for k, v := range c.meta {
+		meta[k] = v
+	}
+	return meta
 }
 
 func (c *BuildContext) GetOutputFiles() map[string]map[string]string {

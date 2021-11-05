@@ -10,6 +10,8 @@ import (
 
 type JasmineMethod struct {
 	Name        string
+	Args        []string
+	Returns     string
 	StackLimit  int64
 	LocalsLimit int64
 	Body        []JasmineInstruction
@@ -22,7 +24,7 @@ func (p *JasmineMethod) Type() JasmineInstructionType {
 func (p *JasmineMethod) ToText(emitter EmitterConfig) string {
 	subemitter := emitter.ApplyIdent(1)
 	methodContents := []string{
-		emitter.Emit(".method %s", p.Name),
+		emitter.Emit(".method %s(%s)%s", p.Name, strings.Join(p.Args, ""), p.Returns),
 		subemitter.Emit(".limit stack %d", p.StackLimit),
 		subemitter.Emit(".limit locals %d", p.LocalsLimit),
 	}
@@ -74,11 +76,17 @@ func (p *JasmineMethod) Validate() *compiler.CompilationError {
 	}
 
 	localsCount := len(vars)
-	if localsCount != int(p.LocalsLimit) {
+	specLimit := 0
+	if p.Name == "<init>" {
+		specLimit = 0
+	}
+	expectedLocalsLimit := localsCount + len(p.Args) + specLimit
+
+	if int(p.LocalsLimit) != expectedLocalsLimit {
 		codeContext := pc.IndentCodeLines(p.ToText(EmitterConfig{Ident: 0}), 2, 0)
 		return compiler.CreateCompilationError(
 			"Internal assertion has failed",
-			fmt.Sprintf("    | Expected locals limit: %d.\n    | Actual emitted locals limit: %d\n\n%s", localsCount, p.LocalsLimit, codeContext))
+			fmt.Sprintf("    | Expected locals limit: %d.\n    | Actual emitted locals limit: %d\n\n%s", expectedLocalsLimit, p.LocalsLimit, codeContext))
 	}
 	return nil
 }

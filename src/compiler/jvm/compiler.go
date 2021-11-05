@@ -2,6 +2,7 @@ package jvm
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/compiler/jvm/jasmine"
@@ -122,6 +123,22 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", expr))
 }
 
+func (backend CompilerJVMBackend) RunCompiledCode(runContext compiler.CompiledCodeRunContext, c *context.ParsingContext) ([]string, *compiler.RunError) {
+	callOut, err := runContext.Call("java", "rror", "-cp", "$OUTPUT_DIR", "$CLASS_NAME")
+	if err != nil {
+		return nil, err
+	}
+
+	out := []string{}
+	for _, line := range callOut {
+		if len(line) > 0 && !strings.Contains(line, "_JAVA_OPTIONS") {
+			out = append(out, line)
+		}
+	}
+
+	return out, nil
+}
+
 func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext, b *compiler.BuildContext) compiler.LatteCompiledProgramPromiseChan {
 	ret := make(chan compiler.LatteCompiledProgram)
 	go func() {
@@ -135,7 +152,8 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 		// 	Instructions: outputCode,
 		// }
 
-		className := "Main"
+		className := b.GetVariable("INPUT_FILE_BASE")
+		b.SetCompilerMeta("CLASS_NAME", className)
 
 		output := jasmine.JasmineProgram{
 			Instructions: []jasmine.JasmineInstruction{
@@ -144,7 +162,8 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 					Super: "java/lang/Object",
 					Methods: []jasmine.JasmineMethod{
 						{
-							Name:        "<init>()V",
+							Name:        "<init>",
+							Returns:     "V",
 							StackLimit:  1,
 							LocalsLimit: 1,
 							Body: []jasmine.JasmineInstruction{
@@ -160,9 +179,11 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 							},
 						},
 						{
-							Name:        "public static main([Ljava/lang/String;)V",
+							Name:        "public static main",
+							Args:        []string{"[Ljava/lang/String;"},
+							Returns:     "V",
 							StackLimit:  maxStack,
-							LocalsLimit: int64(backend.state.ScopeSize()),
+							LocalsLimit: int64(backend.state.ScopeSize()) + 1,
 							Body:        append(outputCode, &jasmine.JasmineReturn{}),
 						},
 					},

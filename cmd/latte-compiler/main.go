@@ -15,6 +15,7 @@ import (
 	"github.com/styczynski/latte-compiler/src/parser"
 	context2 "github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/printer"
+	"github.com/styczynski/latte-compiler/src/runner"
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
@@ -28,17 +29,22 @@ func ActionCompile(c *cli.Context) error {
 
 	inputPaths := c.Args().Slice()
 	reader := input_reader.CreateLatteInputReader(inputPaths)
-	comp := compiler.CreateLatteCompiler(jvm.CreateCompilerJVMBackend())
+
+	jvmBackend := jvm.CreateCompilerJVMBackend()
+
+	comp := compiler.CreateLatteCompiler(jvmBackend)
+	run := runner.CreateLatteCompiledCodeRunner()
 	ast := p.ParseInput(reader, context)
 
 	checkedProgram := tc.Check(ast, context)
 	compiledProgram := comp.Compile(checkedProgram, context)
+	runnedProgram := run.RunCompiledProgram(compiledProgram, context)
 
 	var summary events_collector.Summarizer = events_collector.CreateCliSummary(-1)
 	if c.Bool("short") {
 		summary = events_collector.CreateCliSummaryShortStatus()
 	}
-	message, ok := eventsCollector.SummarizeCompilation(summary, compiledProgram, context)
+	message, ok := eventsCollector.SummarizeCompiledCodeRunning(summary, runnedProgram, context)
 
 	if !ok {
 		os.Stderr.WriteString("ERROR\n")

@@ -7,6 +7,7 @@ import (
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/runner"
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
@@ -347,6 +348,19 @@ func (ec *EventsCollector) collectSyncCompilationError(program compiler.LatteCom
 	}
 }
 
+func (ec *EventsCollector) collectSyncCompiledCodeRunError(program runner.LatteRunnedProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, bool, runner.LatteRunnedProgram) {
+	result := program.Resolve()
+	if result.RunError != nil {
+		return append(out, CollectedError{
+			filename: result.Filename(),
+			err:      result.RunError,
+		}), false, result
+	} else {
+		out, ok, _ := ec.collectSyncCompilationError(result.Program, c, out)
+		return out, ok, result
+	}
+}
+
 func (ec *EventsCollector) collectSyncCompilationErrors(programs []compiler.LatteCompiledProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, []context.EventCollectorMessageInput) {
 	inputs := []context.EventCollectorMessageInput{}
 	for _, program := range programs {
@@ -356,6 +370,46 @@ func (ec *EventsCollector) collectSyncCompilationErrors(programs []compiler.Latt
 	}
 	return out, inputs
 }
+
+func (ec *EventsCollector) collectSyncCompiledCodeRunErrors(programs []runner.LatteRunnedProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, []context.EventCollectorMessageInput) {
+	inputs := []context.EventCollectorMessageInput{}
+	for _, program := range programs {
+		var result context.EventCollectorMessageInput
+		out, _, result = ec.collectSyncCompiledCodeRunError(program, c, out)
+		inputs = append(inputs, result)
+	}
+	return out, inputs
+}
+
+///
+
+func (ec *EventsCollector) HandleCompiledCodeRunning(programs []runner.LatteRunnedProgramPromise, c *context.ParsingContext) CollectedMetricsPromise {
+	ret := make(chan CollectedMetrics)
+	go func() {
+		defer close(ret)
+		out := []CollectedError{}
+		var inputs []context.EventCollectorMessageInput
+		out, inputs = ec.collectSyncCompiledCodeRunErrors(programs, c, out)
+		ec.eventStream <- EventMessage{
+			eventType: "done",
+		}
+		<-ec.done
+		ret <- CollectedMetricsImpl{
+			errs:               out,
+			timingsAggregation: ec.timingsAggregation,
+			timingsLabels:      ec.timingsLabels,
+			inputs:             inputs,
+			outputs:            ec.outputFiles,
+		}
+	}()
+	return CollectedErrorsPromiseChan(ret)
+}
+
+func (ec *EventsCollector) SummarizeCompiledCodeRunning(summarizer Summarizer, programs []runner.LatteRunnedProgramPromise, c *context.ParsingContext) (string, bool) {
+	return summarizer.Summarize(ec.HandleCompiledCodeRunning(programs, c))
+}
+
+///
 
 func (ec *EventsCollector) HandleCompilation(programs []compiler.LatteCompiledProgramPromise, c *context.ParsingContext) CollectedMetricsPromise {
 	ret := make(chan CollectedMetrics)
