@@ -9,6 +9,7 @@ import (
 
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/compiler"
+	"github.com/styczynski/latte-compiler/src/compiler/jvm"
 	"github.com/styczynski/latte-compiler/src/compiler/llvm"
 	"github.com/styczynski/latte-compiler/src/events_collector"
 	"github.com/styczynski/latte-compiler/src/input_reader"
@@ -30,8 +31,15 @@ func ActionCompile(c *cli.Context) error {
 	inputPaths := c.Args().Slice()
 	reader := input_reader.CreateLatteInputReader(inputPaths)
 
-	//backend := jvm.CreateCompilerJVMBackend()
-	backend := llvm.CreateCompilerLLVMBackend()
+	backend := jvm.CreateCompilerJVMBackend()
+	backendName := c.String("backend")
+	if backendName == "llvm" {
+		backend = llvm.CreateCompilerLLVMBackend()
+	} else if backendName == "jvm" {
+		backend = jvm.CreateCompilerJVMBackend()
+	} else {
+		log.Fatal(fmt.Sprintf("Invalid compiler backend was specified: %s", backendName))
+	}
 
 	comp := compiler.CreateLatteCompiler(backend)
 	run := runner.CreateLatteCompiledCodeRunner()
@@ -78,6 +86,11 @@ func main() {
 				Name:  "short",
 				Usage: "Display only basic success/error information (useful when testing files with glob expression or in bulk)",
 				Value: false,
+			},
+			&cli.StringFlag{
+				Name:  "backend",
+				Usage: "Use specific compiler backend. Supported options are: jvm/llvm",
+				Value: "jvm",
 			},
 		},
 		Action: ActionCompile,

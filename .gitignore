@@ -1,10 +1,11 @@
+# Output test files
 tests/*.bc
 tests/*.class
 tests/*.jasmine
 tests/*.ll
 
 # Binaries
-latc
+insc
 
 # Idea files
 .idea/
