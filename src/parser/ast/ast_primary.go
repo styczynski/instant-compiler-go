@@ -17,6 +17,7 @@ type Primary struct {
 	generic_ast.BaseASTNode
 	Variable      *string     `@Ident`
 	Int           *int64      `| @Int`
+	SubExpression *Expression `| ( "(" @@ ")" )`
 	ParentNode    generic_ast.TraversableNode
 	Invalid       *PrimaryInvalid
 }
@@ -24,6 +25,8 @@ type Primary struct {
 func (ast *Primary) ExtractConst() (generic_ast.TraversableNode, bool) {
 	if ast.IsInvalid() {
 		return ast, false
+	} else if ast.IsSubexpression() {
+		return ast.SubExpression.ExtractConst()
 	} else if ast.IsVariable() {
 		return nil, false
 	}
@@ -129,6 +132,10 @@ func (ast *Primary) GetChildren() []generic_ast.TraversableNode {
 		return []generic_ast.TraversableNode{
 			generic_ast.MakeTraversableNodeValue(ast, *ast.Int, "int", ast.Pos, ast.EndPos),
 		}
+	} else if ast.IsSubexpression() {
+		return []generic_ast.TraversableNode{
+			ast.SubExpression,
+		}
 	}
 	return []generic_ast.TraversableNode{}
 }
@@ -141,11 +148,17 @@ func (ast *Primary) IsInt() bool {
 	return ast.Int != nil
 }
 
+func (ast *Primary) IsSubexpression() bool {
+	return ast.SubExpression != nil
+}
+
 func (ast *Primary) Print(c *context.ParsingContext) string {
 	if ast.IsVariable() {
 		return printNode(c, ast, "%s", *ast.Variable)
 	} else if ast.IsInt() {
 		return printNode(c, ast, "%d", *ast.Int)
+	} else if ast.IsSubexpression() {
+		return printNode(c, ast, "(%s)", ast.SubExpression.Print(c))
 	}
 	panic("Unvalid Expression value")
 	return "UNKNOWN"
@@ -159,29 +172,52 @@ func (ast *Primary) Name() hindley_milner.NameGroup {
 	}
 	panic("Cannot get name for Primary expression which is not a variable")
 }
+
 func (ast *Primary) Body() generic_ast.Expression {
+	if ast.IsSubexpression() {
+		return ast.SubExpression
+	}
 	return ast
 }
+
 func (ast *Primary) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
+	if ast.IsSubexpression() {
+		return mapper(parent, &Primary{
+			BaseASTNode:   ast.BaseASTNode,
+			SubExpression: mapper(ast, ast.SubExpression, context, false).(*Expression),
+			ParentNode:    ast.ParentNode,
+		}, context, true)
+	}
 	return mapper(parent, &Primary{
 		BaseASTNode:   ast.BaseASTNode,
 		Variable:      ast.Variable,
 		Int:           ast.Int,
 		ParentNode:    ast.ParentNode,
+		SubExpression: nil,
 	}, context, true)
 }
+
 func (ast *Primary) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
+	if ast.IsSubexpression() {
+		mapper(ast, ast.SubExpression, context)
+	}
 	mapper(parent, ast, context)
 }
+
 func (ast *Primary) Type() hindley_milner.Type {
 	if ast.IsVariable() {
 		return nil
 	} else if ast.IsInt() {
 		return CreatePrimitive(T_INT)
+	} else if ast.IsSubexpression() {
+		return nil
 	}
 	panic("Unknown Primary type")
 }
 
 func (ast *Primary) ExpressionType() hindley_milner.ExpressionType {
+	if ast.IsSubexpression() {
+		return hindley_milner.E_PROXY
+	}
 	return hindley_milner.E_LITERAL
 }

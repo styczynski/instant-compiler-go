@@ -9,7 +9,7 @@ import (
 type JasmineClass struct {
 	Name    string
 	Super   string
-	Methods []JasmineMethod
+	Methods []*JasmineMethod
 }
 
 func (p *JasmineClass) Type() JasmineInstructionType {
@@ -34,6 +34,12 @@ func (p *JasmineClass) StackSize(previousStackSize int) int {
 		s = ins.StackSize(s)
 	}
 	return s
+}
+
+func (p *JasmineClass) Normalize() {
+	for _, method := range p.Methods {
+		method.Normalize()
+	}
 }
 
 func (p *JasmineClass) Validate() *compiler.CompilationError {

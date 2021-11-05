@@ -37,14 +37,14 @@ To build the project simply call:
 You can test bulk of files using glob:
 
 ```bash
-    $ ./insc_jvm --backend jvm './test/*.in'
+    $ ./insc_jvm --backend jvm './test/*.ins'
 ```
 
 Or compile one at the time:
 
 ```bash
-    $ ./insc_jvm --backend llvm ./tests/a.in
+    $ ./insc_jvm --backend llvm ./tests/a.ins
 ```
 
-The compiler atomatically detects `*.out` files and runs compiled program agains them to check for output correctnes.
-That means thatyou can easily test the executable. You just have to copy all `*.out` files to the specific directory and use './dir/\*.some_extension` glob for compiler input.
+The compiler atomatically detects `*.output` files and runs compiled program agains them to check for output correctnes.
+That means thatyou can easily test the executable. You just have to copy all `*.output` files to the specific directory and use './dir/\*.some_extension` glob for compiler input.

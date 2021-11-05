@@ -166,6 +166,8 @@ func (backend CompilerLLVMBackend) compileExpression(expr generic_ast.Expression
 					Value:     int(*expr.Int),
 				},
 			}, 1
+		} else if expr.IsSubexpression() {
+			return backend.compileExpression(expr.SubExpression)
 		}
 	}
 	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", expr))

@@ -124,6 +124,8 @@ func (backend CompilerJVMBackend) compileExpression(expr generic_ast.Expression)
 					Index: *expr.Int,
 				},
 			}, 1
+		} else if expr.IsSubexpression() {
+			return backend.compileExpression(expr.SubExpression)
 		}
 	}
 	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", reflect.TypeOf(expr)))
@@ -166,8 +168,8 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 				&jasmine.JasmineClass{
 					Name:  fmt.Sprintf("public %s", className),
 					Super: "java/lang/Object",
-					Methods: []jasmine.JasmineMethod{
-						{
+					Methods: []*jasmine.JasmineMethod{
+						&jasmine.JasmineMethod{
 							Name:        "<init>",
 							Returns:     "V",
 							StackLimit:  1,
@@ -184,7 +186,7 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 								&jasmine.JasmineReturn{},
 							},
 						},
-						{
+						&jasmine.JasmineMethod{
 							Name:        "public static main",
 							Args:        []string{"[Ljava/lang/String;"},
 							Returns:     "V",
@@ -196,6 +198,7 @@ func (backend CompilerJVMBackend) Compile(program type_checker.LatteTypecheckedP
 				},
 			},
 		}
+		output.Normalize()
 
 		validationErr := output.Validate()
 

@@ -89,10 +89,10 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 		runContext := CreateCompiledCodeRunContext(program)
 		out, err := program.Backend.RunCompiledCode(runContext, c)
 
-		expectedContentBytes, outFileErr := runContext.ReadFileByExt("out")
+		expectedContentBytes, outFileErr := runContext.ReadFileByExt("output")
 		if outFileErr == nil {
 			expectedContent := strings.Split(string(expectedContentBytes), "\n")
-			testDescription := runContext.Substitute("Test $INPUT_FILE_BASE.out")
+			testDescription := runContext.Substitute("Test $INPUT_FILE_BASE.output")
 			c.EventsCollectorStream.Start(testDescription, c, program)
 			for lineNo, line := range out {
 				if line != expectedContent[lineNo] {

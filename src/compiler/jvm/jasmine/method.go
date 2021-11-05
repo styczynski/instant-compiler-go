@@ -45,6 +45,26 @@ func (p *JasmineMethod) StackSize(previousStackSize int) int {
 	return s
 }
 
+func (p *JasmineMethod) CalculateLocalsCount() int {
+	vars := map[int64]struct{}{}
+	for _, stmt := range p.Body {
+		if stmt.Type() == LoadInt {
+			vars[stmt.(*JasmineLoadInt).Index] = struct{}{}
+		}
+		if stmt.Type() == StoreInt {
+			vars[stmt.(*JasmineStoreInt).Index] = struct{}{}
+		}
+		if stmt.Type() == ReferenceLoad {
+			vars[stmt.(*JasmineReferenceLoad).Index] = struct{}{}
+		}
+	}
+	return len(vars) + len(p.Args)
+}
+
+func (p *JasmineMethod) Normalize() {
+	p.LocalsLimit = int64(p.CalculateLocalsCount())
+}
+
 func (p *JasmineMethod) Validate() *compiler.CompilationError {
 	s := 0
 	sMax := 0
@@ -62,26 +82,7 @@ func (p *JasmineMethod) Validate() *compiler.CompilationError {
 			fmt.Sprintf("    | Expected stack limit: %d.\n    | Actual emitted stack limit: %d\n\n%s", sMax, p.StackLimit, codeContext))
 	}
 
-	vars := map[int64]struct{}{}
-	for _, stmt := range p.Body {
-		if stmt.Type() == LoadInt {
-			vars[stmt.(*JasmineLoadInt).Index] = struct{}{}
-		}
-		if stmt.Type() == StoreInt {
-			vars[stmt.(*JasmineStoreInt).Index] = struct{}{}
-		}
-		if stmt.Type() == ReferenceLoad {
-			vars[stmt.(*JasmineReferenceLoad).Index] = struct{}{}
-		}
-	}
-
-	localsCount := len(vars)
-	specLimit := 0
-	if p.Name == "<init>" {
-		specLimit = 0
-	}
-	expectedLocalsLimit := localsCount + len(p.Args) + specLimit
-
+	expectedLocalsLimit := p.CalculateLocalsCount()
 	if int(p.LocalsLimit) != expectedLocalsLimit {
 		codeContext := pc.IndentCodeLines(p.ToText(EmitterConfig{Ident: 0}), 2, 0)
 		return compiler.CreateCompilationError(

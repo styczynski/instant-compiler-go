@@ -75,6 +75,14 @@ func (p *JasmineProgram) StackSize(previousStackSize int) int {
 	return previousStackSize
 }
 
+func (p *JasmineProgram) Normalize() {
+	for _, ins := range p.Instructions {
+		if cls, ok := ins.(*JasmineClass); ok {
+			cls.Normalize()
+		}
+	}
+}
+
 func (p *JasmineProgram) Validate() *compiler.CompilationError {
 	for _, ins := range p.Instructions {
 		if val, ok := ins.(JasmineValidableInstruction); ok {
