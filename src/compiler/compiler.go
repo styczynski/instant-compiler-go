@@ -106,7 +106,7 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 
 		compiled := <-compiler.backend.Compile(program, c, buildContext)
 
-		//fmt.Printf("%s", buildContext.DescribeOutputFiles())
+		c.EventsCollectorStream.EmitOutputFiles(backendProcessDescription, c, buildContext.GetOutputFiles())
 
 		ret <- LatteCompiledProgram{
 			Program:          compiled.Program,

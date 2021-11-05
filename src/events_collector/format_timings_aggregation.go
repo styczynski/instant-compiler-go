@@ -28,10 +28,12 @@ var formatStageTitleFg = color.New(color.FgMagenta).SprintFunc()
 var formatOkMessageFg = color.New(color.FgHiWhite).SprintFunc()
 var formatOkMessageBg = color.New(color.BgGreen).SprintFunc()
 
+var formatOutputFilePathFg = color.New(color.FgMagenta).SprintFunc()
+
 func generateIndent(nestLevel int) string {
 	indent := strings.Repeat("  ", nestLevel)
 	if nestLevel > 1 {
-		indent = "  "+strings.Repeat("│ ", nestLevel-1)
+		indent = "  " + strings.Repeat("│ ", nestLevel-1)
 	}
 	return indent
 }
@@ -47,7 +49,7 @@ func formatTimingAggregationRec(aggregation *TimingsAggreagation, nestLevel int)
 		}
 		subtree := formatTimingAggregationRec(agg, nestLevel+1)
 		if subtree != generateIndent(nestLevel+1) {
-			subtree = "\n"+subtree
+			subtree = "\n" + subtree
 		} else {
 			subtree = ""
 		}
@@ -63,4 +65,19 @@ func formatTimingAggregationRec(aggregation *TimingsAggreagation, nestLevel int)
 func FormatTimingAggregation(aggregation TimingsAggreagation) string {
 	t := &aggregation
 	return formatTimingAggregationRec(t, 1)
+}
+
+func FormatOutputFilesList(outputFiles map[string]map[string]string) string {
+	descriptionLines := []string{}
+	for path, files := range outputFiles {
+		filesTextExt := ""
+		if len(files) > 1 {
+			filesTextExt = "s"
+		}
+		descriptionLines = append(descriptionLines, fmt.Sprintf("   → Created %s file%s in %s:", formatOutputFilePathFg(len(files)), filesTextExt, formatOutputFilePathFg(path)))
+		for name, description := range files {
+			descriptionLines = append(descriptionLines, fmt.Sprintf("     ⚐ %s (%s)", name, description))
+		}
+	}
+	return strings.Join(descriptionLines, "\n")
 }

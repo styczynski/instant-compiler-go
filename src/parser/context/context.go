@@ -56,6 +56,7 @@ type EventCollectorMessageInput interface {
 type EventsCollectorStream interface {
 	Start(processName string, c *ParsingContext, input EventCollectorMessageInput)
 	End(processName string, c *ParsingContext, input EventCollectorMessageInput)
+	EmitOutputFiles(processName string, c *ParsingContext, outputFiles map[string]map[string]string)
 }
 
 type ParsingContext struct {

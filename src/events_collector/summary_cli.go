@@ -18,11 +18,12 @@ func (s CliSummary) FormatCliSummary(metricsPromise CollectedMetricsPromise) str
 	metrics := metricsPromise.Resolve()
 	timings := metrics.GetTimingsAggregation()
 
-	return fmt.Sprintf("%s: Processed everything in %s (%d inputs):\n%s\n",
-			formatOkMessageBg(formatOkMessageFg("Done")),
-			timings.Duration,
-			len(metrics.Inputs()),
-			FormatTimingAggregation(timings))
+	return fmt.Sprintf("%s: Processed everything in %s (%d inputs):\n%s\n\n%s",
+		formatOkMessageBg(formatOkMessageFg("Done")),
+		timings.Duration,
+		len(metrics.Inputs()),
+		FormatTimingAggregation(timings),
+		FormatOutputFilesList(metrics.GetOutputs()))
 }
 
 func (s CliSummary) Summarize(metricsPromise CollectedMetricsPromise) (string, bool) {

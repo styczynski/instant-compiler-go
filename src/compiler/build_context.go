@@ -93,14 +93,10 @@ func (c *BuildContext) WriteOutput(description string, extension string, content
 	c.outputFiles[fmt.Sprintf("%s.%s", c.variables["INPUT_FILE_BASE"], extension)] = description
 }
 
-func (c *BuildContext) DescribeOutputFiles() string {
-	descriptionLines := []string{
-		fmt.Sprintf("    Created %d files in %s:", len(c.outputFiles), c.outLoc),
+func (c *BuildContext) GetOutputFiles() map[string]map[string]string {
+	return map[string]map[string]string{
+		c.outLoc: c.outputFiles,
 	}
-	for name, description := range c.outputFiles {
-		descriptionLines = append(descriptionLines, fmt.Sprintf("     - %s (%s)", name, description))
-	}
-	return strings.Join(descriptionLines, "\n")
 }
 
 func (c *BuildContext) ReadBuildFile(name string) []byte {

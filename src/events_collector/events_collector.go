@@ -17,6 +17,7 @@ type EventsCollector struct {
 	timingsAggregation map[string]time.Duration
 	timingsLabels      []string
 	updater            StatusUpdater
+	outputFiles        map[string]map[string]string
 }
 
 type InputStatus struct {
@@ -32,6 +33,17 @@ type EventMessage struct {
 	processName string
 	c           *context.ParsingContext
 	input       context.EventCollectorMessageInput
+}
+
+func (collector *EventsCollector) EmitOutputFiles(processName string, c *context.ParsingContext, outputFiles map[string]map[string]string) {
+	for path, files := range outputFiles {
+		if _, ok := collector.outputFiles[path]; !ok {
+			collector.outputFiles[path] = map[string]string{}
+		}
+		for file, description := range files {
+			collector.outputFiles[path][file] = description
+		}
+	}
 }
 
 func (collector *EventsCollector) Start(processName string, c *context.ParsingContext, input context.EventCollectorMessageInput) {
@@ -157,6 +169,7 @@ func StartEventsCollector(updater StatusUpdater) *EventsCollector {
 		statuses:           map[string][]InputStatus{},
 		timingsAggregation: map[string]time.Duration{},
 		updater:            updater,
+		outputFiles:        map[string]map[string]string{},
 	}
 	defer collector.runEventsCollectorDeamon()
 	return collector
@@ -200,6 +213,7 @@ type CollectedMetrics interface {
 	GetTimingsAggregation() TimingsAggreagation
 	Resolve() CollectedMetrics
 	Inputs() []context.EventCollectorMessageInput
+	GetOutputs() map[string]map[string]string
 }
 
 type CollectedMetricsImpl struct {
@@ -207,6 +221,7 @@ type CollectedMetricsImpl struct {
 	timingsAggregation map[string]time.Duration
 	timingsLabels      []string
 	inputs             []context.EventCollectorMessageInput
+	outputs            map[string]map[string]string
 }
 
 func (c CollectedMetricsImpl) Inputs() []context.EventCollectorMessageInput {
@@ -257,6 +272,10 @@ func (c CollectedMetricsImpl) GetTimingsAggregation() TimingsAggreagation {
 
 func (c CollectedMetricsImpl) Resolve() CollectedMetrics {
 	return c
+}
+
+func (c CollectedMetricsImpl) GetOutputs() map[string]map[string]string {
+	return c.outputs
 }
 
 type CollectedMetricsPromise interface {
@@ -354,6 +373,7 @@ func (ec *EventsCollector) HandleCompilation(programs []compiler.LatteCompiledPr
 			timingsAggregation: ec.timingsAggregation,
 			timingsLabels:      ec.timingsLabels,
 			inputs:             inputs,
+			outputs:            ec.outputFiles,
 		}
 	}()
 	return CollectedErrorsPromiseChan(ret)
@@ -379,6 +399,7 @@ func (ec *EventsCollector) HandleTypechecking(programs []type_checker.LatteTypec
 			timingsAggregation: ec.timingsAggregation,
 			timingsLabels:      ec.timingsLabels,
 			inputs:             inputs,
+			outputs:            ec.outputFiles,
 		}
 	}()
 	return CollectedErrorsPromiseChan(ret)
@@ -404,6 +425,7 @@ func (ec *EventsCollector) HandleParsing(programs []parser.LatteParsedProgramPro
 			timingsAggregation: ec.timingsAggregation,
 			timingsLabels:      ec.timingsLabels,
 			inputs:             inputs,
+			outputs:            ec.outputFiles,
 		}
 	}()
 	return CollectedErrorsPromiseChan(ret)
