@@ -10,6 +10,10 @@ import (
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
+type InputReader interface {
+	Read(c *context.ParsingContext) ([]LatteInput, error)
+}
+
 type LatteInputReader struct {
 	input []string
 }

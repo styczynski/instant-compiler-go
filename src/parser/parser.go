@@ -328,7 +328,7 @@ func (p *LatteParser) parseAsync(c *context.ParsingContext, input input_reader.L
 	return LatteParsedProgramPromiseChanel(ret)
 }
 
-func (p *LatteParser) ParseInput(reader *input_reader.LatteInputReader, c *context.ParsingContext) []LatteParsedProgramPromise {
+func (p *LatteParser) ParseInput(reader input_reader.InputReader, c *context.ParsingContext) []LatteParsedProgramPromise {
 	var err error
 	inputs, err := reader.Read(c)
 	if err != nil {

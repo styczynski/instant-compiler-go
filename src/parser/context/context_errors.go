@@ -48,7 +48,7 @@ func (c *ParsingContext) FormatParsingError(errorType string, message string, li
 		col)
 
 	codeContext, lineStart, _ := c.GetFileContext(nil, line, col)
-	formattedCode, err := c.Printer.FormatRaw(codeContext)
+	formattedCode, err := c.Printer.FormatRaw(codeContext, false)
 	if err != nil {
 		// Ignore error
 		formattedCode = codeContext

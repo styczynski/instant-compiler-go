@@ -14,6 +14,7 @@ require (
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/dlclark/regexp2 v1.2.0
 	github.com/fatih/color v1.10.0
+	github.com/jroimartin/gocui v0.5.0 // indirect
 	github.com/mattn/go-colorable v0.1.8
 	github.com/mattn/go-isatty v0.0.12
 	github.com/pkg/errors v0.9.1

@@ -18,7 +18,7 @@ type TraversableNode interface {
 }
 
 type CodeFormatter interface {
-	FormatRaw(input string) (string, error)
+	FormatRaw(input string, ecapeStrings bool) (string, error)
 }
 
 type PrinterConfiguration struct {

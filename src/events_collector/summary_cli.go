@@ -2,6 +2,7 @@ package events_collector
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/styczynski/latte-compiler/src/config"
 )
@@ -17,7 +18,7 @@ func (CliSummaryFactory) CreateEntity(c config.EntityConfig) interface{} {
 }
 
 func (CliSummaryFactory) Params(argSpec *config.EntityArgSpec) {
-	argSpec.AddInt("error-limit", -1, "Maximum error limit")
+	argSpec.AddInt("error-limit", 900, "Maximum error limit")
 }
 
 func (CliSummaryFactory) EntityName() string {
@@ -49,13 +50,17 @@ func (s CliSummary) FormatCliSummary(metricsPromise CollectedMetricsPromise) str
 func (s CliSummary) Summarize(metricsPromise CollectedMetricsPromise) (string, bool) {
 	metrics := metricsPromise.Resolve()
 	errors := metrics.GetAllErrors()
+	errorMessages := []string{}
 	if len(errors) > 0 {
-		for i, err := range errors {
-			if i >= s.errorsLimit && s.errorsLimit != -1 {
+		for _, err := range errors {
+			if len(errorMessages) >= s.errorsLimit && s.errorsLimit != -1 {
 				break
 			}
-			return err.CliMessage(), false
+			errorMessages = append(errorMessages, err.CliMessage())
 		}
 	}
-	return s.FormatCliSummary(metrics), true
+	if len(errorMessages) == 0 {
+		return s.FormatCliSummary(metrics), true
+	}
+	return strings.Join(errorMessages, "\n"), false
 }

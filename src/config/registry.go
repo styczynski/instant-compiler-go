@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 )
@@ -28,11 +27,11 @@ type EntityConfigProxy struct {
 }
 
 func (c EntityConfigProxy) String(name string) string {
-	return c.c.String(strings.TrimPrefix(name, fmt.Sprintf("%s", c.prefix)))
+	return c.c.String(fmt.Sprintf("%s%s", c.prefix, name))
 }
 
 func (c EntityConfigProxy) Int(name string) int {
-	return c.c.Int(strings.TrimPrefix(name, fmt.Sprintf("%s", c.prefix)))
+	return c.c.Int(fmt.Sprintf("%s%s", c.prefix, name))
 }
 
 type EntityArgSpec struct {

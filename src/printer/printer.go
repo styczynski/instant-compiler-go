@@ -20,10 +20,13 @@ func (p *LattePrinter) Raw(program *ast.LatteProgram, c *context.ParsingContext)
 	return program.Print(c)
 }
 
-func (p *LattePrinter) FormatRaw(input string) (string, error) {
+func (p *LattePrinter) FormatRaw(input string, escapeStrings bool) (string, error) {
 	lexer := lexers.Get("latte")
 	style := styles.Get("vim")
-	formatter := formatters.Get("terminal16m")
+	formatter := formatters.Get("terminal16raw")
+	if !escapeStrings {
+		formatter = formatters.Get("terminal16m")
+	}
 	if formatter == nil {
 		formatter = formatters.Fallback
 	}
@@ -41,5 +44,5 @@ func (p *LattePrinter) FormatRaw(input string) (string, error) {
 }
 
 func (p *LattePrinter) Format(program *ast.LatteProgram, c *context.ParsingContext) (string, error) {
-	return p.FormatRaw(p.Raw(program, c))
+	return p.FormatRaw(p.Raw(program, c), false)
 }
