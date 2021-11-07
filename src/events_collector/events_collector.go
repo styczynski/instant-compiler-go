@@ -409,8 +409,16 @@ func (ec *EventsCollector) HandleCompiledCodeRunning(programs []runner.LatteRunn
 	return CollectedErrorsPromiseChan(ret)
 }
 
-func (ec *EventsCollector) SummarizeCompiledCodeRunning(summarizer Summarizer, programs []runner.LatteRunnedProgramPromise, c *context.ParsingContext) (string, bool) {
-	return summarizer.Summarize(ec.HandleCompiledCodeRunning(programs, c))
+func (ec *EventsCollector) SummarizeCompiledCodeRunning(summarizer Summarizer, programs []runner.LatteRunnedProgramPromise, c *context.ParsingContext) (string, []runner.LatteRunnedProgram, bool) {
+	progs := []runner.LatteRunnedProgram{}
+	progsP := []runner.LatteRunnedProgramPromise{}
+	for _, p := range programs {
+		pResolved := p.Resolve()
+		progs = append(progs, pResolved)
+		progsP = append(progsP, pResolved)
+	}
+	message, ok := summarizer.Summarize(ec.HandleCompiledCodeRunning(progsP, c))
+	return message, progs, ok
 }
 
 ///

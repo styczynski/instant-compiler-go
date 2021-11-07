@@ -18,9 +18,21 @@ func (RunCompilerPipelineCliInterface) Run() {
 
 	app := &cli.App{
 		Flags: flags,
+		Commands: []*cli.Command{
+			{
+				Name:    "shell",
+				Aliases: []string{"sh"},
+				Usage:   "Run interactive shell",
+				Action: func(c *cli.Context) error {
+					shellInterface := &RunCompilerPipelineInteractiveCliInterface{}
+					shellInterface.Run()
+					return nil
+				},
+			},
+		},
 		Action: func(c *cli.Context) error {
 			p := config.CreateEntity(config.ENTITY_COMPILER_PIPELINE, "compiler-pipeline", c).(CompilerPipeline)
-			message, ok := p.RunPipeline(c, input_reader.CreateLatteInputReader(c.Args().Slice()))
+			message, _, ok := p.RunPipeline(c, input_reader.CreateLatteInputReader(c.Args().Slice()))
 			if !ok {
 				os.Stderr.WriteString("ERROR\n")
 				fmt.Print(message)

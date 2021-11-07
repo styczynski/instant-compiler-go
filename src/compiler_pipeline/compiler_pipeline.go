@@ -47,7 +47,7 @@ func CreateCompilerPipeline() CompilerPipeline {
 	return CompilerPipeline{}
 }
 
-func (CompilerPipeline) RunPipeline(c config.EntityConfig, reader input_reader.InputReader) (string, bool) {
+func (CompilerPipeline) RunPipeline(c config.EntityConfig, reader input_reader.InputReader) (string, []runner.LatteRunnedProgram, bool) {
 	pr := printer.CreateLattePrinter()
 	eventsCollector := events_collector.StartEventsCollector(
 		config.CreateEntity(config.ENTITY_STATUS_UPDATER, c.String("status-updater"), c).(events_collector.StatusUpdater))
@@ -67,7 +67,7 @@ func (CompilerPipeline) RunPipeline(c config.EntityConfig, reader input_reader.I
 	runnedProgram := run.RunCompiledProgram(compiledProgram, context)
 
 	var summary events_collector.Summarizer = config.CreateEntity(config.ENTITY_SUMMARIZER, c.String("summary"), c).(events_collector.Summarizer)
-	message, ok := eventsCollector.SummarizeCompiledCodeRunning(summary, runnedProgram, context)
+	message, progs, ok := eventsCollector.SummarizeCompiledCodeRunning(summary, runnedProgram, context)
 
-	return message, ok
+	return message, progs, ok
 }

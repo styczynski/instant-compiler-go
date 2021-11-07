@@ -11,9 +11,11 @@ import (
 type RunCompilerPipelineInteractiveCliInterface struct {
 	compilerPipeline *HeadlessCompilerPipeline
 
-	errView    *gocui.View
-	editorView *gocui.View
-	outputView *gocui.View
+	gui *gocui.Gui
+
+	editorView    *gocui.View
+	outputView    *gocui.View
+	runResultView *gocui.View
 }
 
 func (c *RunCompilerPipelineInteractiveCliInterface) handleInputChange() {
@@ -32,29 +34,40 @@ func (c *RunCompilerPipelineInteractiveCliInterface) handleInputChange() {
 	}
 
 	c.compilerPipeline.ProcessAsync(input, func(response CompilationResponse) {
-		c.outputView.Clear()
-		fmt.Fprintf(c.outputView, response.Summary)
+		c.gui.Update(func(g *gocui.Gui) error {
+			c.outputView.Clear()
+			c.runResultView.Clear()
+			if response.Ok {
+				fmt.Fprintf(c.runResultView, "%s", strings.Join(response.Program.ProgramOutput, "\n"))
+				compiledProgramText := response.Program.Program.CompiledProgram.ProgramToText()
+				fmt.Fprintf(c.outputView, "%s", compiledProgramText)
+			} else {
+				fmt.Fprintf(c.outputView, "%s", response.Summary)
+			}
+			return nil
+		})
 	})
 }
 
 func (c *RunCompilerPipelineInteractiveCliInterface) Run() {
 	c.compilerPipeline = CreateHeadlessCompilerPipeline()
+	var err error
 
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	c.gui, err = gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
-	defer g.Close()
+	defer c.gui.Close()
 
-	g.SetManagerFunc(c.layout)
-	g.InputEsc = true
-	g.Cursor = true
+	c.gui.SetManagerFunc(c.layout)
+	c.gui.InputEsc = true
+	c.gui.Cursor = true
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, c.quit); err != nil {
+	if err := c.gui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, c.quit); err != nil {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := c.gui.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
 }
@@ -62,21 +75,32 @@ func (c *RunCompilerPipelineInteractiveCliInterface) Run() {
 func (c *RunCompilerPipelineInteractiveCliInterface) layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	var err error
-	if c.editorView, err = g.SetView("editor", 0, 0, maxX/2, maxY-5); err != nil {
+	if c.editorView, err = g.SetView("editor", 0, 0, maxX/2, maxY-7); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		if c.outputView, err = g.SetView("output", maxX/2+1, 0, maxX-1, maxY-5); err != nil {
+		if c.outputView, err = g.SetView("output", maxX/2+1, 0, maxX-1, maxY-1); err != nil {
 			if err != gocui.ErrUnknownView {
 				return err
 			}
 		}
-		if c.errView, err = g.SetView("error-view", 0, maxY-4, maxX/2, maxY-1); err != nil {
+		if c.runResultView, err = g.SetView("run-output", 0, maxY-6, maxX/2, maxY-1); err != nil {
 			if err != gocui.ErrUnknownView {
 				return err
 			}
+
+			c.runResultView.Autoscroll = true
+			c.runResultView.Wrap = true
+			c.runResultView.Title = "Program output:"
+
+			c.outputView.Autoscroll = true
+			c.outputView.Wrap = true
+			c.outputView.Title = "Compiler output:"
+
 			c.editorView.Editable = true
 			c.editorView.Wrap = true
+			c.editorView.Title = "Input:"
+
 			c.editorView.Editor = gocui.EditorFunc(func(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 				switch {
 				case ch != 0 && mod == 0:

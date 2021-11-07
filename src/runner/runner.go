@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
@@ -17,11 +18,12 @@ func init() {
 type LatteCompiledCodeRunnerFactory struct{}
 
 func (LatteCompiledCodeRunnerFactory) CreateEntity(c config.EntityConfig) interface{} {
-	return CreateLatteCompiledCodeRunner(c.String("test-extension"))
+	return CreateLatteCompiledCodeRunner(c.String("test-extension"), c.Bool("always-run"))
 }
 
 func (LatteCompiledCodeRunnerFactory) Params(argSpec *config.EntityArgSpec) {
 	argSpec.AddString("test-extension", "output", "Specify test file output extension")
+	argSpec.AddBool("always-run", false, "Always run generated code")
 }
 
 func (LatteCompiledCodeRunnerFactory) EntityName() string {
@@ -30,18 +32,21 @@ func (LatteCompiledCodeRunnerFactory) EntityName() string {
 
 type LatteCompiledCodeRunner struct {
 	testExtension string
+	alwaysRun     bool
 }
 
-func CreateLatteCompiledCodeRunner(testExtension string) *LatteCompiledCodeRunner {
+func CreateLatteCompiledCodeRunner(testExtension string, alwaysRun bool) *LatteCompiledCodeRunner {
 	return &LatteCompiledCodeRunner{
 		testExtension: testExtension,
+		alwaysRun:     alwaysRun,
 	}
 }
 
 type LatteRunnedProgram struct {
-	Program  compiler.LatteCompiledProgram
-	filename string
-	RunError *compiler.RunError
+	Program       compiler.LatteCompiledProgram
+	filename      string
+	ProgramOutput []string
+	RunError      *compiler.RunError
 }
 
 func (p LatteRunnedProgram) Filename() string {
@@ -100,37 +105,59 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 			return
 		}
 
-		backendProcessDescription := "Running compiled program"
+		backendProcessDescription := fmt.Sprintf("Running compiled program: %v", tc.alwaysRun)
 
 		c.EventsCollectorStream.Start(backendProcessDescription, c, program)
 		defer c.EventsCollectorStream.End(backendProcessDescription, c, program)
 
 		runContext := CreateCompiledCodeRunContext(program)
-		out, err := program.Backend.RunCompiledCode(runContext, c)
 
 		expectedContentBytes, outFileErr := runContext.ReadFileByExt(tc.testExtension)
-		if outFileErr == nil {
-			expectedContent := strings.Split(string(expectedContentBytes), "\n")
-			testDescription := runContext.Substitute("Test $INPUT_FILE_BASE.%s", tc.testExtension)
-			c.EventsCollectorStream.Start(testDescription, c, program)
-			for lineNo, line := range out {
-				if line != expectedContent[lineNo] {
-					c.EventsCollectorStream.End(testDescription, c, program)
-					r <- LatteRunnedProgram{
-						Program:  program,
-						filename: program.Filename(),
-						RunError: compiler.CreateRunError("Failed test", runContext.Substitute("Test $INPUT_FILE_BASE.out in directory $INPUT_FILE_LOC has failed.\n    Line:    %d\n    Expected: %s\n    Got:     %s", lineNo, expectedContent[lineNo], line)),
-					}
-					return
+		if outFileErr == nil || tc.alwaysRun {
+			runContext := CreateCompiledCodeRunContext(program)
+			out, err := program.Backend.RunCompiledCode(runContext, c)
+
+			if err != nil {
+				r <- LatteRunnedProgram{
+					Program:  program,
+					filename: program.Filename(),
+					RunError: err,
 				}
+				return
 			}
-			c.EventsCollectorStream.End(testDescription, c, program)
+
+			if outFileErr == nil {
+				expectedContent := strings.Split(string(expectedContentBytes), "\n")
+				testDescription := runContext.Substitute("Test $INPUT_FILE_BASE.%s", tc.testExtension)
+				c.EventsCollectorStream.Start(testDescription, c, program)
+				for lineNo, line := range out {
+					if line != expectedContent[lineNo] {
+						c.EventsCollectorStream.End(testDescription, c, program)
+						r <- LatteRunnedProgram{
+							Program:       program,
+							filename:      program.Filename(),
+							ProgramOutput: out,
+							RunError:      compiler.CreateRunError("Failed test", runContext.Substitute("Test $INPUT_FILE_BASE.out in directory $INPUT_FILE_LOC has failed.\n    Line:    %d\n    Expected: %s\n    Got:     %s", lineNo, expectedContent[lineNo], line)),
+						}
+						return
+					}
+				}
+				c.EventsCollectorStream.End(testDescription, c, program)
+			}
+
+			r <- LatteRunnedProgram{
+				Program:       program,
+				filename:      program.Filename(),
+				ProgramOutput: out,
+				RunError:      nil,
+			}
+			return
 		}
 
 		r <- LatteRunnedProgram{
 			Program:  program,
 			filename: program.Filename(),
-			RunError: err,
+			RunError: nil,
 		}
 	}()
 

@@ -18,6 +18,7 @@ const (
 
 type EntityConfig interface {
 	String(name string) string
+	Bool(name string) bool
 	Int(name string) int
 }
 
@@ -28,6 +29,10 @@ type EntityConfigProxy struct {
 
 func (c EntityConfigProxy) String(name string) string {
 	return c.c.String(fmt.Sprintf("%s%s", c.prefix, name))
+}
+
+func (c EntityConfigProxy) Bool(name string) bool {
+	return c.c.Bool(fmt.Sprintf("%s%s", c.prefix, name))
 }
 
 func (c EntityConfigProxy) Int(name string) int {
@@ -52,6 +57,15 @@ func (argSpec *EntityArgSpec) CliFlags() []cli.Flag {
 
 func (argSpec *EntityArgSpec) AddString(name string, value string, usage string) *EntityArgSpec {
 	argSpec.flags = append(argSpec.flags, &cli.StringFlag{
+		Name:  fmt.Sprintf("%s%s", argSpec.prefix, name),
+		Usage: usage,
+		Value: value,
+	})
+	return argSpec
+}
+
+func (argSpec *EntityArgSpec) AddBool(name string, value bool, usage string) *EntityArgSpec {
+	argSpec.flags = append(argSpec.flags, &cli.BoolFlag{
 		Name:  fmt.Sprintf("%s%s", argSpec.prefix, name),
 		Usage: usage,
 		Value: value,

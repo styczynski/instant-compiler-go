@@ -4,6 +4,7 @@ import (
 	"github.com/styczynski/latte-compiler/src/config"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/printer"
+	"github.com/styczynski/latte-compiler/src/runner"
 )
 
 type CompilationRequest struct {
@@ -13,6 +14,7 @@ type CompilationRequest struct {
 type CompilationResponse struct {
 	Summary string
 	Ok      bool
+	Program runner.LatteRunnedProgram
 }
 
 func (in CompilationRequest) Read() ([]byte, error) {
@@ -20,12 +22,14 @@ func (in CompilationRequest) Read() ([]byte, error) {
 }
 
 func (in CompilationRequest) Filename() string {
-	return "<input>"
+	return "input"
 }
 
 type HeadlessCompilerPipeline struct {
 	inputRequests chan CompilationRequest
 	outputs       chan CompilationResponse
+
+	responseCache map[string]*CompilationResponse
 
 	Printer *printer.LattePrinter
 
@@ -40,6 +44,7 @@ func CreateHeadlessCompilerPipeline() *HeadlessCompilerPipeline {
 		outputs:       make(chan CompilationResponse),
 		Printer:       pr,
 		running:       false,
+		responseCache: map[string]*CompilationResponse{},
 	}
 }
 
@@ -68,17 +73,34 @@ func (pipeline *HeadlessCompilerPipeline) deamonHandler() {
 			"runner":         "runner",
 			"summary":        "summary-cli",
 		},
+		Ints: map[string]int{
+			"summary-cli-error-limit": 900,
+		},
+		Bools: map[string]bool{
+			"runner-always-run": true,
+		},
 	}
 	for {
 		request := <-pipeline.inputRequests
 
-		p := config.CreateEntity(config.ENTITY_COMPILER_PIPELINE, "compiler-pipeline", c).(CompilerPipeline)
-		message, ok := p.RunPipeline(c, input_reader.CreateLatteConstInputReader([]input_reader.LatteInput{request}))
+		if cachedResponse, ok := pipeline.responseCache[request.input]; false && ok {
+			pipeline.responseCache = map[string]*CompilationResponse{}
+			pipeline.outputs <- *cachedResponse
+			return
+		}
+		// Flush cache
+		pipeline.responseCache = map[string]*CompilationResponse{}
 
-		pipeline.outputs <- CompilationResponse{
+		p := config.CreateEntity(config.ENTITY_COMPILER_PIPELINE, "compiler-pipeline", c).(CompilerPipeline)
+		message, progs, ok := p.RunPipeline(c, input_reader.CreateLatteConstInputReader([]input_reader.LatteInput{request}))
+
+		response := &CompilationResponse{
 			Summary: message,
 			Ok:      ok,
+			Program: progs[0],
 		}
 
+		pipeline.responseCache[request.input] = response
+		pipeline.outputs <- *response
 	}
 }
