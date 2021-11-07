@@ -6,6 +6,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
+	"github.com/styczynski/latte-compiler/src/config"
 )
 
 var formatStatusBg = color.New(color.BgBlack).SprintFunc()
@@ -28,6 +29,37 @@ func CreateStatusUpdater(isSilent bool) StatusUpdater {
 		return SilentStatusUpdater{}
 	}
 	return &CliProgressBarStatusUpdater{}
+}
+
+func init() {
+	config.RegisterEntityFactory(config.ENTITY_STATUS_UPDATER, CliProgressBarStatusUpdaterFactory{})
+	config.RegisterEntityFactory(config.ENTITY_STATUS_UPDATER, SilentStatusUpdaterFactory{})
+}
+
+type SilentStatusUpdaterFactory struct{}
+
+func (SilentStatusUpdaterFactory) CreateEntity(c config.EntityConfig) interface{} {
+	return SilentStatusUpdater{}
+}
+
+func (SilentStatusUpdaterFactory) Params(argSpec *config.EntityArgSpec) {
+}
+
+func (SilentStatusUpdaterFactory) EntityName() string {
+	return "updater-silent"
+}
+
+type CliProgressBarStatusUpdaterFactory struct{}
+
+func (CliProgressBarStatusUpdaterFactory) CreateEntity(c config.EntityConfig) interface{} {
+	return &CliProgressBarStatusUpdater{}
+}
+
+func (CliProgressBarStatusUpdaterFactory) Params(argSpec *config.EntityArgSpec) {
+}
+
+func (CliProgressBarStatusUpdaterFactory) EntityName() string {
+	return "updater-cli-progress"
 }
 
 func (SilentStatusUpdater) Init() {

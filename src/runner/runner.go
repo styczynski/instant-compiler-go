@@ -4,19 +4,38 @@ import (
 	"strings"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
+	"github.com/styczynski/latte-compiler/src/config"
 	"github.com/styczynski/latte-compiler/src/errors"
 
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
-type LatteCompiledCodeRunner struct{}
-
-func CreateLatteCompiledCodeRunner() *LatteCompiledCodeRunner {
-	return &LatteCompiledCodeRunner{}
+func init() {
+	config.RegisterEntityFactory(config.ENTITY_RUNNER, LatteCompiledCodeRunnerFactory{})
 }
 
-func (tc *LatteCompiledCodeRunner) Test(c *context.ParsingContext) {
-	// Nothing
+type LatteCompiledCodeRunnerFactory struct{}
+
+func (LatteCompiledCodeRunnerFactory) CreateEntity(c config.EntityConfig) interface{} {
+	return CreateLatteCompiledCodeRunner(c.String("test-extension"))
+}
+
+func (LatteCompiledCodeRunnerFactory) Params(argSpec *config.EntityArgSpec) {
+	argSpec.AddString("test-extension", "output", "Specify test file output extension")
+}
+
+func (LatteCompiledCodeRunnerFactory) EntityName() string {
+	return "runner"
+}
+
+type LatteCompiledCodeRunner struct {
+	testExtension string
+}
+
+func CreateLatteCompiledCodeRunner(testExtension string) *LatteCompiledCodeRunner {
+	return &LatteCompiledCodeRunner{
+		testExtension: testExtension,
+	}
 }
 
 type LatteRunnedProgram struct {
@@ -89,10 +108,10 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 		runContext := CreateCompiledCodeRunContext(program)
 		out, err := program.Backend.RunCompiledCode(runContext, c)
 
-		expectedContentBytes, outFileErr := runContext.ReadFileByExt("output")
+		expectedContentBytes, outFileErr := runContext.ReadFileByExt(tc.testExtension)
 		if outFileErr == nil {
 			expectedContent := strings.Split(string(expectedContentBytes), "\n")
-			testDescription := runContext.Substitute("Test $INPUT_FILE_BASE.output")
+			testDescription := runContext.Substitute("Test $INPUT_FILE_BASE.%s", tc.testExtension)
 			c.EventsCollectorStream.Start(testDescription, c, program)
 			for lineNo, line := range out {
 				if line != expectedContent[lineNo] {

@@ -2,7 +2,27 @@ package events_collector
 
 import (
 	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/config"
 )
+
+func init() {
+	config.RegisterEntityFactory(config.ENTITY_SUMMARIZER, CliSummaryFactory{})
+}
+
+type CliSummaryFactory struct{}
+
+func (CliSummaryFactory) CreateEntity(c config.EntityConfig) interface{} {
+	return CreateCliSummary(c.Int("error-limit"))
+}
+
+func (CliSummaryFactory) Params(argSpec *config.EntityArgSpec) {
+	argSpec.AddInt("error-limit", -1, "Maximum error limit")
+}
+
+func (CliSummaryFactory) EntityName() string {
+	return "summary-cli"
+}
 
 type CliSummary struct {
 	errorsLimit int

@@ -7,6 +7,7 @@ import (
 
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/compiler/llvm/llvm_ast"
+	"github.com/styczynski/latte-compiler/src/config"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -14,16 +15,20 @@ import (
 )
 
 func init() {
-	compiler.RegisterCompilerBackendFactory(CompilerLLVMBackendFactory{})
+	config.RegisterEntityFactory(config.ENTITY_COMPILER_BACKEND, CompilerLLVMBackendFactory{})
 }
 
 type CompilerLLVMBackendFactory struct{}
 
-func (CompilerLLVMBackendFactory) CreateBackend() compiler.CompilerBackend {
+func (CompilerLLVMBackendFactory) CreateEntity(c config.EntityConfig) interface{} {
 	return CreateCompilerLLVMBackend()
 }
 
-func (CompilerLLVMBackendFactory) BackendName() string {
+func (CompilerLLVMBackendFactory) Params(argSpec *config.EntityArgSpec) {
+	return
+}
+
+func (CompilerLLVMBackendFactory) EntityName() string {
 	return "llvm"
 }
 
