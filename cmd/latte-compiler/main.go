@@ -7,10 +7,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	_ "github.com/styczynski/latte-compiler/src/compiler/jvm"
+	_ "github.com/styczynski/latte-compiler/src/compiler/llvm"
+
 	"github.com/styczynski/latte-compiler/cmd/latte-compiler/config"
 	"github.com/styczynski/latte-compiler/src/compiler"
-	"github.com/styczynski/latte-compiler/src/compiler/jvm"
-	"github.com/styczynski/latte-compiler/src/compiler/llvm"
 	"github.com/styczynski/latte-compiler/src/events_collector"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser"
@@ -31,15 +32,8 @@ func ActionCompile(c *cli.Context) error {
 	inputPaths := c.Args().Slice()
 	reader := input_reader.CreateLatteInputReader(inputPaths)
 
-	backend := jvm.CreateCompilerJVMBackend()
-	backendName := c.String("backend")
-	if backendName == "llvm" {
-		backend = llvm.CreateCompilerLLVMBackend()
-	} else if backendName == "jvm" {
-		backend = jvm.CreateCompilerJVMBackend()
-	} else {
-		log.Fatal(fmt.Sprintf("Invalid compiler backend was specified: %s", backendName))
-	}
+	backend := compiler.CreateCompilerBackend(c.String("backend"))
+	//jvm.CreateCompilerJVMBackend()
 
 	comp := compiler.CreateLatteCompiler(backend)
 	run := runner.CreateLatteCompiledCodeRunner()

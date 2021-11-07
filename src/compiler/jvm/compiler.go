@@ -13,6 +13,20 @@ import (
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
+func init() {
+	compiler.RegisterCompilerBackendFactory(CompilerJVMBackendFactory{})
+}
+
+type CompilerJVMBackendFactory struct{}
+
+func (CompilerJVMBackendFactory) CreateBackend() compiler.CompilerBackend {
+	return CreateCompilerJVMBackend()
+}
+
+func (CompilerJVMBackendFactory) BackendName() string {
+	return "jvm"
+}
+
 type CompilerJVMBackend struct {
 	state *compiler.CompilerState
 }

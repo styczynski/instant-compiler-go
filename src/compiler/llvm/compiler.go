@@ -13,6 +13,20 @@ import (
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
+func init() {
+	compiler.RegisterCompilerBackendFactory(CompilerLLVMBackendFactory{})
+}
+
+type CompilerLLVMBackendFactory struct{}
+
+func (CompilerLLVMBackendFactory) CreateBackend() compiler.CompilerBackend {
+	return CreateCompilerLLVMBackend()
+}
+
+func (CompilerLLVMBackendFactory) BackendName() string {
+	return "llvm"
+}
+
 type CompilerLLVMBackend struct {
 	state *compiler.CompilerState
 }
