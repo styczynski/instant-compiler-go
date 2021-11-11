@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )

@@ -81,6 +81,14 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 			close(r)
 		})
 
+		if program.Program.FlowAnalysisError != nil {
+			r <- LatteRunnedProgram{
+				Program:  program,
+				filename: program.Filename(),
+			}
+			return
+		}
+
 		if program.CompilationError != nil {
 			r <- LatteRunnedProgram{
 				Program:  program,
@@ -89,7 +97,7 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 			return
 		}
 
-		if program.Program.TypeCheckingError != nil {
+		if program.Program.Program.TypeCheckingError != nil {
 			r <- LatteRunnedProgram{
 				Program:  program,
 				filename: program.Filename(),
@@ -97,7 +105,7 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 			return
 		}
 
-		if program.Program.Program.ParsingError() != nil {
+		if program.Program.Program.Program.ParsingError() != nil {
 			r <- LatteRunnedProgram{
 				Program:  program,
 				filename: program.Filename(),

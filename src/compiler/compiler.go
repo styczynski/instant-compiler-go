@@ -5,8 +5,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/styczynski/latte-compiler/src/errors"
+	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/parser/context"
-	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
 type CompilationError struct {
@@ -85,13 +85,13 @@ func CreateRunError(errorMessage string, details string) *RunError {
 }
 
 type CompilerBackend interface {
-	Compile(program type_checker.LatteTypecheckedProgram, c *context.ParsingContext, b *BuildContext) LatteCompiledProgramPromiseChan
+	Compile(program flow_analysis.LatteAnalyzedProgram, c *context.ParsingContext, b *BuildContext) LatteCompiledProgramPromiseChan
 	RunCompiledCode(runContext CompiledCodeRunContext, c *context.ParsingContext) ([]string, *RunError)
 	BackendName() string
 }
 
 type LatteCompiledProgram struct {
-	Program          type_checker.LatteTypecheckedProgram
+	Program          flow_analysis.LatteAnalyzedProgram
 	CompiledProgram  CompiledProgram
 	CompilationError *CompilationError
 	Backend          CompilerBackend
@@ -123,13 +123,13 @@ func CreateLatteCompiler(Backend CompilerBackend) *LatteCompiler {
 	}
 }
 
-func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTypecheckedProgramPromise, c *context.ParsingContext) LatteCompiledProgramPromise {
+func (compiler *LatteCompiler) compileAsync(programPromise flow_analysis.LatteAnalyzedProgramPromise, c *context.ParsingContext) LatteCompiledProgramPromise {
 	ret := make(chan LatteCompiledProgram)
 	ctx := c.Copy()
 	go func() {
 		program := programPromise.Resolve()
 
-		buildContext := CreateBuildContext(program, c)
+		buildContext := CreateBuildContext(program.Program, c)
 
 		defer errors.GeneralRecovery(ctx, "Code generation", program.Filename(), func(message string, textMessage string) {
 			ret <- LatteCompiledProgram{
@@ -144,7 +144,7 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 			close(ret)
 		})
 
-		if program.TypeCheckingError != nil {
+		if program.FlowAnalysisError != nil {
 			ret <- LatteCompiledProgram{
 				Program: program,
 				Backend: compiler.backend,
@@ -152,7 +152,15 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 			return
 		}
 
-		if program.Program.ParsingError() != nil {
+		if program.Program.TypeCheckingError != nil {
+			ret <- LatteCompiledProgram{
+				Program: program,
+				Backend: compiler.backend,
+			}
+			return
+		}
+
+		if program.Program.Program.ParsingError() != nil {
 			ret <- LatteCompiledProgram{
 				Program: program,
 				Backend: compiler.backend,
@@ -181,7 +189,7 @@ func (compiler *LatteCompiler) compileAsync(programPromise type_checker.LatteTyp
 	return LatteCompiledProgramPromiseChan(ret)
 }
 
-func (compiler *LatteCompiler) Compile(programs []type_checker.LatteTypecheckedProgramPromise, c *context.ParsingContext) []LatteCompiledProgramPromise {
+func (compiler *LatteCompiler) Compile(programs []flow_analysis.LatteAnalyzedProgramPromise, c *context.ParsingContext) []LatteCompiledProgramPromise {
 	ret := []LatteCompiledProgramPromise{}
 	for _, program := range programs {
 		ret = append(ret, compiler.compileAsync(program, c))

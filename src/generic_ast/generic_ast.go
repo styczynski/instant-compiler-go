@@ -15,7 +15,7 @@ type ComplexASTNode struct {
 }
 
 type BaseASTNode struct {
-	Pos lexer.Position
+	Pos    lexer.Position
 	EndPos lexer.Position
 }
 
@@ -87,6 +87,14 @@ type NormalNode interface {
 	TraversableNode
 }
 
+type ConstFoldableNode interface {
+	ConstFold() TraversableNode
+}
+
+type NodeWithFoldingValidation interface {
+	ValidateConstFold() (error, TraversableNode)
+}
+
 type ConstExtractableNode interface {
 	ExtractConst() (TraversableNode, bool)
 }
@@ -96,16 +104,16 @@ type NormalNodeWithID interface {
 }
 
 type NormalNodeSelection struct {
-	node NormalNode
-	id int
+	node     NormalNode
+	id       int
 	describe func(src context.SelectionBlock, id int, mappingID func(block context.SelectionBlock) int) []string
 }
 
 func NewNormalNodeSelection(node NormalNode, id int, describe func(src context.SelectionBlock, id int, mappingID func(block context.SelectionBlock) int) []string) NormalNodeSelection {
 	return NormalNodeSelection{
-		node: node,
+		node:     node,
 		describe: describe,
-		id: id,
+		id:       id,
 	}
 }
 
@@ -132,35 +140,35 @@ func (sel NormalNodeSelection) End() (int, int) {
 }
 
 type TraversableNodeToken struct {
-	Token string
-	BeginPos lexer.Position
-	EndPos lexer.Position
+	Token      string
+	BeginPos   lexer.Position
+	EndPos     lexer.Position
 	ParentNode TraversableNode
 }
 
 type TraversableNodeValue struct {
-	Value interface{}
-	Type string
-	BeginPos lexer.Position
-	EndPos lexer.Position
+	Value      interface{}
+	Type       string
+	BeginPos   lexer.Position
+	EndPos     lexer.Position
 	ParentNode TraversableNode
 }
 
 func MakeTraversableNodeValue(parent TraversableNode, value interface{}, typeName string, begin lexer.Position, end lexer.Position) TraversableNode {
 	return &TraversableNodeValue{
-		Value: value,
-		Type: typeName,
-		BeginPos: begin,
-		EndPos: end,
+		Value:      value,
+		Type:       typeName,
+		BeginPos:   begin,
+		EndPos:     end,
 		ParentNode: parent,
 	}
 }
 
 func MakeTraversableNodeToken(parent TraversableNode, value string, begin lexer.Position, end lexer.Position) TraversableNode {
 	return &TraversableNodeToken{
-		Token: value,
-		BeginPos: begin,
-		EndPos: end,
+		Token:      value,
+		BeginPos:   begin,
+		EndPos:     end,
 		ParentNode: parent,
 	}
 }
@@ -229,8 +237,8 @@ func TraverseAST(node TraversableNode, visitor func(ast TraversableNode)) {
 	}
 }
 
-type ExpressionVisitor = func (parent Expression, e Expression, context VisitorContext)
-type ExpressionMapper = func (parent Expression, e Expression, context VisitorContext, backwards bool) Expression
+type ExpressionVisitor = func(parent Expression, e Expression, context VisitorContext)
+type ExpressionMapper = func(parent Expression, e Expression, context VisitorContext, backwards bool) Expression
 
 type VisitorContext interface {
 	context2.Context
@@ -289,18 +297,18 @@ type NodeError interface {
 
 func NewNodeError(errorName string, source Expression, message string, cliMessage string) *NodeErrorImpl {
 	return &NodeErrorImpl{
-		Message:    message,
-		CliMessage: cliMessage,
-		Source:     source,
+		Message:       message,
+		CliMessage:    cliMessage,
+		Source:        source,
 		ErrorTypeName: errorName,
 	}
 }
 
 type NodeErrorImpl struct {
 	ErrorTypeName string
-	Message string
-	CliMessage string
-	Source Expression
+	Message       string
+	CliMessage    string
+	Source        Expression
 }
 
 func (e *NodeErrorImpl) ErrorName() string {
