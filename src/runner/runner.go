@@ -22,7 +22,7 @@ func (LatteCompiledCodeRunnerFactory) CreateEntity(c config.EntityConfig) interf
 }
 
 func (LatteCompiledCodeRunnerFactory) Params(argSpec *config.EntityArgSpec) {
-	argSpec.AddString("test-extension", "output", "Specify test file output extension")
+	argSpec.AddString("test-extension", "valid_output", "Specify test file output extension")
 	argSpec.AddBool("always-run", false, "Always run generated code")
 }
 
@@ -130,7 +130,11 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 				expectedContent := strings.Split(string(expectedContentBytes), "\n")
 				testDescription := runContext.Substitute("Test $INPUT_FILE_BASE.%s", tc.testExtension)
 				c.EventsCollectorStream.Start(testDescription, c, program)
-				for lineNo, line := range out {
+				lineNo := 0
+                                for _, line := range out {
+                                        if strings.HasPrefix(line, "could") {
+                                                continue
+                                        }
 					if line != expectedContent[lineNo] {
 						c.EventsCollectorStream.End(testDescription, c, program)
 						r <- LatteRunnedProgram{
@@ -141,6 +145,7 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 						}
 						return
 					}
+                                        lineNo = lineNo+1
 				}
 				c.EventsCollectorStream.End(testDescription, c, program)
 			}

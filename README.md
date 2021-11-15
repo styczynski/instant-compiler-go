@@ -15,6 +15,7 @@ The code itself is mine although orignally it was written for Latte compilation.
 
 - compiler - core compiler features
 - errors - error handling
+- compiler_pipeline - Compiler pipeline code (this folder contains all blocks like runner, compiler, type checker connected)
 - events_collector - compiler async event colelction system
 - events_utils - minor utilities for event collection
 - generic_ast - AST implementation (the specification allows parsing and inference algotether)
@@ -36,8 +37,10 @@ To build the project simply call:
 
 You can run interactive CLI by typing:
 ```bash
-   $ ./insc shell
+   $ ./insc_jvm shell
 ```
+
+The interactive shell allows user to provide input program and realtime compiler output as well as running program output.
 
 ## Running
 
@@ -53,5 +56,12 @@ Or compile one at the time:
     $ ./insc_jvm --backend llvm ./tests/a.ins
 ```
 
-The compiler atomatically detects `*.output` files and runs compiled program agains them to check for output correctnes.
-That means thatyou can easily test the executable. You just have to copy all `*.output` files to the specific directory and use './dir/\*.some_extension` glob for compiler input.
+The compiler atomatically detects `*.valid_output` files and runs compiled program agains them to check for output correctnes.
+That means thatyou can easily test the executable. You just have to copy all `*.valid_output` files to the specific directory and use './dir/\*.some_extension` glob for compiler input.
+The extension is configrable by using `--runner-test-extension` parameter. Please type `./insc_jvm --help` or `./insc_llvm --help` to get more info.
+
+For example if you wish to test all files in `tests/` diretory you can execute the following command:
+```bash
+    $ ./insc_llvm --runner-test-extension output "./tests/*.ins"
+    $ ./insc_jvm --runner-test-extension output "./tests/*.ins"
+```

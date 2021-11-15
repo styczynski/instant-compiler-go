@@ -5,6 +5,11 @@ tests/*.j
 tests/*.jasmine
 tests/*.ll
 
+input.class
+input.j
+input.ll
+input.bc
+
 # Binaries
 insc
 
