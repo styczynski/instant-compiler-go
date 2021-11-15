@@ -32,4 +32,3 @@ bin
 .container-*
 .dockerfile-*
 
-go.sum
