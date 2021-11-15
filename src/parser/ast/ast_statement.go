@@ -13,17 +13,17 @@ import (
 
 type Statement struct {
 	generic_ast.BaseASTNode
-	Empty *string `";"`
-	BlockStatement *Block `| @@`
-	Declaration *Declaration `| @@`
-	Assignment *Assignment `| @@`
+	Empty          *string         `";"`
+	BlockStatement *Block          `| @@`
+	Declaration    *Declaration    `| @@`
+	Assignment     *Assignment     `| @@`
 	UnaryStatement *UnaryStatement `| @@`
-	Return *Return `| @@`
-	If *If `| @@`
-	While *While `| @@`
-	For *For `| @@`
-	Expression *Expression `| @@ ";"`
-	ParentNode generic_ast.TraversableNode
+	Return         *Return         `| @@`
+	If             *If             `| @@`
+	While          *While          `| @@`
+	For            *For            `| @@`
+	Expression     *Expression     `| @@ ";"`
+	ParentNode     generic_ast.TraversableNode
 }
 
 func (ast *Statement) Parent() generic_ast.TraversableNode {
@@ -47,9 +47,7 @@ func (ast *Statement) GetNode() interface{} {
 }
 
 func (ast *Statement) IsEmpty() bool {
-	return (
-		ast.Empty != nil || (
-		!ast.IsBlockStatement() &&
+	return (ast.Empty != nil || (!ast.IsBlockStatement() &&
 		!ast.IsDeclaration() &&
 		!ast.IsAssignment() &&
 		!ast.IsUnaryStatement() &&
@@ -101,23 +99,23 @@ func (ast *Statement) GetChildren() []generic_ast.TraversableNode {
 		return []generic_ast.TraversableNode{}
 		//return []generic_ast.TraversableNode{ generic_ast.MakeTraversableNodeToken(ast, *ast.Empty, ast.Pos, ast.EndPos) }
 	} else if ast.IsBlockStatement() {
-		return []generic_ast.TraversableNode{ ast.BlockStatement }
+		return []generic_ast.TraversableNode{ast.BlockStatement}
 	} else if ast.IsDeclaration() {
-		return []generic_ast.TraversableNode{ ast.Declaration }
+		return []generic_ast.TraversableNode{ast.Declaration}
 	} else if ast.IsAssignment() {
-		return []generic_ast.TraversableNode{ ast.Assignment }
+		return []generic_ast.TraversableNode{ast.Assignment}
 	} else if ast.IsUnaryStatement() {
-		return []generic_ast.TraversableNode{ ast.UnaryStatement }
+		return []generic_ast.TraversableNode{ast.UnaryStatement}
 	} else if ast.IsReturn() {
-		return []generic_ast.TraversableNode{ ast.Return }
+		return []generic_ast.TraversableNode{ast.Return}
 	} else if ast.IsIf() {
-		return []generic_ast.TraversableNode{ ast.If }
+		return []generic_ast.TraversableNode{ast.If}
 	} else if ast.IsWhile() {
-		return []generic_ast.TraversableNode{ ast.While }
+		return []generic_ast.TraversableNode{ast.While}
 	} else if ast.IsFor() {
-		return []generic_ast.TraversableNode{ ast.For }
+		return []generic_ast.TraversableNode{ast.For}
 	} else if ast.IsExpression() {
-		return []generic_ast.TraversableNode{ ast.Expression }
+		return []generic_ast.TraversableNode{ast.Expression}
 	}
 	return []generic_ast.TraversableNode{}
 }
@@ -149,7 +147,7 @@ func (ast *Statement) Print(c *context.ParsingContext) string {
 	} else if ast.IsReturn() {
 		ret = ast.Return.Print(c)
 	} else if ast.IsIf() {
-		ret =  ast.If.Print(c)
+		ret = ast.If.Print(c)
 	} else if ast.IsWhile() {
 		ret = ast.While.Print(c)
 	} else if ast.IsFor() {
@@ -205,13 +203,13 @@ func feedExpressionIntoStatement(node interface{}, base generic_ast.BaseASTNode)
 		}
 	} else if decl, ok := node.(*Declaration); ok {
 		return &Statement{
-			BaseASTNode:    base,
+			BaseASTNode: base,
 			Declaration: decl,
 		}
 	} else if assignment, ok := node.(*Assignment); ok {
 		return &Statement{
-			BaseASTNode:    base,
-			Assignment: assignment,
+			BaseASTNode: base,
+			Assignment:  assignment,
 		}
 	} else if unaryStmt, ok := node.(*UnaryStatement); ok {
 		return &Statement{
@@ -220,28 +218,28 @@ func feedExpressionIntoStatement(node interface{}, base generic_ast.BaseASTNode)
 		}
 	} else if returnStmt, ok := node.(*Return); ok {
 		return &Statement{
-			BaseASTNode:    base,
-			Return: returnStmt,
+			BaseASTNode: base,
+			Return:      returnStmt,
 		}
 	} else if ifStmt, ok := node.(*If); ok {
 		return &Statement{
-			BaseASTNode:    base,
-			If: ifStmt,
+			BaseASTNode: base,
+			If:          ifStmt,
 		}
 	} else if whileStmt, ok := node.(*While); ok {
 		return &Statement{
-			BaseASTNode:    base,
-			While: whileStmt,
+			BaseASTNode: base,
+			While:       whileStmt,
 		}
 	} else if forStmt, ok := node.(*For); ok {
 		return &Statement{
-			BaseASTNode:    base,
-			For: forStmt,
+			BaseASTNode: base,
+			For:         forStmt,
 		}
 	} else if expr, ok := node.(*Expression); ok {
 		return &Statement{
-			BaseASTNode:    base,
-			Expression: expr,
+			BaseASTNode: base,
+			Expression:  expr,
 		}
 	}
 	panic("Invalid statement type")

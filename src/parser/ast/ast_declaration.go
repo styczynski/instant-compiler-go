@@ -13,9 +13,9 @@ import (
 
 type Declaration struct {
 	generic_ast.BaseASTNode
-	DeclarationType Type `@@`
-	Items []*DeclarationItem `( @@ ( "," @@ )* ) ";"`
-	ParentNode generic_ast.TraversableNode
+	DeclarationType Type               `@@`
+	Items           []*DeclarationItem `( @@ ( "," @@ )* ) ";"`
+	ParentNode      generic_ast.TraversableNode
 }
 
 func (ast *Declaration) Parent() generic_ast.TraversableNode {
@@ -56,7 +56,7 @@ func (ast *Declaration) Print(c *context.ParsingContext) string {
 }
 
 func (ast *Declaration) canBeInputType(t hindley_milner.Type) bool {
-	return !( t.Eq(CreatePrimitive(T_VOID_ARG)) || t.Eq(CreatePrimitive(T_VOID)) )
+	return !(t.Eq(CreatePrimitive(T_VOID_ARG)) || t.Eq(CreatePrimitive(T_VOID)))
 }
 
 func (ast *Declaration) Validate(c *context.ParsingContext) generic_ast.NodeError {
@@ -80,10 +80,10 @@ func (ast *Declaration) Body() generic_ast.Expression {
 
 func (ast *Declaration) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Declaration{
-		BaseASTNode: ast.BaseASTNode,
+		BaseASTNode:     ast.BaseASTNode,
 		DeclarationType: ast.DeclarationType,
-		Items: ast.Items,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		Items:           ast.Items,
+		ParentNode:      parent.(generic_ast.TraversableNode),
 	}, context, true).(*Declaration)
 }
 
@@ -118,3 +118,16 @@ func (ast *Declaration) Def() generic_ast.Expression {
 	}
 }
 
+func (ast *Declaration) RemoveVariableAssignment(variableNames map[string]struct{}) generic_ast.NormalNode {
+	newDecls := []*DeclarationItem{}
+	for _, declItem := range ast.Items {
+		if _, ok := variableNames[declItem.Name]; !ok {
+			newDecls = append(newDecls, declItem)
+		}
+	}
+	ast.Items = newDecls
+	if len(ast.Items) == 0 {
+		return nil
+	}
+	return ast
+}

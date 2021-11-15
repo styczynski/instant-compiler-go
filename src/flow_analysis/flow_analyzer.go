@@ -1,6 +1,8 @@
 package flow_analysis
 
 import (
+	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -8,17 +10,17 @@ import (
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
-type LatteFlowAnalyzer struct {}
+type LatteFlowAnalyzer struct{}
 
 func CreateLatteFlowAnalyzer() *LatteFlowAnalyzer {
 	return &LatteFlowAnalyzer{}
 }
 
 type FlowAnalysisError struct {
-	message string
+	message     string
 	textMessage string
-	errorName string
-	source generic_ast.NormalNode
+	errorName   string
+	source      generic_ast.NormalNode
 }
 
 func (e *FlowAnalysisError) ErrorName() string {
@@ -34,9 +36,9 @@ func (e *FlowAnalysisError) CliMessage() string {
 }
 
 type LatteAnalyzedProgram struct {
-	Program type_checker.LatteTypecheckedProgram
+	Program           type_checker.LatteTypecheckedProgram
 	FlowAnalysisError *FlowAnalysisError
-	filename string
+	filename          string
 }
 
 func (p LatteAnalyzedProgram) Filename() string {
@@ -59,6 +61,7 @@ func (p LatteAnalyzedProgramPromiseChan) Resolve() LatteAnalyzedProgram {
 
 type FlowAnalyzableNode interface {
 	OnFlowAnalysis(flow cfg.FlowAnalysis) error
+	AfterFlowAnalysis(flow cfg.FlowAnalysis)
 }
 
 func wrapFlowAnalysisError(err error, source generic_ast.NormalNode, c *context.ParsingContext) *FlowAnalysisError {
@@ -123,7 +126,7 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 		program := programPromise.Resolve()
 		defer errors.GeneralRecovery(ctx, "Flow analysis", program.Filename(), func(message string, textMessage string) {
 			r <- LatteAnalyzedProgram{
-				Program:  program,
+				Program: program,
 				FlowAnalysisError: &FlowAnalysisError{
 					message:     message,
 					textMessage: textMessage,
@@ -159,7 +162,7 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 
 		var flowErrGlobal *FlowAnalysisError = nil
 
-		flowVisitor = func (parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
+		flowVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
 			if _, ok := visitedNodes[e]; ok {
 				return
 			}
@@ -167,7 +170,6 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 			if nodeForAnalysis, ok := (e.(FlowAnalyzableNode)); ok {
 				ast := nodeForAnalysis.(generic_ast.NormalNode)
 				flow := cfg.CreateFlowAnalysis(ast)
-
 
 				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
 				//fmt.Print(flow.Print(ctx))
@@ -182,11 +184,14 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				flow.Rebuild()
 				ast = flow.Output()
 
-				//fmt.Printf("Fold done.\n")
-				//fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
-				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				//fmt.Print(flow.Print(ctx))
-				//fmt.Printf("Yeah.\n")
+				flow.Optimize(c)
+				//nodeForAnalysis.AfterFlowAnalysis(flow)
+
+				fmt.Printf("Fold done:\n")
+				fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
+				fmt.Printf("\n\nENTIRE GRAPH:\n\n")
+				fmt.Print(flow.Print(ctx))
+				fmt.Printf("Yeah.\n")
 
 				customErr := nodeForAnalysis.OnFlowAnalysis(flow)
 				if customErr != nil {
@@ -205,9 +210,9 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 
 		if flowErrGlobal != nil {
 			r <- LatteAnalyzedProgram{
-				Program:  program,
+				Program:           program,
 				FlowAnalysisError: flowErrGlobal,
-				filename: program.Filename(),
+				filename:          program.Filename(),
 			}
 			return
 		}

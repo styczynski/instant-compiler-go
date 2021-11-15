@@ -12,10 +12,15 @@ type VariableSet map[string]Variable
 
 func (vars VariableSet) Copy() VariableSet {
 	out := VariableSet{}
-	for k,v := range vars {
+	for k, v := range vars {
 		out[k] = v
 	}
 	return out
+}
+
+func (vars VariableSet) HasVariable(name string) bool {
+	_, ok := vars[name]
+	return ok
 }
 
 func (vars VariableSet) ReplaceBlock(old generic_ast.NormalNode, new generic_ast.NormalNode) {
@@ -62,6 +67,10 @@ type NodeWithVariableReplacement interface {
 	RenameVariables(subst VariableSubstitution)
 }
 
+type NodeWithRemovableVariableAsignment interface {
+	RemoveVariableAssignment(variables map[string]struct{}) generic_ast.NormalNode
+}
+
 type VariableSubstitution interface {
 	Get(name string) string
 	Has(name string) bool
@@ -92,20 +101,20 @@ func (s VariableSubstitutionMap) Get(name string) string {
 }
 
 type Variable interface {
-	 Name() string
-	 String() string
-	 Value() generic_ast.NormalNode
+	Name() string
+	String() string
+	Value() generic_ast.NormalNode
 }
 
 type VariableImpl struct {
 	varName string
-	value generic_ast.NormalNode
+	value   generic_ast.NormalNode
 }
 
 func NewVariable(name string, value generic_ast.NormalNode) Variable {
 	return &VariableImpl{
 		varName: name,
-		value: value,
+		value:   value,
 	}
 }
 

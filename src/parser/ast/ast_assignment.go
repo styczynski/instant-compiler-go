@@ -11,8 +11,8 @@ import (
 
 type Assignment struct {
 	generic_ast.BaseASTNode
-	TargetName string `@Ident`
-	Value *Expression `"=" @@ ";"`
+	TargetName string      `@Ident`
+	Value      *Expression `"=" @@ ";"`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -52,9 +52,9 @@ func (ast *Assignment) Print(c *context.ParsingContext) string {
 func (ast *Assignment) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Assignment{
 		BaseASTNode: ast.BaseASTNode,
-		Value:    mapper(ast, ast.Value, context, false).(*Expression),
-		TargetName: ast.TargetName,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		Value:       mapper(ast, ast.Value, context, false).(*Expression),
+		TargetName:  ast.TargetName,
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -80,7 +80,7 @@ func (ast *Assignment) Body() generic_ast.Expression {
 		Exp: []generic_ast.Expression{
 			&VarName{
 				BaseASTNode: ast.BaseASTNode,
-				name: ast.TargetName,
+				name:        ast.TargetName,
 			},
 			ast.Value,
 		},
@@ -111,3 +111,10 @@ func (ast *Assignment) RenameVariables(subst cfg.VariableSubstitution) {
 //	}
 //	return cfg.GetAllVariables(ast.Primary)
 //}
+
+func (ast *Assignment) RemoveVariableAssignment(variableNames map[string]struct{}) generic_ast.NormalNode {
+	if _, ok := variableNames[ast.TargetName]; ok {
+		return nil
+	}
+	return ast
+}
