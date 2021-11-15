@@ -1,6 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-void foo() {}
-int main() {
-	foo() > new int[3];
-	return 0;
-}

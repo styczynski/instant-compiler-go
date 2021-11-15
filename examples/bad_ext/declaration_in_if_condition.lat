@@ -1,6 +1,0 @@
-// Author: Tomasz Wysocki 277696
-int main() {
-    if(int i = 0) {
-    }
-    return 0;
-}

@@ -1,7 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-int main() {
-	foo("");
-	return 0;
-}
-
-void foo(boolean b) {}

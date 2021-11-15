@@ -1,7 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-boolean btrue() { return true; }
-
-int main() {
-	if (true && btrue()) {}
-	else return 0;
-}

@@ -1,4 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-int main(int a, int b) {
-	return 0;
-}

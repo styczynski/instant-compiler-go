@@ -1,5 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-int main() {
-	new int[3] >= new int[3];
-	return 0;
-}

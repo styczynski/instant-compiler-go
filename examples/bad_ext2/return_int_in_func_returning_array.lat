@@ -1,5 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-int[] test() { return 42; }
-int main() {
-	return 0;
-}

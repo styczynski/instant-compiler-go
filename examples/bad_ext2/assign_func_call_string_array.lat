@@ -1,9 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-string foo() { return ""; }
-
-void tester() {
-	foo() = new int[3];
-}
-int main() {
-	return 0;
-}
