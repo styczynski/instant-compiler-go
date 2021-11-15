@@ -32,6 +32,13 @@ To build the project simply call:
     $ make
 ```
 
+## Interactive CLI
+
+You can run interactive CLI by typing:
+```bash
+   $ ./insc shell
+```
+
 ## Running
 
 You can test bulk of files using glob:

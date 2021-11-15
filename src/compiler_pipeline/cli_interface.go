@@ -36,10 +36,12 @@ func (RunCompilerPipelineCliInterface) Run() {
 			if !ok {
 				os.Stderr.WriteString("ERROR\n")
 				fmt.Print(message)
+                                fmt.Print("\n")
 				os.Exit(1)
 			} else {
 				os.Stderr.WriteString("OK\n")
 				fmt.Print(message)
+                                fmt.Print("\n")
 			}
 			return nil
 		},
