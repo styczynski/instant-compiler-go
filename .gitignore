@@ -1,5 +1,17 @@
+# Output test files
+tests/*.bc
+tests/*.class
+tests/*.j
+tests/*.jasmine
+tests/*.ll
+
+input.class
+input.j
+input.ll
+input.bc
+
 # Binaries
-latc
+insc
 
 # Idea files
 .idea/

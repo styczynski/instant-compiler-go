@@ -1,6 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-void foo(void[] x) {}
-
-int main() {
-	return 0;
-}

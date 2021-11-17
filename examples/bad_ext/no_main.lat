@@ -1,4 +1,0 @@
-// Author: Tomasz Biczel 277568
-int f() {
-  return 0;
-}

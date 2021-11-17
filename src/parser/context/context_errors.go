@@ -13,8 +13,7 @@ var formatErrorFg = color.New(color.FgHiWhite).SprintFunc()
 var formatErrorMessageFg = color.New(color.FgRed).SprintFunc()
 var formatErrorMetaInfoFg = color.New(color.FgHiBlue).SprintFunc()
 
-
-func indentCodeLines(message string, errorLine int, lineStart int) string {
+func IndentCodeLines(message string, errorLine int, lineStart int) string {
 	lines := strings.Split(message, "\n")
 	newLines := []string{}
 	curLineNo := lineStart
@@ -49,7 +48,7 @@ func (c *ParsingContext) FormatParsingError(errorType string, message string, li
 		col)
 
 	codeContext, lineStart, _ := c.GetFileContext(nil, line, col)
-	formattedCode, err := c.Printer.FormatRaw(codeContext)
+	formattedCode, err := c.Printer.FormatRaw(codeContext, false)
 	if err != nil {
 		// Ignore error
 		formattedCode = codeContext
@@ -57,7 +56,7 @@ func (c *ParsingContext) FormatParsingError(errorType string, message string, li
 
 	textMessage := fmt.Sprintf("%s\n%s\n %s: %s\n",
 		locationMessage,
-		indentCodeLines(formattedCode, line, lineStart),
+		IndentCodeLines(formattedCode, line, lineStart),
 		formatErrorFg(formatErrorBg(fmt.Sprintf(" %s ", errorType))),
 		formatErrorMessageFg(errorMessage))
 

@@ -2,14 +2,15 @@ package printer
 
 import (
 	"bytes"
+
 	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
-	"github.com/styczynski/latte-compiler/src/printer/chroma/styles"
 	"github.com/styczynski/latte-compiler/src/printer/chroma/formatters"
 	"github.com/styczynski/latte-compiler/src/printer/chroma/lexers"
+	"github.com/styczynski/latte-compiler/src/printer/chroma/styles"
 )
 
-type LattePrinter struct {}
+type LattePrinter struct{}
 
 func CreateLattePrinter() *LattePrinter {
 	return &LattePrinter{}
@@ -19,10 +20,13 @@ func (p *LattePrinter) Raw(program *ast.LatteProgram, c *context.ParsingContext)
 	return program.Print(c)
 }
 
-func (p *LattePrinter) FormatRaw(input string) (string, error) {
+func (p *LattePrinter) FormatRaw(input string, escapeStrings bool) (string, error) {
 	lexer := lexers.Get("latte")
-	style := styles.Get("colorful")
-	formatter := formatters.Get("terminal16m")
+	style := styles.Get("vim")
+	formatter := formatters.Get("terminal16raw")
+	if !escapeStrings {
+		formatter = formatters.Get("terminal16m")
+	}
 	if formatter == nil {
 		formatter = formatters.Fallback
 	}
@@ -40,5 +44,5 @@ func (p *LattePrinter) FormatRaw(input string) (string, error) {
 }
 
 func (p *LattePrinter) Format(program *ast.LatteProgram, c *context.ParsingContext) (string, error) {
-	return p.FormatRaw(p.Raw(program, c))
+	return p.FormatRaw(p.Raw(program, c), false)
 }

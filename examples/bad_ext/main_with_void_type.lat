@@ -1,6 +1,0 @@
-// Author: Jacek Tomaszewski 277663
-//main void type
-
-void main() {
-	return 0 ;
-}

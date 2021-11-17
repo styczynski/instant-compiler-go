@@ -1,6 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-void foo() {}
-void test() { return null; }
-int main() {
-	return 0;
-}

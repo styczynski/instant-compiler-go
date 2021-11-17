@@ -1,9 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-void vfunc() {}
-
-void tester() {
-	-(4+2) = vfunc();
-}
-int main() {
-	return 0;
-}

@@ -1,6 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-void printInt(int x) {}
-
-int main() {
-	return 0;
-}

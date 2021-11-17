@@ -1,7 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-string foo() {}
-
-int main() {
-	foo();
-	return 0;
-}

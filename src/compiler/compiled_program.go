@@ -1,3 +1,5 @@
 package compiler
 
-type CompiledProgram struct {}
+type CompiledProgram interface {
+	ProgramToText() string
+}

@@ -1,6 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-int main() {
-	int[] arr;
-	arr[null];
-	return 0;
-}

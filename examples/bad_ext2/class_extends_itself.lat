@@ -1,6 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-class A extends A {}
-
-int main() {
-	return 0;
-}
