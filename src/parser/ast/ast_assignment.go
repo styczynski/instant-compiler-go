@@ -2,6 +2,8 @@ package ast
 
 import (
 	"github.com/alecthomas/participle/v2/lexer"
+
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
@@ -61,12 +63,16 @@ func (ast *Assignment) Visit(parent generic_ast.Expression, mapper generic_ast.E
 	mapper(parent, ast, context)
 }
 
-func (ast *Assignment) Var() hindley_milner.NameGroup {
-	return hindley_milner.Names([]string{ast.TargetName})
-}
-
-func (ast *Assignment) Def() generic_ast.Expression {
-	return ast.Value
+func (ast *Assignment) Fn() generic_ast.Expression {
+	//return &BuiltinFunction{
+	//	BaseASTNode: ast.BaseASTNode,
+	//	name: "=",
+	//}
+	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
+		return hindley_milner.NewScheme(
+			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
+			hindley_milner.NewFnType(hindley_milner.TVar('a'), hindley_milner.TVar('a'), hindley_milner.TVar('a')))
+	}}
 }
 
 func (ast *Assignment) Body() generic_ast.Expression {
@@ -82,5 +88,33 @@ func (ast *Assignment) Body() generic_ast.Expression {
 }
 
 func (ast *Assignment) ExpressionType() hindley_milner.ExpressionType {
-	return hindley_milner.E_REDEFINABLE_LET
+	return hindley_milner.E_TYPE_EQUALITY
+}
+
+// Validate here this shit
+
+func (ast *Assignment) GetAssignedVariables(wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	return cfg.NewVariableSet(cfg.NewVariable(ast.TargetName, ast.Value))
+}
+
+func (ast *Assignment) RenameVariables(subst cfg.VariableSubstitution) {
+	ast.TargetName = subst.Replace(ast.TargetName)
+}
+
+//func (ast *Assignment) GetAssignedVariables(wantMembers bool) cfg.VariableSet {
+//	if ast.HasIndexingExpr() {
+//		if wantMembers {
+//			return cfg.GetAllAssignedVariables(ast.Primary, wantMembers)
+//		} else {
+//			return cfg.NewVariableSet()
+//		}
+//	}
+//	return cfg.GetAllVariables(ast.Primary)
+//}
+
+func (ast *Assignment) RemoveVariableAssignment(variableNames map[string]struct{}) generic_ast.NormalNode {
+	if _, ok := variableNames[ast.TargetName]; ok {
+		return nil
+	}
+	return ast
 }

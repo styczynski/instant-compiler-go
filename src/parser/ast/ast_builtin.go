@@ -9,7 +9,7 @@ import (
 
 type BuiltinFunction struct {
 	generic_ast.BaseASTNode
-	name       string
+	name string
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -33,7 +33,7 @@ func (ast *BuiltinFunction) GetNode() interface{} {
 	return ast
 }
 
-func (ast *BuiltinFunction) Name() hindley_milner.NameGroup { return hindley_milner.Name(ast.name) }
+func (ast *BuiltinFunction) Name() hindley_milner.NameGroup     { return hindley_milner.Name(ast.name) }
 
 func (ast *BuiltinFunction) Body() generic_ast.Expression { return ast }
 
@@ -49,6 +49,5 @@ func (ast *BuiltinFunction) Type() hindley_milner.Type {
 	return nil
 }
 
-func (ast *BuiltinFunction) ExpressionType() hindley_milner.ExpressionType {
-	return hindley_milner.E_LITERAL
-}
+func (ast *BuiltinFunction) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_LITERAL }
+

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
+	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/runner"
@@ -339,6 +340,19 @@ func (ec *EventsCollector) collectSyncTypecheckingErrors(programs []type_checker
 	return out, inputs
 }
 
+func (ec *EventsCollector) collectSyncFlowAnalysisError(program flow_analysis.LatteAnalyzedProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, bool, flow_analysis.LatteAnalyzedProgram) {
+	result := program.Resolve()
+	if result.FlowAnalysisError != nil {
+		return append(out, CollectedError{
+			filename: result.Filename(),
+			err:      result.FlowAnalysisError,
+		}), false, result
+	} else {
+		out, ok, _ := ec.collectSyncTypecheckingError(result.Program, c, out)
+		return out, ok, result
+	}
+}
+
 func (ec *EventsCollector) collectSyncCompilationError(program compiler.LatteCompiledProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, bool, compiler.LatteCompiledProgram) {
 	result := program.Resolve()
 	if result.CompilationError != nil {
@@ -347,7 +361,7 @@ func (ec *EventsCollector) collectSyncCompilationError(program compiler.LatteCom
 			err:      result.CompilationError,
 		}), false, result
 	} else {
-		out, ok, _ := ec.collectSyncTypecheckingError(result.Program, c, out)
+		out, ok, _ := ec.collectSyncFlowAnalysisError(result.Program, c, out)
 		return out, ok, result
 	}
 }

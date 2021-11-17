@@ -7,6 +7,7 @@ import (
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/config"
 	"github.com/styczynski/latte-compiler/src/events_collector"
+	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/input_reader"
 	"github.com/styczynski/latte-compiler/src/parser"
 	context2 "github.com/styczynski/latte-compiler/src/parser/context"
@@ -55,6 +56,7 @@ func (CompilerPipeline) RunPipeline(c config.EntityConfig, reader input_reader.I
 
 	tc := type_checker.CreateLatteTypeChecker()
 	p := parser.CreateLatteParser()
+	flow_analyzer := flow_analysis.CreateLatteFlowAnalyzer()
 
 	backend := config.CreateEntity(config.ENTITY_COMPILER_BACKEND, c.String("backend"), c).(compiler.CompilerBackend)
 
@@ -63,7 +65,8 @@ func (CompilerPipeline) RunPipeline(c config.EntityConfig, reader input_reader.I
 	ast := p.ParseInput(reader, context)
 
 	checkedProgram := tc.Check(ast, context)
-	compiledProgram := comp.Compile(checkedProgram, context)
+	programFlow := flow_analyzer.Analyze(checkedProgram, context)
+	compiledProgram := comp.Compile(programFlow, context)
 	runnedProgram := run.RunCompiledProgram(compiledProgram, context)
 
 	var summary events_collector.Summarizer = config.CreateEntity(config.ENTITY_SUMMARIZER, c.String("summary"), c).(events_collector.Summarizer)
