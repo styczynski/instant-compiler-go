@@ -11,5 +11,5 @@ func mainx() {
 }
 
 func main() {
-	sat_solver.GraphColouring()
+	sat_solver.TestComputeGraphColouring()
 }
