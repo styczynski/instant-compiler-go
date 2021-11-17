@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 /**
@@ -48,7 +48,7 @@ func GetSolverResultSatisfyingAssignmentString(result SolverResult) string {
 	return "SatAssignment: N/A"
 }
 
-type EmptySolverResult struct {}
+type EmptySolverResult struct{}
 
 func (EmptySolverResult) ToBool() bool {
 	return false
@@ -82,7 +82,7 @@ func (EmptySolverResult) IsUndefined() bool {
 	return true
 }
 
-type SolverQuickUnsatResult struct {}
+type SolverQuickUnsatResult struct{}
 
 func (SolverQuickUnsatResult) ToBool() bool {
 	return false

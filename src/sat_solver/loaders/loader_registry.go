@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 type LoadedFormula interface {
 	CanBeConvertedToFormula() bool
 	CanBeConvertedToAST() bool
 	ConvertToFormula() *sat_solver.SATFormula
-	ConvertToAST()  *sat_solver.Entry
+	ConvertToAST() *sat_solver.Entry
 	IsCNF() bool
 }
 

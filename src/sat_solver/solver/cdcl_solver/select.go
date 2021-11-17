@@ -1,7 +1,7 @@
 package cdcl_solver
 
 import (
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 /**
@@ -38,4 +38,3 @@ func (solver *CDCLSolver) findNextLiteralForDecision() (sat_solver.CNFLiteral, b
 
 	return sat_solver.CNF_UNDEFINED, false
 }
-

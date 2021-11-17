@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 /**
@@ -86,8 +86,8 @@ func (pq LiteralPriorityQueue) Len() int {
  * Check if the queue contains literal. Executes in O(1).
  */
 func (pq LiteralPriorityQueue) Has(lit sat_solver.CNFLiteral) bool {
-	 _, ok := pq.indexes[lit]
-	 return ok
+	_, ok := pq.indexes[lit]
+	return ok
 }
 
 /**
@@ -132,8 +132,8 @@ func (pq *LiteralPriorityQueue) Pop() interface{} {
 	old := *pq
 	n := len(old.items)
 	item := old.items[n-1]
-	old.items[n-1] = nil  // avoid memory leak
-	item.index = -1 // for safety
+	old.items[n-1] = nil // avoid memory leak
+	item.index = -1      // for safety
 	delete(pq.indexes, item.value)
 	pq.items = old.items[0 : n-1]
 	return item
@@ -154,8 +154,8 @@ func (pq *LiteralPriorityQueue) Update(value sat_solver.CNFLiteral) {
 func NewLiteralPriorityQueue(solver *CDCLSolver) *LiteralPriorityQueue {
 	vars := solver.vars.GetAllVariables()
 	pq := LiteralPriorityQueue{
-		solver: solver,
-		items:  make([]*PQLitItem, len(vars)),
+		solver:  solver,
+		items:   make([]*PQLitItem, len(vars)),
 		indexes: map[sat_solver.CNFLiteral]int{},
 	}
 	for i, v := range vars {

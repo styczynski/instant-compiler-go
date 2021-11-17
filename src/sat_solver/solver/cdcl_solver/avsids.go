@@ -20,7 +20,8 @@ package cdcl_solver
 
 import (
 	"container/heap"
-	"github.com/styczynski/go-sat-solver/sat_solver"
+
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 type AVSIDS struct {
@@ -31,7 +32,7 @@ type AVSIDS struct {
 	lbdEma      float64
 
 	// Scores for literals
-	activity       map[sat_solver.CNFLiteral]float64
+	activity map[sat_solver.CNFLiteral]float64
 
 	// Scores for clauses
 	// Those can be used to remove old learned clauses, but this feature is not yet implemented
@@ -127,8 +128,8 @@ func (solver *CDCLSolver) avsidsDecayClauseActivity() {
  * Increment scores for the given literal.
  */
 func (solver *CDCLSolver) avsidsBumpVarActivity(literal sat_solver.CNFLiteral) {
-	if literal  < 0 {
-		literal  = -literal
+	if literal < 0 {
+		literal = -literal
 	}
 	if _, ok := solver.activity[literal]; ok {
 		solver.activity[literal] += solver.varInc
@@ -156,7 +157,7 @@ func (solver *CDCLSolver) avsidsClauseLearnt(clause *sat_solver.CNFClause) {
 	solver.avsidsBumpClauseActivity(clause)
 
 	lbdVal := solver.lbd(*clause)
-	solver.lbdEma = solver.lbdEmaDecay * solver.lbdEma + (1 - solver.lbdEmaDecay) * lbdVal;
+	solver.lbdEma = solver.lbdEmaDecay*solver.lbdEma + (1-solver.lbdEmaDecay)*lbdVal
 	if lbdVal >= solver.lbdEma {
 		solver.avsidsDecayVarActivity(solver.varDecay)
 	} else {

@@ -6,15 +6,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/styczynski/go-sat-solver/sat_solver/log"
+	"github.com/styczynski/latte-compiler/src/sat_solver/log"
 )
 
 type SATContext struct {
-	context context.Context
-	configuration *SATConfiguration
+	context        context.Context
+	configuration  *SATConfiguration
 	eventCollector log.EventCollector
-	contextID uint
-	processID uint
+	contextID      uint
+	processID      uint
 }
 
 type SATConfiguration struct {
@@ -32,15 +32,15 @@ type SATConfiguration struct {
 
 func DefaultSATConfiguration() SATConfiguration {
 	return SATConfiguration{
-		InputFile: "",
+		InputFile:              "",
 		EnableSelfVerification: false,
-		EnableEventCollector: false,
-		EnableSolverTracing: false,
-		EnableCNFConversion: true,
-		EnableASTOptimization: false,
+		EnableEventCollector:   false,
+		EnableSolverTracing:    false,
+		EnableCNFConversion:    true,
+		EnableASTOptimization:  false,
 		EnableCNFOptimizations: false,
-		SolverName: "",
-		LoaderName: "",
+		SolverName:             "",
+		LoaderName:             "",
 	}
 }
 
@@ -50,18 +50,18 @@ func DefaultSATContext() *SATContext {
 
 func NewSATContext(conf SATConfiguration) *SATContext {
 	return &SATContext{
-		context: context.Background(),
-		contextID: 0,
-		configuration: &conf,
+		context:        context.Background(),
+		contextID:      0,
+		configuration:  &conf,
 		eventCollector: log.NewEventLogger(os.Stdout),
 	}
 }
 
 func NewSATContextWithEventCollector(conf SATConfiguration, eventCollector log.EventCollector) *SATContext {
 	return &SATContext{
-		context: context.Background(),
-		contextID: 0,
-		configuration: &conf,
+		context:        context.Background(),
+		contextID:      0,
+		configuration:  &conf,
 		eventCollector: eventCollector,
 	}
 }
@@ -124,7 +124,7 @@ type FormulaLikeResult interface {
 	ToSATFormula() *SATFormula
 }
 
-func (l *SATContext) StartProcessing(stageName string, formatString string, formatArgs... interface{}) (error, *SATContext) {
+func (l *SATContext) StartProcessing(stageName string, formatString string, formatArgs ...interface{}) (error, *SATContext) {
 	if l.configuration.EnableEventCollector && l.eventCollector != nil {
 		err, processID := l.eventCollector.StartProcessing(stageName, l, formatString, formatArgs...)
 		if err != nil {
@@ -151,7 +151,7 @@ func (l *SATContext) EndProcessing(result log.DescribableResult) error {
 	return nil
 }
 
-func (l *SATContext) Trace(eventName string, formatString string, formatArgs... interface{}) {
+func (l *SATContext) Trace(eventName string, formatString string, formatArgs ...interface{}) {
 	if l.configuration.EnableEventCollector && l.eventCollector != nil {
 		l.eventCollector.MustTrace(l.processID, eventName, formatString, formatArgs...)
 	}

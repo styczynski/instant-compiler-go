@@ -3,14 +3,14 @@ package cdcl_solver
 import (
 	"fmt"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
-	"github.com/styczynski/go-sat-solver/sat_solver/solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver/solver"
 )
 
 /*
  * CDCL solver factory
  */
-type CDCLSolverFactory struct {}
+type CDCLSolverFactory struct{}
 
 func (cdclsf CDCLSolverFactory) CanSolveFormula(formula *sat_solver.SATFormula, context *sat_solver.SATContext) bool {
 	_, ok := formula.Formula().(*sat_solver.CNFFormula)
@@ -43,19 +43,19 @@ type CDCLSolver struct {
 	// State information used for learning
 	SolverLearnState
 	// The process ID is used for SATContext and mostly debugging
-	processID              uint
+	processID uint
 	// Enable debug output
-	enableDebugLogging     bool
+	enableDebugLogging bool
 	// Stores result of solving process
-	result                 SatResult
+	result SatResult
 	// Context and formula that we work on
 	// Please note that the formula may change after new clauses are learnt,
 	// but variables mapping should be fine.
-	context                *sat_solver.SATContext
-	clauses                []sat_solver.CNFClause
-	vars                   *sat_solver.SATVariableMapping
-    // This index is used as qhead in Minisat.
-    // It points to the next clause to check on a trace (used by solver.performUnitPropagation() fucntion)
+	context *sat_solver.SATContext
+	clauses []sat_solver.CNFClause
+	vars    *sat_solver.SATVariableMapping
+	// This index is used as qhead in Minisat.
+	// It points to the next clause to check on a trace (used by solver.performUnitPropagation() fucntion)
 	currentTraceCheckIndex int
 }
 
@@ -64,7 +64,7 @@ type CDCLSolver struct {
  */
 func NewCDCLSolver() *CDCLSolver {
 	return &CDCLSolver{
-		result:               SatResultUndefined(),
+		result: SatResultUndefined(),
 		CDCLSolverDecisionTrace: CDCLSolverDecisionTrace{
 			currentAssignment: map[sat_solver.CNFLiteral]Ternary{},
 			varsInfo:          map[sat_solver.CNFLiteral]VariableAssignmentInformation{},
@@ -139,7 +139,7 @@ func (solver *CDCLSolver) Solve(formula *sat_solver.SATFormula, context *sat_sol
 				if len(solver.currentLearnedClause) == 1 {
 					solver.performLiteralAssertion(solver.currentLearnedClause[0], nil)
 				} else {
-					learnedClause :=solver.currentLearnedClause.Copy()
+					learnedClause := solver.currentLearnedClause.Copy()
 					solver.clauses = append(solver.clauses, learnedClause)
 					solver.watchClause(learnedClause)
 					solver.performLiteralAssertion(learnedClause[0], learnedClause)

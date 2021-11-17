@@ -3,7 +3,7 @@ package nwf_converter
 import (
 	"fmt"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 func convert(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping) (error, *sat_solver.NWFFormula) {
@@ -13,7 +13,7 @@ func convert(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping) (err
 			And: nil,
 			Or:  nil,
 			Variable: &sat_solver.NWFVar{
-				ID:    v,
+				ID: v,
 			},
 		}
 	} else if expr.Not != nil {
@@ -88,8 +88,8 @@ func convert(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping) (err
 		e1.Negate()
 
 		return nil, (&sat_solver.NWFFormula{
-			And:      nil,
-			Or:       &sat_solver.NWFOr{
+			And: nil,
+			Or: &sat_solver.NWFOr{
 				Arg1:  e1,
 				Arg2:  e2,
 				IsNeg: false,
@@ -114,8 +114,8 @@ func convert(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping) (err
 		return nil, (&sat_solver.NWFFormula{
 			And: &sat_solver.NWFAnd{
 				Arg1: (&sat_solver.NWFFormula{
-					And:      nil,
-					Or:       &sat_solver.NWFOr{
+					And: nil,
+					Or: &sat_solver.NWFOr{
 						Arg1:  ne1,
 						Arg2:  e2,
 						IsNeg: false,
@@ -123,8 +123,8 @@ func convert(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping) (err
 					Variable: nil,
 				}).UpdateTopNodeMetrics(),
 				Arg2: (&sat_solver.NWFFormula{
-					And:      nil,
-					Or:       &sat_solver.NWFOr{
+					And: nil,
+					Or: &sat_solver.NWFOr{
 						Arg1:  ne2,
 						Arg2:  e1,
 						IsNeg: false,
@@ -208,7 +208,7 @@ func optimizeTree(formula *sat_solver.NWFFormula, changeDetected *bool) (error, 
 
 		_, opt1complex := opt1.NodeMetrics()
 		_, opt2complex := opt2.NodeMetrics()
-		if opt1complex + opt2complex <= 40 {
+		if opt1complex+opt2complex <= 40 {
 			// This is expensive
 			opt1s := opt1.Serialize()
 			opt2s := opt2.Serialize()
@@ -292,7 +292,7 @@ func optimizeTree(formula *sat_solver.NWFFormula, changeDetected *bool) (error, 
 
 		_, opt1complex := opt1.NodeMetrics()
 		_, opt2complex := opt2.NodeMetrics()
-		if opt1complex + opt2complex <= 40 {
+		if opt1complex+opt2complex <= 40 {
 			// This is expensive
 			opt1s := opt1.Serialize()
 			opt2s := opt2.Serialize()

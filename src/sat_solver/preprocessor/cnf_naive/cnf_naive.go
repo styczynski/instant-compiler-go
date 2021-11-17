@@ -3,7 +3,7 @@ package cnf_naive
 import (
 	"fmt"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 func ConvertToCnfAndChain(exprs []*sat_solver.Formula, vars *sat_solver.SATVariableMapping) (error, *sat_solver.CNFFormula) {
@@ -26,7 +26,7 @@ func convertToCnf(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping)
 	// For variable return formula unmodified
 	if expr.Variable != nil {
 		return nil, &sat_solver.CNFFormula{
-			[]sat_solver.CNFClause{ { vars.Get(expr.Variable.Name), } },
+			[]sat_solver.CNFClause{{vars.Get(expr.Variable.Name)}},
 		}
 	} else if expr.And != nil {
 		err, arg1 := convertToCnf(expr.And.Arg1, vars)
@@ -52,7 +52,7 @@ func convertToCnf(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping)
 		len1 := len(arg1.Variables)
 		len2 := len(arg2.Variables)
 
-		if (len1 == 1 || len2 == 1) {
+		if len1 == 1 || len2 == 1 {
 			arg1.MulWith(arg2)
 			return nil, arg1
 		} else {
@@ -69,7 +69,7 @@ func convertToCnf(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping)
 		// Not with variable
 		if inner.Variable != nil {
 			return nil, &sat_solver.CNFFormula{
-				[]sat_solver.CNFClause{ { -vars.Get(inner.Variable.Name), } },
+				[]sat_solver.CNFClause{{-vars.Get(inner.Variable.Name)}},
 			}
 		} else if inner.Not != nil {
 			// Double not
@@ -93,11 +93,11 @@ func convertToCnf(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping)
 		} else if inner.Constant != nil {
 			if inner.Constant.Bool == "F" {
 				return nil, &sat_solver.CNFFormula{
-					[]sat_solver.CNFClause{ },
+					[]sat_solver.CNFClause{},
 				}
 			} else {
 				return nil, &sat_solver.CNFFormula{
-					[]sat_solver.CNFClause{ { } },
+					[]sat_solver.CNFClause{{}},
 				}
 			}
 		}
@@ -112,11 +112,11 @@ func convertToCnf(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping)
 	} else if expr.Constant != nil {
 		if expr.Constant.Bool == "T" {
 			return nil, &sat_solver.CNFFormula{
-				[]sat_solver.CNFClause{ },
+				[]sat_solver.CNFClause{},
 			}
 		} else {
 			return nil, &sat_solver.CNFFormula{
-				[]sat_solver.CNFClause{ { } },
+				[]sat_solver.CNFClause{{}},
 			}
 		}
 	}

@@ -7,13 +7,13 @@ import (
 	"github.com/alecthomas/participle/lexer"
 	"github.com/alecthomas/participle/lexer/ebnf"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
-	solver "github.com/styczynski/go-sat-solver/sat_solver/loaders"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
+	solver "github.com/styczynski/latte-compiler/src/sat_solver/loaders"
 )
 
-type HaskellLoaderFactory struct {}
+type HaskellLoaderFactory struct{}
 
-type HaskellLoader struct {}
+type HaskellLoader struct{}
 
 func (hlf *HaskellLoaderFactory) CreateLoader(context *sat_solver.SATContext) solver.Loader {
 	return HaskellLoader{}
@@ -30,7 +30,7 @@ var (
 	Name = "\"" (alpha | "_") { "_" | alpha | digit } "\"" .
     Number = ("." | digit) {"." | digit} .
     Whitespace = " " | "\t" | "\n" | "\r" .
-    Punct = "!"…"/" | ":"…"@" | "["…`+"\"`\""+` | "{"…"~" .
+    Punct = "!"…"/" | ":"…"@" | "["…` + "\"`\"" + ` | "{"…"~" .
 
     alpha = "a"…"z" | "A"…"Z" .
     digit = "0"…"9" .

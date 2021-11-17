@@ -11,14 +11,14 @@ package cdcl_solver
  */
 
 import (
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 type SolverLearnState struct {
 	// Learned clause is stored here
-	currentLearnedClause   sat_solver.CNFClause
+	currentLearnedClause sat_solver.CNFClause
 	// Map of visited literals is used only in learnClause() to prevent updating literals twice
-	visited                map[sat_solver.CNFLiteral]bool
+	visited map[sat_solver.CNFLiteral]bool
 }
 
 /**
@@ -45,7 +45,7 @@ func (solver *CDCLSolver) learnClause(conflictingClause sat_solver.CNFClause) in
 			}
 			learnedVarLevel := solver.getDecisionLevelForVar(learnedVar)
 			if !solver.visited[learnedVar] && learnedVarLevel > 0 {
-				solver.avsidsBumpVarActivity(learnedVar);
+				solver.avsidsBumpVarActivity(learnedVar)
 				if learnedVarLevel >= solver.getDecisionLevel() {
 					literalsLeft++
 				} else {
@@ -63,14 +63,14 @@ func (solver *CDCLSolver) learnClause(conflictingClause sat_solver.CNFClause) in
 			traceVisitedLiteral = -traceVisitedLiteral
 		}
 		for !solver.visited[traceVisitedLiteral] {
-			traceIndex = traceIndex-1
+			traceIndex = traceIndex - 1
 			traceVisitedLiteral = solver.assignmentTrace[traceIndex]
 			if traceVisitedLiteral < 0 {
 				traceVisitedLiteral = -traceVisitedLiteral
 			}
 		}
 		// But go back one step more
-		traceIndex = traceIndex-1
+		traceIndex = traceIndex - 1
 
 		traceLiteral = solver.assignmentTrace[traceIndex+1]
 		traceLiteralVar := traceLiteral
@@ -103,7 +103,7 @@ func (solver *CDCLSolver) learnClause(conflictingClause sat_solver.CNFClause) in
 			if learnedVar < 0 {
 				learnedVar = -learnedVar
 			}
-			varLevel := solver.getDecisionLevelForVar(learnedVar);
+			varLevel := solver.getDecisionLevelForVar(learnedVar)
 			if varLevel > maxLevel {
 				maxLevel = varLevel
 				maxDecisionLevelVarIndex = i + 2

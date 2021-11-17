@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 func hashVarID(varID sat_solver.CNFLiteral) int64 {
@@ -15,7 +15,7 @@ func hashVarID(varID sat_solver.CNFLiteral) int64 {
 	return (1 >> uint64(varID) % 63)
 }
 
-type UnsatReasonUP struct {}
+type UnsatReasonUP struct{}
 
 func NewUnsatReasonUP() *UnsatReasonUP {
 	return &UnsatReasonUP{}
@@ -26,13 +26,13 @@ func (reason *UnsatReasonUP) Describe() string {
 }
 
 type UnsatReasonStrengthening struct {
-	clause string
+	clause  string
 	varName string
 }
 
 func NewUnsatReasonStrengthening(clause *Clause, varID sat_solver.CNFLiteral, opt *SimpleOptimizer) *UnsatReasonStrengthening {
 	return &UnsatReasonStrengthening{
-		clause: clause.String(opt),
+		clause:  clause.String(opt),
 		varName: opt.vars.Reverse(varID),
 	}
 }
@@ -42,8 +42,8 @@ func (reason *UnsatReasonStrengthening) Describe() string {
 }
 
 type Clause struct {
-	hash int64
-	vars map[sat_solver.CNFLiteral]struct{}
+	hash      int64
+	vars      map[sat_solver.CNFLiteral]struct{}
 	isDeleted bool
 }
 
@@ -57,8 +57,8 @@ func (c *Clause) negateClauseVar(varIDToNegate sat_solver.CNFLiteral) *Clause {
 		}
 	}
 	return &Clause{
-		hash:  c.hash,
-		vars:  newVars,
+		hash: c.hash,
+		vars: newVars,
 	}
 }
 
@@ -79,17 +79,17 @@ func (c *Clause) Rehash() {
 }
 
 type SimpleOptimizer struct {
-	clauses map[*Clause]struct{}
-	occur map[sat_solver.CNFLiteral]map[*Clause]struct{}
+	clauses  map[*Clause]struct{}
+	occur    map[sat_solver.CNFLiteral]map[*Clause]struct{}
 	singular map[*Clause]struct{}
 
-	added map[*Clause]struct{}
-	touched map[sat_solver.CNFLiteral]struct{}
+	added        map[*Clause]struct{}
+	touched      map[sat_solver.CNFLiteral]struct{}
 	strenghtened map[*Clause]struct{}
 
 	visitedUnits map[sat_solver.CNFLiteral]struct{}
 
-	vars *sat_solver.SATVariableMapping
+	vars    *sat_solver.SATVariableMapping
 	context *sat_solver.SATContext
 }
 
@@ -135,7 +135,7 @@ func (opt *SimpleOptimizer) notEqual(clause *Clause, clause2 *Clause) bool {
 
 func (opt *SimpleOptimizer) subset(clause *Clause, clause2 *Clause) bool {
 	//fmt.Printf("  Is %s subset of %s?", clause.String(opt), clause2.String(opt))
-	if (clause.hash & ^clause2.hash != 0) {
+	if clause.hash & ^clause2.hash != 0 {
 		return false
 	}
 	found := false
@@ -184,13 +184,13 @@ func (opt *SimpleOptimizer) findSubsumed(clause *Clause) []*Clause {
 func (opt *SimpleOptimizer) getAddedClauseCandidates(added *map[*Clause]struct{}, positiveSearch bool) map[*Clause]struct{} {
 	for clause := range *added {
 		for v := range clause.vars {
-			if (positiveSearch && v > 0) {
+			if positiveSearch && v > 0 {
 				res := map[*Clause]struct{}{}
 				for c := range opt.occur[v] {
 					res[c] = struct{}{}
 				}
 				return res
-			} else if (!positiveSearch && v < 0) {
+			} else if !positiveSearch && v < 0 {
 				res := map[*Clause]struct{}{}
 				for c := range opt.occur[v] {
 					res[c] = struct{}{}
@@ -327,7 +327,8 @@ func (opt *SimpleOptimizer) checkIfStateIsValid() error {
 }
 
 func (opt *SimpleOptimizer) OptimizeTrivialTautologies() {
-	for opt.tryOptimizeTrivialTautologies() {}
+	for opt.tryOptimizeTrivialTautologies() {
+	}
 }
 
 func (opt *SimpleOptimizer) tryOptimizeTrivialTautologies() bool {
@@ -344,7 +345,6 @@ func (opt *SimpleOptimizer) tryOptimizeTrivialTautologies() bool {
 	return detectedChange
 }
 
-
 func (opt *SimpleOptimizer) PerformUnitPropagation() error {
 	for {
 		err, cont := opt.tryPerformUnitPropagation()
@@ -352,7 +352,7 @@ func (opt *SimpleOptimizer) PerformUnitPropagation() error {
 			return err
 		}
 		if !cont {
-			 break
+			break
 		}
 	}
 	return nil
@@ -436,8 +436,11 @@ func (opt *SimpleOptimizer) propagateToplevel() {
 
 func (opt *SimpleOptimizer) cleanup() {
 	v := true
-	for v { _, v = opt.tryPerformUnitPropagation() }
-	for opt.blockedClauseElimination() {}
+	for v {
+		_, v = opt.tryPerformUnitPropagation()
+	}
+	for opt.blockedClauseElimination() {
+	}
 }
 
 func (opt *SimpleOptimizer) simplify() error {
@@ -482,7 +485,7 @@ func (opt *SimpleOptimizer) simplify() error {
 
 		//fmt.Printf("Iterate added %d\n", len(opt.added))
 
-		S0 := opt.getAddedClauseCandidates(&opt.added,  true)
+		S0 := opt.getAddedClauseCandidates(&opt.added, true)
 		for {
 			//fmt.Printf("Iterate strenghtened\n")
 
@@ -616,9 +619,9 @@ func Optimize(formula *sat_solver.SATFormula, context *sat_solver.SATContext) (e
 		hashVal := int64(0)
 
 		bve := SimpleOptimizer{
-			clauses: map[*Clause]struct{}{},
-			occur:   map[sat_solver.CNFLiteral]map[*Clause]struct{}{},
-			vars:    formula.Variables(),
+			clauses:      map[*Clause]struct{}{},
+			occur:        map[sat_solver.CNFLiteral]map[*Clause]struct{}{},
+			vars:         formula.Variables(),
 			visitedUnits: map[sat_solver.CNFLiteral]struct{}{},
 		}
 
@@ -651,8 +654,7 @@ func Optimize(formula *sat_solver.SATFormula, context *sat_solver.SATContext) (e
 			bve.clauses[c] = struct{}{}
 		}
 
-
-		err, newContext := context.StartProcessing("Run simple optimizer","")
+		err, newContext := context.StartProcessing("Run simple optimizer", "")
 		if err != nil {
 			return err, nil
 		}
@@ -668,7 +670,7 @@ func Optimize(formula *sat_solver.SATFormula, context *sat_solver.SATContext) (e
 			return err, nil
 		}
 
-		err, newContext = context.StartProcessing("Run simple postprocess","")
+		err, newContext = context.StartProcessing("Run simple postprocess", "")
 		if err != nil {
 			return err, nil
 		}
@@ -677,7 +679,6 @@ func Optimize(formula *sat_solver.SATFormula, context *sat_solver.SATContext) (e
 		if err != nil {
 			return err, nil
 		}
-
 
 		return nil, bve.Formula()
 	}

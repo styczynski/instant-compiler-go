@@ -3,7 +3,7 @@ package solver
 import (
 	"fmt"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 type SolverFactory interface {

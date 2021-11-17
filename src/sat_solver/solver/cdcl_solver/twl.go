@@ -2,13 +2,14 @@ package cdcl_solver
 
 import (
 	"fmt"
-	"github.com/styczynski/go-sat-solver/sat_solver"
+
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 type SolverTWLState struct {
 	// This fields maintains TWL data structure
 	// There's more information in twl.go about how TWL works
-	watchedLiterals        map[sat_solver.CNFLiteral][]*TWLRecord
+	watchedLiterals map[sat_solver.CNFLiteral][]*TWLRecord
 }
 
 /*

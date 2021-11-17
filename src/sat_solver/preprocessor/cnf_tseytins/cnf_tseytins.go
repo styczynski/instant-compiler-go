@@ -3,7 +3,7 @@ package cnf_tseytins
 import (
 	"fmt"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 func notArr(vars []int64) []int64 {
@@ -61,7 +61,7 @@ func convertToCnf(expr *sat_solver.Formula, vars *sat_solver.SATVariableMapping,
 		c := rightVar
 
 		// (~a | b | c) & (~b | a) & (~c | a)
-		*ts = append(*ts, sat_solver.CNFClause{-a, b, c}, sat_solver.CNFClause{ -b, a }, sat_solver.CNFClause{ -c, a })
+		*ts = append(*ts, sat_solver.CNFClause{-a, b, c}, sat_solver.CNFClause{-b, a}, sat_solver.CNFClause{-c, a})
 		//*ts = append(*ts, sat_solver.MakeOr(sat_solver.MakeOr(sat_solver.MakeNot(a), sat_solver.MakeNot(b)), c),
 		//	sat_solver.MakeOr(sat_solver.MakeNot(b), a), sat_solver.MakeOr(sat_solver.MakeNot(c), a))
 		return nil, a, 0
@@ -198,9 +198,9 @@ func ConvertToCNFTseytins(formula *sat_solver.Formula, context *sat_solver.SATCo
 
 	// Add substitution for the entire formula
 	if topLevelVar != 0 {
-		ts = append(ts, sat_solver.CNFClause{ topLevelVar })
+		ts = append(ts, sat_solver.CNFClause{topLevelVar})
 	} else {
-		ts = append(ts, sat_solver.CNFClause{ f })
+		ts = append(ts, sat_solver.CNFClause{f})
 	}
 
 	tseytinsCnf := sat_solver.NewSATFormula(&sat_solver.CNFFormula{

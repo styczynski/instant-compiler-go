@@ -1,6 +1,6 @@
 package preprocessor
 
-import "github.com/styczynski/go-sat-solver/sat_solver"
+import "github.com/styczynski/latte-compiler/src/sat_solver"
 
 /*
  * Eliminates x by clause distribution if the result has fewer clauses than the original
@@ -19,10 +19,10 @@ func (opt *SimpleOptimizer) tryDistributeClauses() bool {
 					len2 := len(negClause.vars)
 					if clause != negClause && !negClause.isDeleted && len2 > 0 {
 						opt.removeClause(negClause)
-						if len1 == 1 && len1 + len2 - 2 != 1 {
+						if len1 == 1 && len1+len2-2 != 1 {
 							delete(opt.singular, clause)
 						}
-						if len1 != 1 && len1 + len2 - 2 == 1 {
+						if len1 != 1 && len1+len2-2 == 1 {
 							opt.singular[clause] = struct{}{}
 						}
 
@@ -59,6 +59,7 @@ func (opt *SimpleOptimizer) tryDistributeClauses() bool {
 }
 
 func (opt *SimpleOptimizer) DistributeClauses() bool {
-	for opt.tryDistributeClauses() {}
+	for opt.tryDistributeClauses() {
+	}
 	return false
 }

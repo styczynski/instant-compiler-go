@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
-	solv "github.com/styczynski/go-sat-solver/sat_solver/solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
+	solv "github.com/styczynski/latte-compiler/src/sat_solver/solver"
 )
 
 /**
@@ -16,7 +16,7 @@ import (
  * This code is mainly used for educational/testing purpose.
  * I really does not recommend using NaiveSolver if you have CDCL right next to it (XD).
  */
-type NaiveSolver struct {}
+type NaiveSolver struct{}
 
 func NewNaiveSolver() *NaiveSolver {
 	return &NaiveSolver{}
@@ -37,9 +37,9 @@ type SatResultType int8
 
 const (
 	// Formula cannot be satisfied
-	SAT_RESULT_UNSAT      SatResultType  = 1
+	SAT_RESULT_UNSAT SatResultType = 1
 	// Formula can be satisified
-	SAT_RESULT_SAT        SatResultType  = 2
+	SAT_RESULT_SAT SatResultType = 2
 )
 
 /*
@@ -110,7 +110,7 @@ func (result SatResult) GetSatisfyingAssignment() map[string]bool {
 /*
  * Naive solver factory
  */
-type NaiveSolverFactory struct {}
+type NaiveSolverFactory struct{}
 
 func (nsf NaiveSolverFactory) CanSolveFormula(formula *sat_solver.SATFormula, context *sat_solver.SATContext) bool {
 	return true
@@ -152,7 +152,7 @@ func (solver *NaiveSolver) Solve(formula *sat_solver.SATFormula, context *sat_so
 	iterCount := int64(math.Exp2(float64(varCount)))
 	for i := int64(0); i < iterCount; i++ {
 		for j := int64(0); j < varCount; j++ {
-			vars[j] = (int64(1) >> uint64(j)) & values != 0
+			vars[j] = (int64(1)>>uint64(j))&values != 0
 		}
 		//
 		// Evaluate formula if it's true then we print the result
@@ -162,7 +162,7 @@ func (solver *NaiveSolver) Solve(formula *sat_solver.SATFormula, context *sat_so
 			result := map[string]bool{}
 			for k, v := range vars {
 				// If the variable was introduced later during optimizations we discard it
-				if formulaVars.IsFounderVariable(sat_solver.CNFLiteral(k+1)) {
+				if formulaVars.IsFounderVariable(sat_solver.CNFLiteral(k + 1)) {
 					result[formulaVars.Reverse(sat_solver.CNFLiteral(k+1))] = v
 				}
 			}

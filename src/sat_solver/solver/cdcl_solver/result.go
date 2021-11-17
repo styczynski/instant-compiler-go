@@ -1,6 +1,6 @@
 package cdcl_solver
 
-import "github.com/styczynski/go-sat-solver/sat_solver"
+import "github.com/styczynski/latte-compiler/src/sat_solver"
 
 /**
  * Result of the execution of the solver
@@ -17,11 +17,11 @@ type SatResultType int8
 
 const (
 	// Solution was not found
-	SAT_RESULT_UNDEFINED  SatResultType  = 0
+	SAT_RESULT_UNDEFINED SatResultType = 0
 	// Formula cannot be satisfied
-	SAT_RESULT_UNSAT      SatResultType  = 1
+	SAT_RESULT_UNSAT SatResultType = 1
 	// Formula can be satisified
-	SAT_RESULT_SAT        SatResultType  = 2
+	SAT_RESULT_SAT SatResultType = 2
 )
 
 /*
@@ -29,7 +29,7 @@ const (
  */
 func (result SatResult) String() string {
 	switch result.resultType {
-	case  SAT_RESULT_UNDEFINED:
+	case SAT_RESULT_UNDEFINED:
 		return "Undefined"
 	case SAT_RESULT_SAT:
 		return "SAT"
@@ -97,7 +97,7 @@ func (result SatResult) GetSatisfyingAssignment() map[string]bool {
  */
 type VariableAssignmentInformation struct {
 	// What clause caused the variable assignment?
-	reasonClause  sat_solver.CNFClause
+	reasonClause sat_solver.CNFClause
 	// Decision level when this variable was assigned
 	decisionLevel int
 }

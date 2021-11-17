@@ -3,7 +3,7 @@ package cdcl_solver
 import (
 	"strings"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 type TWL []*TWLRecord
@@ -16,7 +16,7 @@ func (twl TWL) DebugString() string {
 	for _, record := range twl {
 		ret = append(ret, record.DebugString())
 	}
-	return strings.Join(ret,",")
+	return strings.Join(ret, ",")
 }
 
 /*

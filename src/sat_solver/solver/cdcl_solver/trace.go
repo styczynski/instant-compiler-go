@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
 )
 
 type CDCLSolverDecisionTrace struct {
@@ -16,14 +16,14 @@ type CDCLSolverDecisionTrace struct {
 	// Let's assume decisionTrace[2] = 4
 	// so the decision node has clause [9 v not(5)]
 	//
-	decisionTrace          []int
+	decisionTrace []int
 	// Current assignment of variables
-	currentAssignment      map[sat_solver.CNFLiteral]Ternary
+	currentAssignment map[sat_solver.CNFLiteral]Ternary
 	// Meta information attached to currently assigned variables
 	// Mosty information how we assigned those variables
-	varsInfo               map[sat_solver.CNFLiteral]VariableAssignmentInformation
+	varsInfo map[sat_solver.CNFLiteral]VariableAssignmentInformation
 	// Assignment trace is a list of literals captured when decision was made
-	assignmentTrace        []sat_solver.CNFLiteral
+	assignmentTrace []sat_solver.CNFLiteral
 }
 
 // Get current value for a literal

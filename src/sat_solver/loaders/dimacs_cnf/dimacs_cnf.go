@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/styczynski/go-sat-solver/sat_solver"
-	solver "github.com/styczynski/go-sat-solver/sat_solver/loaders"
+	"github.com/styczynski/latte-compiler/src/sat_solver"
+	solver "github.com/styczynski/latte-compiler/src/sat_solver/loaders"
 )
 
-type CNFLoaderFactory struct {}
+type CNFLoaderFactory struct{}
 
-type CNFLoader struct {}
+type CNFLoader struct{}
 
 func (hlf *CNFLoaderFactory) CreateLoader(context *sat_solver.SATContext) solver.Loader {
 	return CNFLoader{}
