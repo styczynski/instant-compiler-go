@@ -22,7 +22,7 @@ func (CompilerJVMBackendFactory) CreateEntity(c config.EntityConfig) interface{}
 }
 
 func (CompilerJVMBackendFactory) Params(argSpec *config.EntityArgSpec) {
-	argSpec.AddString("test", "huj", "elo")
+
 }
 
 func (CompilerJVMBackendFactory) EntityName() string {
