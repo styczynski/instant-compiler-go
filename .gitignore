@@ -1,9 +1,9 @@
 # Output test files
-tests/*.bc
-tests/*.class
-tests/*.j
-tests/*.jasmine
-tests/*.ll
+tests/**/*.bc
+tests/**/*.class
+tests/**/*.j
+tests/**/*.jasmine
+tests/**/*.ll
 
 input.class
 input.j
