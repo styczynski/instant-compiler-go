@@ -1,0 +1,9 @@
+class Node {
+    int v;
+}
+
+int main() {
+    Node[2][1] n;
+    Node s = n[0][1][2];
+    return 0;
+}

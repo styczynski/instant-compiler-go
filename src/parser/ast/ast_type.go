@@ -10,9 +10,8 @@ import (
 
 type Type struct {
 	generic_ast.BaseASTNode
-	Name *string `@( "string" | "boolean" | "int" | "void" )`
-	Dimensions *string `(@( "["`
-	Size *Expression `@@? "]" ))?`
+	Name       *string   `@Ident`
+	Dimensions *Accessor `( @@ )?`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -46,16 +45,15 @@ func (ast *Type) Print(c *context.ParsingContext) string {
 	return printNode(c, ast, "%s", *ast.Name)
 }
 
-
 /////
 
 func (ast *Type) GetType() *hindley_milner.Scheme {
 	if ast.Dimensions != nil {
-		return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("array", PrimitiveType{
-			name:    *ast.Name,
+		return hindley_milner.NewScheme(nil, ast.Dimensions.BuildType(PrimitiveType{
+			name: *ast.Name,
 		}))
 	}
 	return hindley_milner.NewScheme(nil, PrimitiveType{
-		name:    *ast.Name,
+		name: *ast.Name,
 	})
 }

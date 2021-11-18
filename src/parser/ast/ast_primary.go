@@ -18,13 +18,13 @@ type PrimaryInvalid struct {
 
 type Primary struct {
 	generic_ast.BaseASTNode
-	Variable   *string   `@Ident`
-	Int        *int64    `| @Int`
+	Variable      *string     `@Ident`
+	Int           *int64      `| @Int`
 	String        *string     `| @String`
 	Bool          *bool       `| @( "true" | "false" )`
 	SubExpression *Expression `| ( "(" @@ ")" )`
-	ParentNode generic_ast.TraversableNode
-	Invalid *PrimaryInvalid
+	ParentNode    generic_ast.TraversableNode
+	Invalid       *PrimaryInvalid
 }
 
 func (ast *Primary) ExtractConst() (generic_ast.TraversableNode, bool) {
@@ -66,8 +66,8 @@ func (a *Primary) Add(b *Primary, Op string) *Primary {
 			panic("Invalid add operation")
 		}
 		return &Primary{
-			BaseASTNode:   a.BaseASTNode,
-			Int: &v,
+			BaseASTNode: a.BaseASTNode,
+			Int:         &v,
 		}
 	} else if a.IsString() && b.IsString() {
 		v := ""
@@ -77,13 +77,12 @@ func (a *Primary) Add(b *Primary, Op string) *Primary {
 			panic("Invalid add operation")
 		}
 		return &Primary{
-			BaseASTNode:   a.BaseASTNode,
-			String: &v,
+			BaseASTNode: a.BaseASTNode,
+			String:      &v,
 		}
 	}
 	panic("Invalid addition")
 }
-
 
 func (a *Primary) Compare(b *Primary, Op string) *Primary {
 	if a.IsString() && b.IsString() {
@@ -104,8 +103,8 @@ func (a *Primary) Compare(b *Primary, Op string) *Primary {
 			panic("Invalid comaprison type")
 		}
 		return &Primary{
-			BaseASTNode:   a.BaseASTNode,
-			Bool: &v,
+			BaseASTNode: a.BaseASTNode,
+			Bool:        &v,
 		}
 	} else if a.IsBool() && b.IsBool() {
 		v := false
@@ -113,8 +112,8 @@ func (a *Primary) Compare(b *Primary, Op string) *Primary {
 			v = *a.Bool == *b.Bool
 		}
 		return &Primary{
-			BaseASTNode:   a.BaseASTNode,
-			Bool: &v,
+			BaseASTNode: a.BaseASTNode,
+			Bool:        &v,
 		}
 	} else if a.IsInt() && b.IsInt() {
 		v := false
@@ -134,8 +133,8 @@ func (a *Primary) Compare(b *Primary, Op string) *Primary {
 			panic("Invalid comaprison type")
 		}
 		return &Primary{
-			BaseASTNode:   a.BaseASTNode,
-			Bool: &v,
+			BaseASTNode: a.BaseASTNode,
+			Bool:        &v,
 		}
 	}
 	panic("Invalid addition")
@@ -152,8 +151,8 @@ func (a *Primary) And(b *Primary, Op string) *Primary {
 			panic("Invalid and operator")
 		}
 		return &Primary{
-			BaseASTNode:   a.BaseASTNode,
-			Bool: &v,
+			BaseASTNode: a.BaseASTNode,
+			Bool:        &v,
 		}
 	}
 	panic("Invalid and")
@@ -165,7 +164,7 @@ func (a *Primary) Mul(b *Primary, Op string) *Primary {
 		if Op == "/" {
 			if *b.Int == 0 {
 				return &Primary{
-					BaseASTNode:   a.BaseASTNode,
+					BaseASTNode: a.BaseASTNode,
 					Invalid: &PrimaryInvalid{
 						Reason: "Detected division by 0.",
 						Source: b,
@@ -180,7 +179,7 @@ func (a *Primary) Mul(b *Primary, Op string) *Primary {
 		} else if Op == "%" {
 			if *b.Int == 0 {
 				return &Primary{
-					BaseASTNode:   a.BaseASTNode,
+					BaseASTNode: a.BaseASTNode,
 					Invalid: &PrimaryInvalid{
 						Reason: "Detected modulo operation with 0 base.",
 						Source: b,
@@ -194,8 +193,8 @@ func (a *Primary) Mul(b *Primary, Op string) *Primary {
 			panic("Invalid multiplication type")
 		}
 		return &Primary{
-			BaseASTNode:   a.BaseASTNode,
-			Int: &v,
+			BaseASTNode: a.BaseASTNode,
+			Int:         &v,
 		}
 	}
 	panic("Invalid addition")
@@ -297,7 +296,7 @@ func (ast *Primary) Print(c *context.ParsingContext) string {
 
 ////
 
-func (ast *Primary) Name() hindley_milner.NameGroup     {
+func (ast *Primary) Name() hindley_milner.NameGroup {
 	if ast.IsVariable() {
 		return hindley_milner.Name(*ast.Variable)
 	}
@@ -348,7 +347,7 @@ func (ast *Primary) Type() hindley_milner.Type {
 	panic("Unknown Primary type")
 }
 
-func  (ast *Primary)  ExpressionType() hindley_milner.ExpressionType {
+func (ast *Primary) ExpressionType() hindley_milner.ExpressionType {
 	if ast.IsSubexpression() {
 		return hindley_milner.E_PROXY
 	}
@@ -372,4 +371,3 @@ func (ast *Primary) RenameVariables(subst cfg.VariableSubstitution) {
 		ast.Variable = &v
 	}
 }
-
