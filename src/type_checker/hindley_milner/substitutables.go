@@ -2,6 +2,9 @@ package hindley_milner
 
 import "fmt"
 
+type UnionTypeCheck interface {
+	CheckIfCanUnionTypes(t2 interface{}) error
+}
 
 type Constraints []Constraint
 
@@ -44,7 +47,6 @@ func (cs Constraints) Format(state fmt.State, c rune) {
 	state.Write([]byte{']'})
 }
 
-
 type Types []Type
 
 func (ts Types) Contains(t Type) bool {
@@ -55,18 +57,3 @@ func (ts Types) Contains(t Type) bool {
 	}
 	return false
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

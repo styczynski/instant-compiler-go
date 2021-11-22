@@ -2,10 +2,6 @@ package hindley_milner
 
 import "fmt"
 
-
-
-
-
 type Scheme struct {
 	tvs TypeVarSet
 	t   Type
@@ -78,14 +74,12 @@ func (s *Scheme) Format(state fmt.State, c rune) {
 	fmt.Fprintf(state, "]: %v", s.t)
 }
 
-
 func (s *Scheme) Type() (t Type, isMonoType bool) {
 	if len(s.tvs) == 0 {
 		return s.t, true
 	}
 	return s.t, false
 }
-
 
 func (s *Scheme) Normalize() (err error) {
 	tfv := s.t.FreeTypeVar()

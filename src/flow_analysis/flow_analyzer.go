@@ -184,13 +184,13 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				flow.Rebuild()
 				ast = flow.Output()
 
-				flow.Optimize(c)
+				//flow.Optimize(c)
 				//nodeForAnalysis.AfterFlowAnalysis(flow)
 
 				fmt.Printf("Fold done:\n")
 				fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
-				fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				fmt.Print(flow.Print(ctx))
+				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
+				//fmt.Print(flow.Print(ctx))
 				fmt.Printf("Yeah.\n")
 
 				customErr := nodeForAnalysis.OnFlowAnalysis(flow)

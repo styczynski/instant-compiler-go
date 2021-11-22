@@ -27,7 +27,7 @@ func (ast *TopDef) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
-func (ast *TopDef) GetDefinedIdentifier() ([]string, []*hindley_milner.Scheme) {
+func (ast *TopDef) GetDefinedIdentifier(c hindley_milner.InferContext) ([]string, []*hindley_milner.Scheme) {
 	if ast.IsFunction() {
 		return []string{
 				ast.Function.Name,
@@ -38,7 +38,7 @@ func (ast *TopDef) GetDefinedIdentifier() ([]string, []*hindley_milner.Scheme) {
 		return []string{
 				ast.Class.Name,
 			}, []*hindley_milner.Scheme{
-				ast.Class.GetDeclarationType(),
+				ast.Class.GetDeclarationType(c),
 			}
 	}
 	return []string{}, []*hindley_milner.Scheme{}
@@ -149,7 +149,7 @@ func (ast *TopDef) BuildFlowGraph(builder cfg.CFGBuilder) {
 func (ast *TopDef) OnFlowAnalysis(flow cfg.FlowAnalysis) error {
 	if ast.IsFunction() {
 		// Validate flow graph
-		retType, _ := ast.Function.ReturnType.GetType().Type()
+		retType, _ := ast.Function.ReturnType.GetType(nil).Type()
 		if !retType.Eq(CreatePrimitive(T_VOID)) {
 
 			gateways := flow.Graph().GetAllEndGateways()

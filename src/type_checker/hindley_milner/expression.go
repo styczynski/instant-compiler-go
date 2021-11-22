@@ -58,6 +58,10 @@ type Inferer interface {
 	Infer(Env, Fresher) (Type, error)
 }
 
+type InferContext interface {
+	TypeOf(et generic_ast.Expression) (Type, error)
+}
+
 type ExpressionType int
 
 const (
@@ -171,27 +175,27 @@ type Literal interface {
 
 type Apply interface {
 	generic_ast.Expression
-	Fn() generic_ast.Expression
+	Fn(c InferContext) generic_ast.Expression
 }
 
 type LetBase interface {
 	generic_ast.Expression
-	Var() NameGroup
+	Var(c InferContext) NameGroup
 }
 
 type Let interface {
 	LetBase
-	Def() generic_ast.Expression
+	Def(c InferContext) generic_ast.Expression
 }
 
 type Lambda interface {
 	generic_ast.Expression
-	Args() NameGroup
+	Args(c InferContext) NameGroup
 }
 
 type EmbeddedType interface {
 	generic_ast.Expression
-	EmbeddedType() *Scheme
+	EmbeddedType(c InferContext) *Scheme
 }
 
 type Block interface {
@@ -204,7 +208,7 @@ type Return interface {
 }
 
 type DefaultTyper interface {
-	DefaultType() *Scheme
+	DefaultType(c InferContext) *Scheme
 }
 
 type CustomExpressionEnv struct {
@@ -221,7 +225,7 @@ type CustomExpression interface {
 }
 
 type ExpressionWithIdentifiersDeps interface {
-	GetIdentifierDeps() NameGroup
+	GetIdentifierDeps(c InferContext) NameGroup
 }
 
 type IntrospectionExpression interface {

@@ -12,7 +12,7 @@ import (
 
 type Typename struct {
 	generic_ast.BaseASTNode
-	Expr      *LogicalOperation       `"typename" @@`
+	Expr       *LogicalOperation `"typename" @@`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -86,28 +86,28 @@ func (ast *Typename) OnTypeReturned(t hindley_milner.Type) {
 
 	newAST := &LogicalOperation{
 		BaseASTNode: ast.BaseASTNode,
-		Equality:    &Equality{
+		Equality: &Equality{
 			BaseASTNode: ast.BaseASTNode,
-			Comparison:  &Comparison{
+			Comparison: &Comparison{
 				BaseASTNode: ast.BaseASTNode,
-				Addition:    &Addition{
-					BaseASTNode:    ast.BaseASTNode,
+				Addition: &Addition{
+					BaseASTNode: ast.BaseASTNode,
 					Multiplication: &Multiplication{
 						BaseASTNode: ast.BaseASTNode,
-						Unary:      &Unary{
-							BaseASTNode:      ast.BaseASTNode,
-							Op:               "",
-							Unary:            &Unary{
-								BaseASTNode:      ast.BaseASTNode,
-								Op:               "",
-								Unary:            nil,
+						Unary: &Unary{
+							BaseASTNode: ast.BaseASTNode,
+							Op:          "",
+							Unary: &Unary{
+								BaseASTNode: ast.BaseASTNode,
+								Op:          "",
+								Unary:       nil,
 								UnaryApplication: &UnaryApplication{
 									BaseASTNode: ast.BaseASTNode,
 									Target:      nil,
 									Arguments:   nil,
-									Index:       &Index{
-										BaseASTNode:  ast.BaseASTNode,
-										Primary:      &Primary{
+									Index: &Index{
+										BaseASTNode: ast.BaseASTNode,
+										Primary: &Primary{
 											BaseASTNode:   ast.BaseASTNode,
 											Variable:      nil,
 											Int:           nil,
@@ -119,32 +119,32 @@ func (ast *Typename) OnTypeReturned(t hindley_milner.Type) {
 										IndexingExpr: nil,
 										ParentNode:   nil,
 									},
-									ParentNode:  nil,
+									ParentNode: nil,
 								},
-								ParentNode:       nil,
+								ParentNode: nil,
 							},
 							UnaryApplication: nil,
 							ParentNode:       nil,
 						},
-						Op:          "",
-						Next:        nil,
-						ParentNode:  nil,
+						Op:         "",
+						Next:       nil,
+						ParentNode: nil,
 					},
-					Op:             "",
-					Next:           nil,
-					ParentNode:     nil,
+					Op:         "",
+					Next:       nil,
+					ParentNode: nil,
 				},
-				Op:          "",
-				Next:        nil,
-				ParentNode:  nil,
+				Op:         "",
+				Next:       nil,
+				ParentNode: nil,
 			},
-			Op:          "",
-			Next:        nil,
-			ParentNode:  nil,
+			Op:         "",
+			Next:       nil,
+			ParentNode: nil,
 		},
-		Op:          "",
-		Next:        nil,
-		ParentNode:  nil,
+		Op:         "",
+		Next:       nil,
+		ParentNode: nil,
 	}
 
 	newAST.Visit(newAST, func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {

@@ -2,6 +2,7 @@ package hindley_milner
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/alecthomas/repr"
 	"github.com/pkg/errors"
@@ -113,6 +114,25 @@ func (infer *inferer) resolveProxy(expr generic_ast.Expression, exprType Express
 	return expr, exprType
 }
 
+func (infer *inferer) TypeOf(et generic_ast.Expression) (Type, error) {
+	defer infer.cleanupConstraints()
+
+	if err := infer.consGen(et, E_NONE, false, false); err != nil {
+		return nil, err
+	}
+	actType := infer.t
+	tv := infer.Fresh()
+	infer.t = tv
+	infer.cs = append(infer.cs, Constraint{
+		a:       tv.WithContext(CreateCodeContext(et)),
+		b:       actType,
+		context: CreateCodeContext(et),
+	})
+
+	logf("TYPEOF [%s]: {%v}\n", et, tv)
+	return tv, nil
+}
+
 func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error) {
 
 	defer infer.cleanupConstraints()
@@ -131,7 +151,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 	expr, exprType = infer.resolveProxy(expr, exprType)
 
 	if exprWithDeps, ok := expr.(ExpressionWithIdentifiersDeps); ok {
-		idents := exprWithDeps.GetIdentifierDeps()
+		idents := exprWithDeps.GetIdentifierDeps(nil)
 		for _, name := range idents.GetNames() {
 			if objType := idents.GetTypeOf(name); objType != nil {
 
@@ -277,7 +297,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 
 	case E_TYPE:
 		et := expr.(EmbeddedType)
-		scheme := et.EmbeddedType()
+		scheme := et.EmbeddedType(infer)
 
 		infer.t = Instantiate(infer, scheme)
 
@@ -292,7 +312,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		if defaultTyper, ok := et.(DefaultTyper); ok {
 			infer.cs = append(infer.cs, Constraint{
 				a:       tv.WithContext(CreateCodeContext(expr)),
-				b:       Instantiate(infer, defaultTyper.DefaultType()),
+				b:       Instantiate(infer, defaultTyper.DefaultType(infer)),
 				context: CreateCodeContext(expr),
 			})
 		} else if infer.config.CreateDefaultEmptyType() != nil {
@@ -313,9 +333,10 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		rets := infer.returns
 		infer.returns = []Type{}
 
-		names := et.Args().GetNames()
+		args := et.Args(infer)
+		names := args.GetNames()
 		for _, name := range names {
-			varType := et.Args().GetTypeOf(name)
+			varType := args.GetTypeOf(name)
 
 			newVar := infer.Fresh()
 			if varType != nil {
@@ -386,7 +407,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		if defaultTyper, ok := et.(DefaultTyper); ok {
 			infer.cs = append(infer.cs, Constraint{
 				a:       r.WithContext(CreateCodeContext(expr)),
-				b:       Instantiate(infer, defaultTyper.DefaultType()),
+				b:       Instantiate(infer, defaultTyper.DefaultType(infer)),
 				context: CreateCodeContext(expr),
 			})
 		}
@@ -429,7 +450,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		logf("\n\nAPPLICATION START %v\n", expr)
 		batchErr := ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
 			if firstExec {
-				if err = infer.consGen(et.Fn(), E_NONE, false, false); err != nil {
+				if err = infer.consGen(et.Fn(infer), E_NONE, false, false); err != nil {
 					return err
 				}
 				firstExec = false
@@ -479,7 +500,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		if defaultTyper, ok := et.(DefaultTyper); ok {
 			infer.cs = append(infer.cs, Constraint{
 				a:       tv,
-				b:       Instantiate(infer, defaultTyper.DefaultType()),
+				b:       Instantiate(infer, defaultTyper.DefaultType(infer)),
 				context: CreateCodeContext(expr),
 			})
 		} else if infer.config.CreateDefaultEmptyType() != nil {
@@ -506,7 +527,8 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 	case E_LET_RECURSIVE, E_DECLARATION, E_FUNCTION_DECLARATION:
 
 		et := expr.(LetBase)
-		names := et.Var().GetNames()
+		vars := et.Var(infer)
+		names := vars.GetNames()
 		types := []*Scheme{}
 
 		definitions := []generic_ast.Expression{}
@@ -514,13 +536,14 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			if exprType == E_FUNCTION_DECLARATION {
 				definitions = append(definitions, et.(Lambda))
 			} else {
-				if batch, ok := et.(Let).Def().(Batch); ok {
+				def := et.(Let).Def(infer)
+				if batch, ok := def.(Batch); ok {
 					definitions = append(definitions, batch.Expressions()[0])
 				} else {
-					definitions = append(definitions, et.(Let).Def())
+					definitions = append(definitions, def)
 				}
-				if et.Var().HasTypes() {
-					types = append(types, et.Var().GetTypeOf(names[0]))
+				if vars.HasTypes() {
+					types = append(types, vars.GetTypeOf(names[0]))
 				}
 			}
 		} else if len(names) > 1 {
@@ -529,10 +552,11 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 					definitions = append(definitions, et.(Lambda))
 				}
 			} else {
-				for i, expr := range et.(Let).Def().(Batch).Expressions() {
+				def := et.(Let).Def(infer)
+				for i, expr := range def.(Batch).Expressions() {
 					definitions = append(definitions, expr)
-					if et.Var().HasTypes() {
-						types = append(types, et.Var().GetTypeOf(names[i]))
+					if vars.HasTypes() {
+						types = append(types, vars.GetTypeOf(names[i]))
 					}
 				}
 			}
@@ -605,7 +629,9 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			if s.err != nil {
 				return err
 			}
-			logf("\nPATRZ CIPO ROZJEBAE [%s]: %v\n", name, saveExprContext(defType.Apply(s.sub).(Type), &expr))
+			logf("\nDefinition type [%s]: %v\n", name, saveExprContext(defType.Apply(s.sub).(Type), &expr))
+			//Instantiate(infer, defExpectedType)
+			logf("\n |-> Expected type [%s]: %v\n", name, defExpectedType)
 
 			sc := Generalize(infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 
@@ -633,7 +659,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 				if defaultTyper, ok := expr.(DefaultTyper); ok {
 					infer.cs = append(infer.cs, Constraint{
 						a:       retType,
-						b:       Instantiate(infer, defaultTyper.DefaultType()),
+						b:       Instantiate(infer, defaultTyper.DefaultType(infer)),
 						context: CreateCodeContext(expr),
 					})
 				} else if infer.config.CreateDefaultEmptyType() != nil {
@@ -671,14 +697,16 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 
 	case E_LET, E_REDEFINABLE_LET:
 		et := expr.(Let)
-		if len(et.Var().GetNames()) != 1 {
+		vars := et.Var(infer)
+
+		if len(vars.GetNames()) != 1 {
 			return fmt.Errorf("Let entity cannot conntain other value than one variable name. You cannot use Names batch here.")
 		}
-		name := et.Var().GetNames()[0]
+		name := vars.GetNames()[0]
 
 		env := infer.env
 
-		if err = infer.consGen(et.Def(), E_NONE, false, false); err != nil {
+		if err = infer.consGen(et.Def(infer), E_NONE, false, false); err != nil {
 			return err
 		}
 		defType, defCs := infer.t, infer.cs
@@ -977,6 +1005,20 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 }
 
 func Unify(a, b Type, context Constraint) (sub Subs, err error) {
+
+	if sa, ok := a.(UnionTypeCheck); ok {
+		if reflect.TypeOf(a) == reflect.TypeOf(b) {
+			err := sa.CheckIfCanUnionTypes(b)
+			if err != nil {
+				return nil, UnificationWrongTypeError{
+					TypeA:      a,
+					TypeB:      b,
+					Constraint: context,
+					Details:    err.Error(),
+				}
+			}
+		}
+	}
 
 	switch at := a.(type) {
 	case TypeVariable:

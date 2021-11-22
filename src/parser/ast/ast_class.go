@@ -13,8 +13,9 @@ import (
 
 type Class struct {
 	generic_ast.BaseASTNode
-	Name string `"class" @Ident "{"`
-	Fields []*ClassField `(@@ ";")* "}"`
+	ClassType  string        `@("class" | "scheme")`
+	Name       string        `@Ident "{"`
+	Fields     []*ClassField `(@@ ";")* "}"`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -65,9 +66,9 @@ func (ast *Class) Body() generic_ast.Expression {
 func (ast *Class) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Class{
 		BaseASTNode: ast.BaseASTNode,
-		Name: ast.Name,
-		Fields: ast.Fields,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		Name:        ast.Name,
+		Fields:      ast.Fields,
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true).(*Class)
 }
 
@@ -79,12 +80,10 @@ func (ast *Class) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_DECLARATION
 }
 
-func (ast *Class) Var() hindley_milner.NameGroup {
+func (ast *Class) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
 	return hindley_milner.NamesWithTypes([]string{
 		ast.Name,
-	}, map[string]*hindley_milner.Scheme{
-
-	})
+	}, map[string]*hindley_milner.Scheme{})
 	//names := []string{}
 	//types := map[string]*hindley_milner.Scheme{}
 	//for _, item := range ast.Fields {
@@ -94,26 +93,29 @@ func (ast *Class) Var() hindley_milner.NameGroup {
 	//return hindley_milner.NamesWithTypes(names, types)
 }
 
-func (ast *Class) GetClassInstanceType() hindley_milner.Type {
+func (ast *Class) GetClassInstanceType(c hindley_milner.InferContext) hindley_milner.Type {
 	fields := map[string]hindley_milner.Type{}
 	for _, field := range ast.Fields {
-		t, _ := field.ClassFieldType.GetType().Type()
+		t, _ := field.ClassFieldType.GetType(c).Type()
 		fields[field.Name] = t
+	}
+	if ast.ClassType == "scheme" {
+		return hindley_milner.NewSignedStructType("", fields)
 	}
 	return hindley_milner.NewSignedStructType(ast.Name, fields)
 }
 
-func (ast *Class) GetDeclarationType() *hindley_milner.Scheme {
+func (ast *Class) GetDeclarationType(c hindley_milner.InferContext) *hindley_milner.Scheme {
 	return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("class", hindley_milner.NewFnType(
 		CreatePrimitive(T_VOID),
-		ast.GetClassInstanceType(),
+		ast.GetClassInstanceType(c),
 	)))
 }
 
-func (ast *Class) Def() generic_ast.Expression {
+func (ast *Class) Def(c hindley_milner.InferContext) generic_ast.Expression {
 	return hindley_milner.EmbeddedTypeExpr{
 		GetType: func() *hindley_milner.Scheme {
-			return ast.GetDeclarationType()
+			return ast.GetDeclarationType(c)
 		},
 		Source: ast,
 	}

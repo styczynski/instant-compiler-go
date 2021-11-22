@@ -12,9 +12,9 @@ import (
 )
 
 type While struct {
-	 generic_ast.BaseASTNode
-	Condition *Expression `"while" "(" @@ ")"`
-	Do *Statement `@@`
+	generic_ast.BaseASTNode
+	Condition  *Expression `"while" "(" @@ ")"`
+	Do         *Statement  `@@`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -70,9 +70,9 @@ func (ast *While) Validate(c *context.ParsingContext) generic_ast.NodeError {
 func (ast *While) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &While{
 		BaseASTNode: ast.BaseASTNode,
-		Condition: mapper(ast, ast.Condition, context, false).(*Expression),
-		Do: mapper(ast, ast.Do, context, false).(*Statement),
-		ParentNode: parent.(generic_ast.TraversableNode),
+		Condition:   mapper(ast, ast.Condition, context, false).(*Expression),
+		Do:          mapper(ast, ast.Do, context, false).(*Statement),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -82,12 +82,12 @@ func (ast *While) Visit(parent generic_ast.Expression, mapper generic_ast.Expres
 	mapper(parent, ast, context)
 }
 
-func (ast *While) Fn() generic_ast.Expression {
+func (ast *While) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
 		return hindley_milner.NewScheme(
 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
 			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), hindley_milner.TVar('a'), CreatePrimitive(T_VOID)))
-	}, Source: ast,}
+	}, Source: ast}
 }
 
 func (ast *While) Body() generic_ast.Expression {
@@ -128,12 +128,12 @@ func (ast *While) BuildFlowGraph(builder cfg.CFGBuilder) {
 
 	builder.AddBlockSuccesor(ast)
 
-	builder.UpdatePrev([]generic_ast.NormalNode{ ast })
+	builder.UpdatePrev([]generic_ast.NormalNode{ast})
 	builder.BuildNode(ast.Do)
 
 	builder.AddBlockSuccesor(post)
 
-	ctrlExits := []generic_ast.NormalNode{ ast }
+	ctrlExits := []generic_ast.NormalNode{ast}
 
 	// handle any branches; if no label or for me: handle and remove from branches.
 	for i := 0; i < len(builder.Branches()); i++ {

@@ -63,7 +63,7 @@ func (ast *Assignment) Visit(parent generic_ast.Expression, mapper generic_ast.E
 	mapper(parent, ast, context)
 }
 
-func (ast *Assignment) Fn() generic_ast.Expression {
+func (ast *Assignment) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	//return &BuiltinFunction{
 	//	BaseASTNode: ast.BaseASTNode,
 	//	name: "=",

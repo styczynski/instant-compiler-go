@@ -1,9 +1,25 @@
-class Node {
+scheme Node {
     int v;
 }
 
+class Pyc {
+    int v;
+    int z;
+}
+
+/*
 int main() {
     Node[2][1] n;
-    Node s = n[0][1][2];
+    Node s = n[0];
+    bool r = s.v;
+    printString(typename Node);
+    return 0;
+}
+*/
+
+int main() {
+    Node[1][0] n;
+    Node p = new Pyc();
+    printString(typename n);
     return 0;
 }

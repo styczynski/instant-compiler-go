@@ -10,9 +10,9 @@ import (
 
 type Multiplication struct {
 	generic_ast.BaseASTNode
-	Unary *Unary          `@@`
-	Op    string          `[ @( "/" | "*" | "%" )`
-	Next  *Multiplication `  @@ ]`
+	Unary      *Unary          `@@`
+	Op         string          `[ @( "/" | "*" | "%" )`
+	Next       *Multiplication `  @@ ]`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -62,9 +62,7 @@ func (ast *Multiplication) Print(c *context.ParsingContext) string {
 	return ast.Unary.Print(c)
 }
 
-
 ////
-
 
 func (ast *Multiplication) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	next := ast.Next
@@ -73,10 +71,10 @@ func (ast *Multiplication) Map(parent generic_ast.Expression, mapper generic_ast
 	}
 	return mapper(parent, &Multiplication{
 		BaseASTNode: ast.BaseASTNode,
-		Unary:    mapper(ast, ast.Unary, context, false).(*Unary),
+		Unary:       mapper(ast, ast.Unary, context, false).(*Unary),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -88,10 +86,10 @@ func (ast *Multiplication) Visit(parent generic_ast.Expression, mapper generic_a
 	mapper(parent, ast, context)
 }
 
-func (ast *Multiplication) Fn() generic_ast.Expression {
+func (ast *Multiplication) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: ast.Op,
+		name:        ast.Op,
 	}
 }
 

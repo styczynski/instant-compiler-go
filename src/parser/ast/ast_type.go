@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"fmt"
+
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -47,13 +49,45 @@ func (ast *Type) Print(c *context.ParsingContext) string {
 
 /////
 
-func (ast *Type) GetType() *hindley_milner.Scheme {
-	if ast.Dimensions != nil {
-		return hindley_milner.NewScheme(nil, ast.Dimensions.BuildType(PrimitiveType{
-			name: *ast.Name,
-		}))
+func (ast *Type) IsBasePrimitive() bool {
+	typeName := *ast.Name
+	if typeName == "string" {
+		return true
+	} else if typeName == "bool" {
+		return true
+	} else if typeName == "int" {
+		return true
 	}
-	return hindley_milner.NewScheme(nil, PrimitiveType{
-		name: *ast.Name,
-	})
+	return false
+}
+
+func (ast *Type) GetType(c hindley_milner.InferContext) *hindley_milner.Scheme {
+	var baseType hindley_milner.Type
+	if ast.IsBasePrimitive() {
+		baseType = PrimitiveType{
+			name: *ast.Name,
+		}
+	} else {
+		if c != nil {
+			t, err := c.TypeOf(&New{
+				BaseASTNode: ast.BaseASTNode,
+				ParentNode:  ast.ParentNode,
+				Class:       ast.Name,
+			})
+			fmt.Printf("GOT CLASS => %s [%v]\n", *ast.Name, t)
+			if err != nil {
+				panic(err.Error())
+			}
+			if ast.Dimensions != nil {
+				return hindley_milner.NewScheme(hindley_milner.TypeVarSet{}, ast.Dimensions.BuildType(t))
+			}
+			return hindley_milner.NewScheme(hindley_milner.TypeVarSet{}, t)
+		}
+		baseType = hindley_milner.NewSignedStructType(*ast.Name, map[string]hindley_milner.Type{})
+	}
+
+	if ast.Dimensions != nil {
+		return hindley_milner.NewScheme(nil, ast.Dimensions.BuildType(baseType))
+	}
+	return hindley_milner.NewScheme(nil, baseType)
 }

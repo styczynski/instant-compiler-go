@@ -9,11 +9,11 @@ import (
 )
 
 type Unary struct {
-	 generic_ast.BaseASTNode
-	Op      string   `  ( @( "!" | "-" )`
-	Unary   *Unary   `    @@ )`
+	generic_ast.BaseASTNode
+	Op               string            `  ( @( "!" | "-" )`
+	Unary            *Unary            `    @@ )`
 	UnaryApplication *UnaryApplication `| @@`
-	ParentNode generic_ast.TraversableNode
+	ParentNode       generic_ast.TraversableNode
 }
 
 func (ast *Unary) ExtractConst() (generic_ast.TraversableNode, bool) {
@@ -76,20 +76,19 @@ func (ast *Unary) Print(c *context.ParsingContext) string {
 
 ////
 
-
 func (ast *Unary) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	if ast.IsOperation() {
 		return mapper(parent, &Unary{
-			BaseASTNode:      ast.BaseASTNode,
-			Op:               ast.Op,
-			Unary:            mapper(ast, ast.Unary, context, false).(*Unary),
-			ParentNode: parent.(generic_ast.TraversableNode),
+			BaseASTNode: ast.BaseASTNode,
+			Op:          ast.Op,
+			Unary:       mapper(ast, ast.Unary, context, false).(*Unary),
+			ParentNode:  parent.(generic_ast.TraversableNode),
 		}, context, true)
 	} else if ast.IsUnaryApplication() {
 		return mapper(parent, &Unary{
 			BaseASTNode:      ast.BaseASTNode,
 			UnaryApplication: mapper(ast, ast.UnaryApplication, context, false).(*UnaryApplication),
-			ParentNode: parent.(generic_ast.TraversableNode),
+			ParentNode:       parent.(generic_ast.TraversableNode),
 		}, context, true)
 	}
 	panic("Invalid Unary operation type")
@@ -104,10 +103,10 @@ func (ast *Unary) Visit(parent generic_ast.Expression, mapper generic_ast.Expres
 	mapper(parent, ast, context)
 }
 
-func (ast *Unary) Fn() generic_ast.Expression {
+func (ast *Unary) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: "unary_"+ast.Op,
+		name:        "unary_" + ast.Op,
 	}
 }
 

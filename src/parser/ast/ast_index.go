@@ -63,7 +63,7 @@ func (ast *Index) HasIndexingExpr() bool {
 
 func (ast *Index) Print(c *context.ParsingContext) string {
 	if ast.HasIndexingExpr() {
-		return fmt.Sprintf("%s[%s]", ast.Primary.Print(c), ast.IndexingExpr.Print(c))
+		return fmt.Sprintf("%s%s", ast.Primary.Print(c), ast.IndexingExpr.Print(c))
 	}
 	return ast.Primary.Print(c)
 }

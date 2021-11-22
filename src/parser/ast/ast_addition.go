@@ -13,7 +13,7 @@ type Addition struct {
 	Multiplication *Multiplication `@@`
 	Op             string          `[ @( "-" | "+" )`
 	Next           *Addition       `  @@ ]`
-	ParentNode generic_ast.TraversableNode
+	ParentNode     generic_ast.TraversableNode
 }
 
 func (ast *Addition) ExtractConst() (generic_ast.TraversableNode, bool) {
@@ -64,18 +64,17 @@ func (ast *Addition) Print(c *context.ParsingContext) string {
 
 ///
 
-
 func (ast *Addition) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	next := ast.Next
 	if ast.HasNext() {
 		next = mapper(ast, ast.Next, context, false).(*Addition)
 	}
 	return mapper(parent, &Addition{
-		BaseASTNode: ast.BaseASTNode,
-		Multiplication:    mapper(ast, ast.Multiplication, context, false).(*Multiplication),
-		Op:          ast.Op,
-		Next:        next,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		BaseASTNode:    ast.BaseASTNode,
+		Multiplication: mapper(ast, ast.Multiplication, context, false).(*Multiplication),
+		Op:             ast.Op,
+		Next:           next,
+		ParentNode:     parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -87,10 +86,10 @@ func (ast *Addition) Visit(parent generic_ast.Expression, mapper generic_ast.Exp
 	mapper(parent, ast, context)
 }
 
-func (ast *Addition) Fn() generic_ast.Expression {
+func (ast *Addition) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: ast.Op,
+		name:        ast.Op,
 	}
 }
 

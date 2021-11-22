@@ -9,10 +9,10 @@ import (
 )
 
 type LogicalOperation struct {
-	 generic_ast.BaseASTNode
-	Equality *Equality `@@`
-	Op         string      `[ @( "|" "|" | "&" "&" )`
-	Next       *LogicalOperation   `  @@ ]`
+	generic_ast.BaseASTNode
+	Equality   *Equality         `@@`
+	Op         string            `[ @( "|" "|" | "&" "&" )`
+	Next       *LogicalOperation `  @@ ]`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -74,7 +74,7 @@ func (ast *LogicalOperation) Map(parent generic_ast.Expression, mapper generic_a
 		Equality:    mapper(ast, ast.Equality, context, false).(*Equality),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -86,10 +86,10 @@ func (ast *LogicalOperation) Visit(parent generic_ast.Expression, mapper generic
 	mapper(parent, ast, context)
 }
 
-func (ast *LogicalOperation) Fn() generic_ast.Expression {
+func (ast *LogicalOperation) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: ast.Op,
+		name:        ast.Op,
 	}
 }
 
@@ -120,11 +120,11 @@ func (ast *LogicalOperation) ConstFold() generic_ast.TraversableNode {
 		const1, ok1 := ast.Equality.ExtractConst()
 		if ok1 && ast.Op == "||" && const1.(*Primary).IsBool() {
 			//fmt.Printf("Fold left ||\n")
-			if (*const1.(*Primary).Bool) {
+			if *const1.(*Primary).Bool {
 				v := true
 				ast.Equality.Comparison.Addition.Multiplication.Unary.UnaryApplication.Index.Primary = &Primary{
-					BaseASTNode:   ast.BaseASTNode,
-					Bool: &v,
+					BaseASTNode: ast.BaseASTNode,
+					Bool:        &v,
 				}
 				ast.Next = nil
 				return ast
@@ -135,8 +135,8 @@ func (ast *LogicalOperation) ConstFold() generic_ast.TraversableNode {
 			if !(*const1.(*Primary).Bool) {
 				v := false
 				ast.Equality.Comparison.Addition.Multiplication.Unary.UnaryApplication.Index.Primary = &Primary{
-					BaseASTNode:   ast.BaseASTNode,
-					Bool: &v,
+					BaseASTNode: ast.BaseASTNode,
+					Bool:        &v,
 				}
 				ast.Next = nil
 				return ast

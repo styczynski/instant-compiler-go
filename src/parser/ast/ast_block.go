@@ -73,7 +73,7 @@ func (ast *Block) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 	return mapper(parent, &Block{
 		BaseASTNode: ast.BaseASTNode,
 		Statements:  mappedStmts,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 

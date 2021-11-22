@@ -7,8 +7,8 @@ import (
 )
 
 type EmbeddedTypeExpr struct {
-	GetType func()*Scheme
-	Source generic_ast.NormalNode
+	GetType func() *Scheme
+	Source  generic_ast.NormalNode
 }
 
 func (n EmbeddedTypeExpr) Begin() lexer.Position {
@@ -35,6 +35,6 @@ func (n EmbeddedTypeExpr) ExpressionType() ExpressionType {
 	return E_TYPE
 }
 
-func (n EmbeddedTypeExpr) EmbeddedType() *Scheme {
+func (n EmbeddedTypeExpr) EmbeddedType(c InferContext) *Scheme {
 	return n.GetType()
 }
