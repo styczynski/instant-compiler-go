@@ -15,7 +15,7 @@ type Class struct {
 	generic_ast.BaseASTNode
 	ClassType  string        `@("class" | "scheme")`
 	Name       string        `@Ident "{"`
-	Fields     []*ClassField `(@@ ";")* "}"`
+	Fields     []*ClassField `(@@)* "}"`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -96,8 +96,8 @@ func (ast *Class) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
 func (ast *Class) GetClassInstanceType(c hindley_milner.InferContext) hindley_milner.Type {
 	fields := map[string]hindley_milner.Type{}
 	for _, field := range ast.Fields {
-		t, _ := field.ClassFieldType.GetType(c).Type()
-		fields[field.Name] = t
+		t, _ := field.GetType(c).Type()
+		fields[field.FieldName()] = t
 	}
 	if ast.ClassType == "scheme" {
 		return hindley_milner.NewSignedStructType("", fields)

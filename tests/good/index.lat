@@ -1,25 +1,13 @@
-scheme Node {
+class Node {
     int v;
+    int g;
+    int z(int a) {return 2;}
+    string lol() {return "x";}
 }
-
-class Pyc {
-    int v;
-    int z;
-}
-
-/*
-int main() {
-    Node[2][1] n;
-    Node s = n[0];
-    bool r = s.v;
-    printString(typename Node);
-    return 0;
-}
-*/
 
 int main() {
-    Node[1][0] n;
-    Node p = new Pyc();
-    printString(typename n);
+    Node x = new Node();
+    //string y = x.z;
+    printString(typename x);
     return 0;
 }

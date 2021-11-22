@@ -114,8 +114,16 @@ func (infer *inferer) resolveProxy(expr generic_ast.Expression, exprType Express
 	return expr, exprType
 }
 
-func (infer *inferer) TypeOf(et generic_ast.Expression) (Type, error) {
+func (infer *inferer) TypeOf(et generic_ast.Expression, contextExpressions ...generic_ast.Expression) (Type, error) {
 	defer infer.cleanupConstraints()
+
+	env := infer.env.Clone()
+
+	for _, x := range contextExpressions {
+		if err := infer.consGen(x, E_NONE, false, false); err != nil {
+			return nil, err
+		}
+	}
 
 	if err := infer.consGen(et, E_NONE, false, false); err != nil {
 		return nil, err
@@ -128,6 +136,8 @@ func (infer *inferer) TypeOf(et generic_ast.Expression) (Type, error) {
 		b:       actType,
 		context: CreateCodeContext(et),
 	})
+
+	infer.env = env
 
 	logf("TYPEOF [%s]: {%v}\n", et, tv)
 	return tv, nil
@@ -151,7 +161,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 	expr, exprType = infer.resolveProxy(expr, exprType)
 
 	if exprWithDeps, ok := expr.(ExpressionWithIdentifiersDeps); ok {
-		idents := exprWithDeps.GetIdentifierDeps(nil)
+		idents := exprWithDeps.GetIdentifierDeps(infer)
 		for _, name := range idents.GetNames() {
 			if objType := idents.GetTypeOf(name); objType != nil {
 

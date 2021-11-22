@@ -59,7 +59,7 @@ type Inferer interface {
 }
 
 type InferContext interface {
-	TypeOf(et generic_ast.Expression) (Type, error)
+	TypeOf(et generic_ast.Expression, contextExpressions ...generic_ast.Expression) (Type, error)
 }
 
 type ExpressionType int
