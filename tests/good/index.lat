@@ -1,13 +1,15 @@
 class Node {
     int v;
-    int g;
-    int z(int a) {return 2;}
-    string lol() {return "x";}
+    //int g;
+    Node z(int a) {return a+2;}
+   // string lol() {return "x";}
 }
 
 int main() {
     Node x = new Node();
-    //string y = x.z;
-    printString(typename x);
+    auto p = x.z;
+    class ff = new Node();
+    auto lol = (new Node()).z;
+    printString(typename ff);
     return 0;
 }

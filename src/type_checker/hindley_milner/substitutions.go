@@ -2,18 +2,25 @@ package hindley_milner
 
 import "fmt"
 
-
 type Subs interface {
 	Get(TypeVariable) (Type, bool)
 	Add(TypeVariable, Type) Subs
 	Remove(TypeVariable) Subs
-
 
 	Iter() []Substitution
 	Size() int
 	Clone() Subs
 }
 
+func SubsConcat(con ...Subs) Subs {
+	var ret Subs = mSubs{}
+	for _, subs := range con {
+		for _, sub := range subs.Iter() {
+			ret = ret.Add(sub.Tv, sub.T)
+		}
+	}
+	return ret
+}
 
 type Substitution struct {
 	Tv TypeVariable

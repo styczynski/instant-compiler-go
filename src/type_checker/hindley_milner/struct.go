@@ -29,25 +29,58 @@ func (t *SignedStruct) IsPrototype() bool {
 	return len(t.name) == 0
 }
 
-func (t *SignedStruct) CheckIfCanUnionTypes(other interface{}) error {
+func (t *SignedStruct) Union(other interface{}, context Constraint) (Subs, error) {
 	if ot, ok := other.(*SignedStruct); ok {
 		if t.name != ot.name && !t.IsPrototype() && !ot.IsPrototype() {
-			return fmt.Errorf("Two different entities %s and %s are not compatible.", ot.name, t.name)
+			return nil, fmt.Errorf("Two different entities %s and %s are not compatible.", ot.name, t.name)
 		}
 
 		for i, _ := range t.ts {
 			if _, ok := ot.ts[i]; !ok && !ot.IsPrototype() {
-				return fmt.Errorf("Type %s is missing propery %s", ot.name, i)
+				return nil, fmt.Errorf("Type %s is missing propery %s", ot.name, i)
 			}
 		}
 
 		for i, _ := range ot.ts {
 			if _, ok := t.ts[i]; !ok && !t.IsPrototype() {
-				return fmt.Errorf("Type %s is missing propery %s", t.name, i)
+				return nil, fmt.Errorf("Type %s is missing propery %s", t.name, i)
 			}
 		}
+
+		// Checks finished
+
+		ret := SubsConcat()
+
+		for i, t1 := range t.ts {
+			if t2, ok := ot.ts[i]; ok {
+				subs, err := Unify(t1, t2, context)
+				if err != nil {
+					return nil, err
+				}
+				ret = SubsConcat(ret, subs)
+			}
+		}
+
+		if t.IsPrototype() && !ot.IsPrototype() {
+			
+		} else if !t.IsPrototype() && ot.IsPrototype() {
+			
+		}
+
+		// for i, t1 := range ot.ts {
+		// 	if t2, ok := t.ts[i]; ok {
+		// 		subs, err := Unify(t1, t2, context)
+		// 		if err != nil {
+		// 			return nil, err
+		// 		}
+		// 		ret = SubsConcat(ret, subs)
+		// 	}
+		// }
+
+		return ret, nil
 	}
-	return nil
+
+	return nil, fmt.Errorf("Invalid type")
 }
 
 func (t *SignedStruct) FreeTypeVar() TypeVarSet {

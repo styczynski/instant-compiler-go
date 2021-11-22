@@ -2,8 +2,8 @@ package hindley_milner
 
 import "fmt"
 
-type UnionTypeCheck interface {
-	CheckIfCanUnionTypes(t2 interface{}) error
+type UnionableType interface {
+	Union(t2 interface{}, context Constraint) (Subs, error)
 }
 
 type Constraints []Constraint

@@ -63,7 +63,14 @@ func (ast *Type) IsBasePrimitive() bool {
 
 func (ast *Type) GetType(c hindley_milner.InferContext) *hindley_milner.Scheme {
 	var baseType hindley_milner.Type
-	if ast.IsBasePrimitive() {
+	if *ast.Name == "auto" {
+		return hindley_milner.TypeHelperAny()
+	} else if *ast.Name == "class" {
+		return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("class", hindley_milner.NewFnType(
+			CreatePrimitive(T_VOID),
+			hindley_milner.NewSignedStructType("", map[string]hindley_milner.Type{}),
+		)))
+	} else if ast.IsBasePrimitive() {
 		baseType = PrimitiveType{
 			name: *ast.Name,
 		}

@@ -1016,9 +1016,16 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 
 func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 
-	if sa, ok := a.(UnionTypeCheck); ok {
+	if sa, ok := a.(UnionableType); ok {
 		if reflect.TypeOf(a) == reflect.TypeOf(b) {
-			err := sa.CheckIfCanUnionTypes(b)
+			if a.Eq(b) {
+				return nil, nil
+			}
+
+			defer ReturnTypes(a.Types())
+			defer ReturnTypes(b.Types())
+
+			subs, err := sa.Union(b, context)
 			if err != nil {
 				return nil, UnificationWrongTypeError{
 					TypeA:      a,
@@ -1027,6 +1034,7 @@ func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 					Details:    err.Error(),
 				}
 			}
+			return subs, nil
 		}
 	}
 
