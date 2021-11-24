@@ -49,8 +49,8 @@ func (ast *Type) Print(c *context.ParsingContext) string {
 
 /////
 
-func (ast *Type) IsBasePrimitive() bool {
-	typeName := *ast.Name
+func IsTypeBasePrimitive(name *string) bool {
+	typeName := *name
 	if typeName == "string" {
 		return true
 	} else if typeName == "bool" {
@@ -70,7 +70,7 @@ func (ast *Type) GetType(c hindley_milner.InferContext) *hindley_milner.Scheme {
 			CreatePrimitive(T_VOID),
 			hindley_milner.NewSignedStructType("", map[string]hindley_milner.Type{}),
 		)))
-	} else if ast.IsBasePrimitive() {
+	} else if IsTypeBasePrimitive(ast.Name) {
 		baseType = PrimitiveType{
 			name: *ast.Name,
 		}

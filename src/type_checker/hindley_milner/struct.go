@@ -29,7 +29,7 @@ func (t *SignedStruct) IsPrototype() bool {
 	return len(t.name) == 0
 }
 
-func (t *SignedStruct) Union(other interface{}, context Constraint) (Subs, error) {
+func (t *SignedStruct) Union(other interface{}, context Constraint, listener IntrospecionListener) (Subs, error) {
 	if ot, ok := other.(*SignedStruct); ok {
 		if t.name != ot.name && !t.IsPrototype() && !ot.IsPrototype() {
 			return nil, fmt.Errorf("Two different entities %s and %s are not compatible.", ot.name, t.name)
@@ -53,7 +53,7 @@ func (t *SignedStruct) Union(other interface{}, context Constraint) (Subs, error
 
 		for i, t1 := range t.ts {
 			if t2, ok := ot.ts[i]; ok {
-				subs, err := Unify(t1, t2, context)
+				subs, err := Unify(t1, t2, context, listener)
 				if err != nil {
 					return nil, err
 				}
@@ -62,9 +62,9 @@ func (t *SignedStruct) Union(other interface{}, context Constraint) (Subs, error
 		}
 
 		if t.IsPrototype() && !ot.IsPrototype() {
-			
+
 		} else if !t.IsPrototype() && ot.IsPrototype() {
-			
+
 		}
 
 		// for i, t1 := range ot.ts {

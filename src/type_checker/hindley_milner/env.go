@@ -16,6 +16,16 @@ type Env interface {
 	IsOverloaded(string) bool
 	OverloadedAlternatives(string) []*Scheme
 	IsBuiltin(name string) bool
+
+	RegisterIntrospectionListener(listener IntrospecionListener)
+	GetIntrospecionListener() IntrospecionListener
+}
+
+type IntrospecionListener interface {
+	OnApply(sub Subs)
+	OnApplySingle(tv TypeVariable, t Type)
+	AddIntrospectionVariable(tv TypeVariable)
+	GetIntrospectionVariable(tv TypeVariable) Type
 }
 
 type levelInfo struct {
@@ -44,6 +54,8 @@ type SimpleEnv struct {
 	builtins map[string]func() []*Scheme
 	levels   map[string][]levelInfo
 	uid      int
+
+	listener IntrospecionListener
 }
 
 func CreateSimpleEnv(env map[string][]*Scheme) *SimpleEnv {
@@ -90,15 +102,24 @@ func PrintEnv(env Env) {
 	logf("=========================\n")
 }
 
+func (e *SimpleEnv) RegisterIntrospectionListener(listener IntrospecionListener) {
+	e.listener = listener
+}
+
+func (e *SimpleEnv) GetIntrospecionListener() IntrospecionListener {
+	return e.listener
+}
+
 func (e *SimpleEnv) Apply(sub Subs) Substitutable {
 	logf("Applying %v to env", sub)
+
 	if sub == nil {
 		return e
 	}
 
+	e.listener.OnApply(sub)
 	for name, v := range e.env {
 		if _, ok := e.builtins[name]; ok {
-
 			continue
 		}
 		v[0].Apply(sub)
@@ -169,6 +190,7 @@ func (e *SimpleEnv) Clone() Env {
 		builtins: make(map[string]func() []*Scheme),
 		levels:   map[string][]levelInfo{},
 		uid:      e.uid,
+		listener: e.listener,
 	}
 	for k, v := range e.env {
 		retVal.env[k] = []*Scheme{}
@@ -309,4 +331,48 @@ func (e *SimpleEnv) OverloadedAlternatives(name string) []*Scheme {
 		return b()
 	}
 	return e.env[name]
+}
+
+type IntrospecionSimpleListener struct {
+	introspectionVars  []TypeVariable
+	introspectionTypes []Type
+}
+
+func NewIntrospecionSimpleListener() *IntrospecionSimpleListener {
+	return &IntrospecionSimpleListener{
+		introspectionVars:  []TypeVariable{},
+		introspectionTypes: []Type{},
+	}
+}
+
+func (e *IntrospecionSimpleListener) OnApply(sub Subs) {
+	for introIndex, introTV := range e.introspectionVars {
+		if t, ok := sub.Get(introTV); ok {
+			e.introspectionTypes[introIndex] = t
+		}
+	}
+}
+
+func (e *IntrospecionSimpleListener) OnApplySingle(tv TypeVariable, t Type) {
+	fmt.Printf("(?) INTRO Set %d (?%v) to %v\n", tv.value, e.introspectionVars, t)
+	for introIndex, introTV := range e.introspectionVars {
+		if introTV.Eq(tv) {
+			e.introspectionTypes[introIndex] = t
+			fmt.Printf("INTRO Set %d to %v\n", tv.value, t)
+		}
+	}
+}
+
+func (e *IntrospecionSimpleListener) AddIntrospectionVariable(tv TypeVariable) {
+	e.introspectionVars = append(e.introspectionVars, tv)
+	e.introspectionTypes = append(e.introspectionTypes, tv)
+}
+
+func (e *IntrospecionSimpleListener) GetIntrospectionVariable(tv TypeVariable) Type {
+	for ti, tv0 := range e.introspectionVars {
+		if tv.Eq(tv0) {
+			return e.introspectionTypes[ti]
+		}
+	}
+	return nil
 }

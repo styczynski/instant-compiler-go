@@ -3,7 +3,7 @@ package hindley_milner
 import "fmt"
 
 type UnionableType interface {
-	Union(t2 interface{}, context Constraint) (Subs, error)
+	Union(t2 interface{}, context Constraint, listener IntrospecionListener) (Subs, error)
 }
 
 type Constraints []Constraint

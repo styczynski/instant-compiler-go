@@ -251,6 +251,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		tvRet := infer.Fresh()
 
 		infer.t = tvRet
+		infer.env.GetIntrospecionListener().AddIntrospectionVariable(tvArg)
 		infer.ics = append(infer.ics, IntrospectionConstraint{
 			tv:      tvArg,
 			argTV:   bodyType,
@@ -635,7 +636,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			defType, defCs := infer.t, infer.cs
 
 			s := newSolver()
-			s.solve(defCs)
+			s.solve(defCs, infer.env.GetIntrospecionListener())
 			if s.err != nil {
 				return err
 			}
@@ -722,7 +723,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		defType, defCs := infer.t, infer.cs
 
 		s := newSolver()
-		s.solve(defCs)
+		s.solve(defCs, infer.env.GetIntrospecionListener())
 		if s.err != nil {
 			return err
 		}
@@ -908,6 +909,8 @@ func NewInferConfiguration() *InferConfiguration {
 }
 
 func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*Scheme, Env, error) {
+	env.RegisterIntrospectionListener(NewIntrospecionSimpleListener())
+
 	if expr == nil {
 		return nil, nil, errors.Errorf("Cannot infer a nil expression")
 	}
@@ -932,7 +935,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 	if config.OnSolvingStarted != nil {
 		(*config.OnSolvingStarted)()
 	}
-	s.solve(infer.cs)
+	s.solve(infer.cs, infer.env.GetIntrospecionListener())
 	if config.OnSolvingFinished != nil {
 		(*config.OnSolvingFinished)()
 	}
@@ -959,7 +962,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 				context: ocs.tv.context,
 			})
 			s2 := newSolver()
-			s2.solve(cs)
+			s2.solve(cs, infer.env.GetIntrospecionListener())
 			if s2.err == nil {
 
 				hasCleanRun = true
@@ -984,12 +987,6 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 	}
 	infer.cs = cleanCS
 
-	for _, ics := range infer.ics {
-
-		introExpr := (*ics.context.Source).(IntrospectionExpression)
-		introExpr.OnTypeReturned(ics.argTV)
-	}
-
 	if s.err != nil {
 		return nil, nil, s.err
 	}
@@ -1011,10 +1008,23 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 		infer.retEnv = infer.env
 	}
 
+	fmt.Printf("PIZDO TRY TO GET ALL INTROSPECTION\n")
+	fmt.Printf("%v\n", infer.cs)
+
+	for _, ics := range infer.ics {
+		is := newSolver()
+		is.solve(infer.cs, infer.env.GetIntrospecionListener())
+		h := infer.retEnv.GetIntrospecionListener().GetIntrospectionVariable(ics.tv).Apply(is.sub).(Type)
+		introExpr := (*ics.context.Source).(IntrospectionExpression)
+		introExpr.OnTypeReturned(h)
+	}
+
+	fmt.Printf("EEEEEEND PIZDO TRY TO GET ALL INTROSPECTION!\n")
+
 	return ret, retEnv, nil
 }
 
-func Unify(a, b Type, context Constraint) (sub Subs, err error) {
+func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Subs, err error) {
 
 	if sa, ok := a.(UnionableType); ok {
 		if reflect.TypeOf(a) == reflect.TypeOf(b) {
@@ -1025,7 +1035,7 @@ func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 			defer ReturnTypes(a.Types())
 			defer ReturnTypes(b.Types())
 
-			subs, err := sa.Union(b, context)
+			subs, err := sa.Union(b, context, listener)
 			if err != nil {
 				return nil, UnificationWrongTypeError{
 					TypeA:      a,
@@ -1040,14 +1050,14 @@ func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 
 	switch at := a.(type) {
 	case TypeVariable:
-		return bind(at, b, context, a)
+		return bind(at, b, context, a, listener)
 	default:
 		if a.Eq(b) {
 			return nil, nil
 		}
 
 		if btv, ok := b.(TypeVariable); ok {
-			return bind(btv, a, context, b)
+			return bind(btv, a, context, b, listener)
 		}
 		atypes := a.Types()
 		btypes := b.Types()
@@ -1058,7 +1068,7 @@ func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 			goto e
 		}
 
-		return unifyMany(atypes, btypes, a, b, context)
+		return unifyMany(atypes, btypes, a, b, context, listener)
 
 	e:
 	}
@@ -1070,7 +1080,7 @@ func Unify(a, b Type, context Constraint) (sub Subs, err error) {
 	return
 }
 
-func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Subs, err error) {
+func unifyMany(a, b Types, contextA, contextB Type, context Constraint, listener IntrospecionListener) (sub Subs, err error) {
 
 	if len(a) != len(b) {
 		return nil, UnificationLengthError{
@@ -1089,7 +1099,7 @@ func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Sub
 		}
 
 		var s2 Subs
-		if s2, err = Unify(at, bt, context); err != nil {
+		if s2, err = Unify(at, bt, context, listener); err != nil {
 			return nil, err
 		}
 
@@ -1107,8 +1117,10 @@ func unifyMany(a, b Types, contextA, contextB Type, context Constraint) (sub Sub
 	return
 }
 
-func bind(tv TypeVariable, t Type, context Constraint, tvt Type) (sub Subs, err error) {
+func bind(tv TypeVariable, t Type, context Constraint, tvt Type, listener IntrospecionListener) (sub Subs, err error) {
 	logf("Binding %v to %v", tv, t)
+	listener.OnApplySingle(tv, t)
+
 	switch {
 
 	case occurs(tv, t):
