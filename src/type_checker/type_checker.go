@@ -25,14 +25,40 @@ func (tc *LatteTypeChecker) Test(c *context.ParsingContext) {
 
 func (tc *LatteTypeChecker) GetEnv() *hindley_milner.SimpleEnv {
 	return hindley_milner.CreateSimpleEnv(map[string][]*hindley_milner.Scheme{
-		"+": []*hindley_milner.Scheme{
-			hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
-				ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
-			)),
-			hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		"union0": hindley_milner.SingleDef(hindley_milner.TypeVarSet{}, hindley_milner.NewUnionType([]hindley_milner.Type{
+			ast.CreatePrimitive(ast.T_STRING),
+			ast.CreatePrimitive(ast.T_INT),
+		})),
+		"union": hindley_milner.SingleDef(hindley_milner.TypeVarSet{
+			hindley_milner.TVar(0),
+			hindley_milner.TVar(1),
+		}, hindley_milner.NewFnType(
+			hindley_milner.TVar(0),
+			hindley_milner.TVar(1),
+			hindley_milner.NewUnionType([]hindley_milner.Type{
+				hindley_milner.TVar(0),
+				hindley_milner.TVar(1),
+			}),
+		)),
+		"concatStr": hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING),
+		)),
+		"+": hindley_milner.SingleDef(nil, hindley_milner.NewUnionType([]hindley_milner.Type{
+			hindley_milner.NewFnType(
 				ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING),
-			)),
-		},
+			),
+			hindley_milner.NewFnType(
+				ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+			),
+		})),
+		// "+": []*hindley_milner.Scheme{
+		// 	hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		// 		ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+		// 	)),
+		// 	hindley_milner.NewScheme(nil, hindley_milner.NewFnType(
+		// 		ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING),
+		// 	)),
+		// },
 		"true":  hindley_milner.SingleDef(nil, ast.CreatePrimitive(ast.T_BOOL)),
 		"false": hindley_milner.SingleDef(nil, ast.CreatePrimitive(ast.T_BOOL)),
 		"||": hindley_milner.SingleDef(nil, hindley_milner.NewFnType(

@@ -4,6 +4,10 @@ tests/**/*.class
 tests/**/*.j
 tests/**/*.jasmine
 tests/**/*.ll
+*.j
+*.class
+*.lat
+*.txt
 
 input.class
 input.j

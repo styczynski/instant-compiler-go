@@ -2,15 +2,10 @@ package hindley_milner
 
 import "fmt"
 
-
 type FunctionType struct {
-	a, b Type
+	a, b    Type
 	context CodeContext
 }
-
-
-
-
 
 func NewFnType(ts ...Type) *FunctionType {
 	if len(ts) < 2 {
@@ -41,9 +36,11 @@ func (t *FunctionType) Apply(sub Subs) Substitutable {
 	return t
 }
 
-func (t *FunctionType) FreeTypeVar() TypeVarSet    { return t.a.FreeTypeVar().Union(t.b.FreeTypeVar()) }
-func (t *FunctionType) Format(s fmt.State, c rune) { fmt.Fprintf(s, "%s%v → %v", TypeStringPrefix(t), t.a, t.b) }
-func (t *FunctionType) String() string             { return fmt.Sprintf("%s%v", TypeStringPrefix(t), t) }
+func (t *FunctionType) FreeTypeVar() TypeVarSet { return t.a.FreeTypeVar().Union(t.b.FreeTypeVar()) }
+func (t *FunctionType) Format(s fmt.State, c rune) {
+	fmt.Fprintf(s, "%s%v → %v", TypeStringPrefix(t), t.a, t.b)
+}
+func (t *FunctionType) String() string { return fmt.Sprintf("%s%v", TypeStringPrefix(t), t) }
 func (t *FunctionType) Normalize(k, v TypeVarSet) (Type, error) {
 	var a, b Type
 	var err error
@@ -66,16 +63,12 @@ func (t *FunctionType) Types() Types {
 
 func (t *FunctionType) Eq(other Type) bool {
 	if ot, ok := other.(*FunctionType); ok {
-		return ot.a.Eq(t.a) && ot.b.Eq(t.b)
+		return TypeEq(ot.a, t.a) && TypeEq(ot.b, t.b)
 	}
 	return false
 }
 
-
-
-
 func (t *FunctionType) Arg() Type { return t.a }
-
 
 func (t *FunctionType) Ret(recursive bool) Type {
 	if !recursive {
@@ -88,7 +81,6 @@ func (t *FunctionType) Ret(recursive bool) Type {
 
 	return t.b
 }
-
 
 func (t *FunctionType) FlatTypes() Types {
 	retVal := BorrowTypes(8)
@@ -112,7 +104,6 @@ func (t *FunctionType) FlatTypes() Types {
 	return retVal
 }
 
-
 func (t *FunctionType) Clone() interface{} {
 	retVal := new(FunctionType)
 
@@ -132,16 +123,16 @@ func (t *FunctionType) Clone() interface{} {
 
 func (t *FunctionType) MapTypes(mapper TypeMapper) Type {
 	return mapper(&FunctionType{
-		a: mapper(t.a),
-		b: mapper(t.b),
+		a:       mapper(t.a),
+		b:       mapper(t.b),
 		context: t.context,
 	})
 }
 
 func (t *FunctionType) WithContext(c CodeContext) Type {
 	return &FunctionType{
-		a: t.a,
-		b: t.b,
+		a:       t.a,
+		b:       t.b,
 		context: c,
 	}
 }

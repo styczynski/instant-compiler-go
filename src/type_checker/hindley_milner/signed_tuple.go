@@ -65,7 +65,7 @@ func (t *SignedTuple) Eq(other Type) bool {
 			return false
 		}
 		for i, v := range t.ts {
-			if !v.Eq(ot.ts[i]) {
+			if !TypeEq(v, ot.ts[i]) {
 				return false
 			}
 		}

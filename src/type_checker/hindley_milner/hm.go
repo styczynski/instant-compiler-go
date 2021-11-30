@@ -161,14 +161,67 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 	expr, exprType = infer.resolveProxy(expr, exprType)
 
 	if exprWithDeps, ok := expr.(ExpressionWithIdentifiersDeps); ok {
-		idents := exprWithDeps.GetIdentifierDeps(infer)
+
+		// tt := NewScheme(TypeVarSet{TVar(0)}, NewSignedTupleType("class", TVar(0)))
+		// _, osx1, osx2, _, _ := infer.env.AddPrototype(infer, "Node", tt, infer.blockScopeLevel)
+		// if osx1 != nil && osx2 != nil {
+		// 	infer.cs = append(infer.cs, Constraint{
+		// 		a:       Instantiate(infer, osx1),
+		// 		b:       Instantiate(infer, osx2),
+		// 		context: CreateCodeContext(expr),
+		// 	})
+		// }
+
+		idents := exprWithDeps.GetIdentifierDeps(infer, true)
 		for _, name := range idents.GetNames() {
 			if objType := idents.GetTypeOf(name); objType != nil {
 
 				/*_, osx1, osx2 :=*/
-				infer.env.AddPrototype(infer, name,
+				_, osx1, osx2, _, _ := infer.env.AddPrototype(infer, name,
 					objType,
 					infer.blockScopeLevel)
+				if osx1 != nil && osx2 != nil {
+					infer.cs = append(infer.cs, Constraint{
+						a:       Instantiate(infer, osx1),
+						b:       Instantiate(infer, osx2),
+						context: CreateCodeContext(expr),
+					})
+				}
+
+			} else {
+				tv := infer.Fresh().WithContext(objType.t.GetContext())
+
+				_, osx1, osx2, _, err := infer.env.Add(infer, name,
+					NewScheme(nil, tv),
+					infer.blockScopeLevel, false)
+				if err != nil {
+					return wrapEnvError(err, &expr)
+				}
+				if osx1 != nil && osx2 != nil {
+					infer.cs = append(infer.cs, Constraint{
+						a:       Instantiate(infer, osx1),
+						b:       Instantiate(infer, osx2),
+						context: CreateCodeContext(expr),
+					})
+				}
+			}
+		}
+
+		idents = exprWithDeps.GetIdentifierDeps(infer, false)
+		for _, name := range idents.GetNames() {
+			if objType := idents.GetTypeOf(name); objType != nil {
+
+				/*_, osx1, osx2 :=*/
+				_, osx1, osx2, _, _ := infer.env.AddPrototype(infer, name,
+					objType,
+					infer.blockScopeLevel)
+				if osx1 != nil && osx2 != nil {
+					infer.cs = append(infer.cs, Constraint{
+						a:       Instantiate(infer, osx1),
+						b:       Instantiate(infer, osx2),
+						context: CreateCodeContext(expr),
+					})
+				}
 
 			} else {
 				tv := infer.Fresh().WithContext(objType.t.GetContext())
@@ -580,6 +633,8 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 		}
 
 		for i, _ := range names {
+			redef := false
+
 			name := names[i]
 			def := definitions[i]
 			body := expr.Body()
@@ -595,7 +650,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			if !has {
 				infer.env.Remove(name)
 			}
-			_, s1, s2, varEnvDef, err := infer.env.Add(infer, name, &Scheme{tvs: TypeVarSet{tv}, t: tv}, infer.blockScopeLevel, false)
+			_, s1, s2, varEnvDef, err := infer.env.Add(infer, name, &Scheme{tvs: TypeVarSet{tv}, t: tv}, infer.blockScopeLevel, redef)
 			if err != nil {
 				return wrapEnvError(err, &expr)
 			}
@@ -649,7 +704,7 @@ func (infer *inferer) consGen(expr generic_ast.Expression, forceType ExpressionT
 			if !has {
 				infer.env.Remove(name)
 			}
-			_, os1, os2, varEnvDef2, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel, false)
+			_, os1, os2, varEnvDef2, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel, redef)
 			if err != nil {
 				if _, isDup := err.(*envError); isDup && varEnvDef.GetUID() == varEnvDef2.GetUID() {
 
@@ -796,7 +851,7 @@ func (infer *inferer) cleanupConstraints() {
 	freeVars := map[int16]map[Type]interface{}{}
 	contexts := map[int16]CodeContext{}
 	for _, cons := range infer.cs {
-		if !cons.a.Eq(cons.b) {
+		if !TypeEq(cons.a, cons.b) {
 			if tv, ok := cons.a.(TypeVariable); ok {
 				if _, has := freeVars[tv.value]; !has {
 					freeVars[tv.value] = map[Type]interface{}{}
@@ -808,7 +863,7 @@ func (infer *inferer) cleanupConstraints() {
 				}
 				has := false
 				for q, _ := range freeVars[tv.value] {
-					if q.Eq(cons.b) {
+					if TypeEq(q, cons.b) {
 						has = true
 						break
 					}
@@ -1025,10 +1080,48 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration) (*S
 }
 
 func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Subs, err error) {
+	fmt.Printf("UNION %v %v\n", a, b)
+
+	// aTV, bTV := false, false
+
+	// _, aTV = a.(*TypeVariable)
+	// _, bTV = b.(*TypeVariable)
+
+	//a, b = b, a
+
+	if unionA, ok := a.(*Union); ok {
+		allSubs := []Subs{}
+		for _, v := range unionA.types {
+			if subs, err := Unify(b, v.(Type), context, listener); err != nil {
+				return nil, fmt.Errorf("Cannot match union type: %w", err)
+			} else {
+				allSubs = append(allSubs, subs)
+			}
+		}
+		return SubsConcat(allSubs...), nil
+	}
+	if unionB, ok := b.(*Union); ok {
+		allSubs := []Subs{}
+		var lastErr error = nil
+		for _, v := range unionB.types {
+			if subs, err := Unify(a, v.(Type), context, listener); err != nil {
+				lastErr = fmt.Errorf("Cannot match union type: %w", err)
+			} else {
+				allSubs = append(allSubs, subs)
+				lastErr = nil
+				break
+			}
+		}
+		if lastErr != nil {
+			return nil, lastErr
+		}
+		return SubsConcat(allSubs...), nil
+	}
+	//return SubsConcat(allSubs...), nil
 
 	if sa, ok := a.(UnionableType); ok {
 		if reflect.TypeOf(a) == reflect.TypeOf(b) {
-			if a.Eq(b) {
+			if TypeEq(a, b) {
 				return nil, nil
 			}
 
@@ -1052,7 +1145,7 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 	case TypeVariable:
 		return bind(at, b, context, a, listener)
 	default:
-		if a.Eq(b) {
+		if TypeEq(a, b) {
 			return nil, nil
 		}
 
@@ -1124,7 +1217,7 @@ func bind(tv TypeVariable, t Type, context Constraint, tvt Type, listener Intros
 	switch {
 
 	case occurs(tv, t):
-		if tv.Eq(t) {
+		if TypeEq(tv, t) {
 			ssub := BorrowSSubs(1)
 			ssub.s[0] = Substitution{tv, t}
 			sub = ssub

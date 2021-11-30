@@ -46,7 +46,11 @@ func NamesWithTypes(names []string, types map[string]*Scheme) NameGroup {
 	return NameGroup{names, types, true}
 }
 
-func NamesWithTypesFromMap(names []string, args map[string]*Scheme) NameGroup {
+func NamesWithTypesFromMap(args map[string]*Scheme) NameGroup {
+	names := []string{}
+	for name, _ := range args {
+		names = append(names, name)
+	}
 	return NameGroup{names, args, true}
 }
 
@@ -225,7 +229,7 @@ type CustomExpression interface {
 }
 
 type ExpressionWithIdentifiersDeps interface {
-	GetIdentifierDeps(c InferContext) NameGroup
+	GetIdentifierDeps(c InferContext, pre bool) NameGroup
 }
 
 type IntrospectionExpression interface {

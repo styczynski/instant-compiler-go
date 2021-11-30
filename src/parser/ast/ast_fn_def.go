@@ -156,7 +156,7 @@ func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
 
 func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
 	if len(ast.Arg) == 0 {
-		return hindley_milner.NamesWithTypesFromMap([]string{""}, map[string]*hindley_milner.Scheme{
+		return hindley_milner.NamesWithTypes([]string{""}, map[string]*hindley_milner.Scheme{
 			"void": hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID_ARG)),
 		})
 	}
@@ -166,7 +166,7 @@ func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
 		argsTypes[arg.Name] = arg.ArgumentType.GetType(c)
 		names = append(names, arg.Name)
 	}
-	return hindley_milner.NamesWithTypesFromMap(names, argsTypes)
+	return hindley_milner.NamesWithTypes(names, argsTypes)
 }
 
 func (ast *FnDef) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {

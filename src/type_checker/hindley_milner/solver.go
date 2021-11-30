@@ -1,5 +1,7 @@
 package hindley_milner
 
+import "fmt"
+
 type solver struct {
 	sub Subs
 	err error
@@ -10,6 +12,8 @@ func newSolver() *solver {
 }
 
 func (s *solver) solve(cs Constraints, listener IntrospecionListener) {
+
+	fmt.Printf("DBG: SOLVE CALL\n")
 
 	if s.err != nil {
 		return

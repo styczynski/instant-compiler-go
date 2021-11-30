@@ -27,7 +27,7 @@ func (ast *TopDef) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
-func (ast *TopDef) GetDefinedIdentifier(c hindley_milner.InferContext) ([]string, []*hindley_milner.Scheme) {
+func (ast *TopDef) GetDefinedIdentifier(c hindley_milner.InferContext, pre bool) ([]string, []*hindley_milner.Scheme) {
 	if ast.IsFunction() {
 		return []string{
 				ast.Function.Name,
@@ -35,11 +35,7 @@ func (ast *TopDef) GetDefinedIdentifier(c hindley_milner.InferContext) ([]string
 				ast.Function.GetDeclarationType(),
 			}
 	} else if ast.IsClass() {
-		return []string{
-				ast.Class.Name,
-			}, []*hindley_milner.Scheme{
-				ast.Class.GetDeclarationType(c),
-			}
+		return ast.Class.GetDeclarationIdentifiers()
 	}
 	return []string{}, []*hindley_milner.Scheme{}
 }

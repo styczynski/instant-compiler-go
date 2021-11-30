@@ -14,6 +14,10 @@ func NewScheme(tvs TypeVarSet, t Type) *Scheme {
 	}
 }
 
+func (s *Scheme) Wrap(wrapperFn func(t Type) Type) {
+	s.t = wrapperFn(s.t)
+}
+
 func (s *Scheme) Apply(sub Subs) Substitutable {
 	logf("s: %v, sub: %v", s, sub)
 	if sub == nil {

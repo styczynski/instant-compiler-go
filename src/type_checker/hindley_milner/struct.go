@@ -126,13 +126,13 @@ func (t *SignedStruct) Eq(other Type) bool {
 		}
 
 		for i, tv := range t.ts {
-			if ov, ok := ot.ts[i]; (!ok && !ot.IsPrototype()) || !tv.Eq(ov) {
+			if ov, ok := ot.ts[i]; (!ok && !ot.IsPrototype()) || !TypeEq(tv, ov) {
 				return false
 			}
 		}
 
 		for i, ov := range ot.ts {
-			if tv, ok := t.ts[i]; (!ok && !t.IsPrototype()) || !tv.Eq(ov) {
+			if tv, ok := t.ts[i]; (!ok && !t.IsPrototype()) || !TypeEq(tv, ov) {
 				return false
 			}
 		}

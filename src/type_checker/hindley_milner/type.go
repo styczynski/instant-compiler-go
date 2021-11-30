@@ -6,6 +6,29 @@ import (
 
 type TypeMapper = func(t Type) Type
 
+func TypeEq(a Type, b Type) bool {
+	//a, b = b, a
+	//fmt.Printf("EQ %v %v\n", a, b)
+
+	if unionA, ok := a.(*Union); ok {
+		for _, v := range unionA.types {
+			if !TypeEq(b, v) {
+				return false
+			}
+		}
+		return true
+	}
+	if unionB, ok := b.(*Union); ok {
+		for _, v := range unionB.types {
+			if a.Eq(v) {
+				return true
+			}
+		}
+		return false
+	}
+
+	return a.Eq(b)
+}
 
 type Type interface {
 	Substitutable
@@ -29,15 +52,13 @@ func TypeStringPrefix(t Type) string {
 	return ""
 }
 
-
 type Substitutable interface {
 	Apply(Subs) Substitutable
 	FreeTypeVar() TypeVarSet
 }
 
-
 type TypeConst struct {
-	value string
+	value   string
 	context CodeContext
 }
 
@@ -48,7 +69,7 @@ func (t TypeConst) Normalize(k, v TypeVarSet) (Type, error) { return t, nil }
 func (t TypeConst) Types() Types                            { return nil }
 func (t TypeConst) String() string                          { return fmt.Sprintf("%s%s", TypeStringPrefix(t), t.value) }
 func (t TypeConst) Format(s fmt.State, c rune)              { fmt.Fprintf(s, "%s%s", TypeStringPrefix(t), t.value) }
-func (t TypeConst) Eq(other Type) bool                      {
+func (t TypeConst) Eq(other Type) bool {
 	if otherV, ok := other.(TypeConst); ok {
 		return otherV.value == t.value
 	}
@@ -67,13 +88,11 @@ func (t TypeConst) GetContext() CodeContext {
 	return t.context
 }
 
-
 type Record struct {
-	ts   []Type
-	name string
+	ts      []Type
+	name    string
 	context CodeContext
 }
-
 
 func NewRecordType(name string, ts ...Type) *Record {
 	return &Record{
@@ -128,7 +147,7 @@ func (t *Record) Eq(other Type) bool {
 			return false
 		}
 		for i, v := range t.ts {
-			if !v.Eq(ot.ts[i]) {
+			if !TypeEq(v, ot.ts[i]) {
 				return false
 			}
 		}
@@ -152,8 +171,8 @@ func (t *Record) Format(f fmt.State, c rune) {
 
 func (t *Record) MapTypes(mapper TypeMapper) Type {
 	newRecord := &Record{
-		ts:   []Type{},
-		name: t.name,
+		ts:      []Type{},
+		name:    t.name,
 		context: t.context,
 	}
 	for _, v := range t.ts {
@@ -164,8 +183,8 @@ func (t *Record) MapTypes(mapper TypeMapper) Type {
 
 func (t *Record) WithContext(c CodeContext) Type {
 	return &Record{
-		ts:   t.ts,
-		name: t.name,
+		ts:      t.ts,
+		name:    t.name,
 		context: c,
 	}
 }
@@ -175,7 +194,6 @@ func (t *Record) GetContext() CodeContext {
 }
 
 func (t *Record) String() string { return fmt.Sprintf("%s%v", TypeStringPrefix(t), t) }
-
 
 func (t *Record) Clone() interface{} {
 	retVal := new(Record)

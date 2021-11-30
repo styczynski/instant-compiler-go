@@ -354,11 +354,11 @@ func (e *IntrospecionSimpleListener) OnApply(sub Subs) {
 }
 
 func (e *IntrospecionSimpleListener) OnApplySingle(tv TypeVariable, t Type) {
-	fmt.Printf("(?) INTRO Set %d (?%v) to %v\n", tv.value, e.introspectionVars, t)
+	//fmt.Printf("(?) INTRO Set %d (?%v) to %v\n", tv.value, e.introspectionVars, t)
 	for introIndex, introTV := range e.introspectionVars {
-		if introTV.Eq(tv) {
+		if TypeEq(introTV, tv) {
 			e.introspectionTypes[introIndex] = t
-			fmt.Printf("INTRO Set %d to %v\n", tv.value, t)
+			//fmt.Printf("INTRO Set %d to %v\n", tv.value, t)
 		}
 	}
 }
@@ -370,7 +370,7 @@ func (e *IntrospecionSimpleListener) AddIntrospectionVariable(tv TypeVariable) {
 
 func (e *IntrospecionSimpleListener) GetIntrospectionVariable(tv TypeVariable) Type {
 	for ti, tv0 := range e.introspectionVars {
-		if tv.Eq(tv0) {
+		if TypeEq(tv, tv0) {
 			return e.introspectionTypes[ti]
 		}
 	}

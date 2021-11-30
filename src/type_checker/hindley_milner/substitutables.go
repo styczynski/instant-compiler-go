@@ -51,7 +51,7 @@ type Types []Type
 
 func (ts Types) Contains(t Type) bool {
 	for _, T := range ts {
-		if t.Eq(T) {
+		if TypeEq(t, T) {
 			return true
 		}
 	}

@@ -1,8 +1,6 @@
 package ast
 
 import (
-	"fmt"
-
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -75,21 +73,6 @@ func (ast *Type) GetType(c hindley_milner.InferContext) *hindley_milner.Scheme {
 			name: *ast.Name,
 		}
 	} else {
-		if c != nil {
-			t, err := c.TypeOf(&New{
-				BaseASTNode: ast.BaseASTNode,
-				ParentNode:  ast.ParentNode,
-				Class:       ast.Name,
-			})
-			fmt.Printf("GOT CLASS => %s [%v]\n", *ast.Name, t)
-			if err != nil {
-				panic(err.Error())
-			}
-			if ast.Dimensions != nil {
-				return hindley_milner.NewScheme(hindley_milner.TypeVarSet{}, ast.Dimensions.BuildType(t))
-			}
-			return hindley_milner.NewScheme(hindley_milner.TypeVarSet{}, t)
-		}
 		baseType = hindley_milner.NewSignedStructType(*ast.Name, map[string]hindley_milner.Type{})
 	}
 
