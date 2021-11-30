@@ -2,21 +2,29 @@
 
 set -o errexit
 set -o nounset
-set -o pipefail
 
 # Enable C code, as it is needed for SQLite3 database binary
 # Enable go modules
 export CGO_ENABLED=1
 export GO111MODULE=on
-export GOFLAGS="-mod=vendor"
+export GOFLAGS=""
 
 # Collect test targets
 TARGETS=$(for d in "$@"; do echo ./$d/...; done)
 
+# Build everything
+make
+
 # Run tests
-echo "Running tests:"
-go test -installsuffix "static" ${TARGETS} 2>&1
-echo
+# echo "Running tests:"
+# go test -installsuffix "static" ${TARGETS} 2>&1
+# echo
+
+make tests
+
+# Package release
+rm -rfd ps386038.tar.gz
+make ps386038.tar.gz
 
 # Collect all `.go` files and `gofmt` against them. If some need formatting - print them.
 echo -n "Checking gofmt: "

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-DIR=$(PWD)
-git add . && git reset --hard
-git clean -ffdx
+DIR=$(pwd)
 rm -rfd *.tar.gz
 cd ..
-tar -czvf ps386038.tar.gz *ps386038
+cp -R $DIR $DIR/ps386038
 cd $DIR
+tar -czvf ps386038.tar.gz ./ps386038
+rm -rfd ./ps386038
 mv ../ps386038.tar.gz .
