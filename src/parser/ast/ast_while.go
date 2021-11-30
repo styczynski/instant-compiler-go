@@ -84,9 +84,8 @@ func (ast *While) Visit(parent generic_ast.Expression, mapper generic_ast.Expres
 
 func (ast *While) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
-		return hindley_milner.NewScheme(
-			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
-			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), hindley_milner.TVar('a'), CreatePrimitive(T_VOID)))
+		return hindley_milner.Concreate(
+			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), CreatePrimitive(T_VOID), CreatePrimitive(T_VOID)))
 	}, Source: ast}
 }
 

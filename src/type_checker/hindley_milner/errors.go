@@ -46,6 +46,13 @@ func (err UnificationWrongTypeError) GetCauseName() string {
 	return err.Constraint.context.Name
 }
 
+func (err UnificationWrongTypeError) HasSource() bool {
+	if err.Constraint.context.Source == nil {
+		return false
+	}
+	return true
+}
+
 func (err UnificationWrongTypeError) Source() generic_ast.Expression {
 	if err.Constraint.context.Source == nil {
 		logf("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())

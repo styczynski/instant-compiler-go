@@ -100,7 +100,7 @@ func (a *Primary) Compare(b *Primary, Op string) *Primary {
 		} else if Op == ">" {
 			v = *a.String > *b.String
 		} else {
-			panic("Invalid comaprison type")
+			return nil
 		}
 		return &Primary{
 			BaseASTNode: a.BaseASTNode,
@@ -130,14 +130,14 @@ func (a *Primary) Compare(b *Primary, Op string) *Primary {
 		} else if Op == ">" {
 			v = *a.Int > *b.Int
 		} else {
-			panic("Invalid comaprison type")
+			return nil
 		}
 		return &Primary{
 			BaseASTNode: a.BaseASTNode,
 			Bool:        &v,
 		}
 	}
-	panic("Invalid addition")
+	return nil
 }
 
 func (a *Primary) And(b *Primary, Op string) *Primary {
@@ -248,7 +248,7 @@ func (ast *Primary) GetChildren() []generic_ast.TraversableNode {
 		}
 	} else if ast.IsBool() {
 		return []generic_ast.TraversableNode{
-			generic_ast.MakeTraversableNodeValue(ast, *ast.Bool, "bool", ast.Pos, ast.EndPos),
+			generic_ast.MakeTraversableNodeValue(ast, *ast.Bool, "boolean", ast.Pos, ast.EndPos),
 		}
 	} else if ast.IsSubexpression() {
 		return []generic_ast.TraversableNode{

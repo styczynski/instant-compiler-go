@@ -91,7 +91,7 @@ func TestComputeGraphColouring() {
 	}
 
 	for node, colour := range colouring {
-		fmt.Printf("\nNode %d has colour %d", node, colour)
+		//fmt.Printf("\nNode %d has colour %d", node, colour)
 	}
 }
 

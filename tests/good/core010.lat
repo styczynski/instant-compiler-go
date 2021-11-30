@@ -15,5 +15,5 @@ int fac (int a) {
     r = r * n;
     n = n - 1;
   }
-  return r;
+  return 3;
 }

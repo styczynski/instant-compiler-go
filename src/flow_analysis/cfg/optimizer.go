@@ -1,9 +1,6 @@
 package cfg
 
 import (
-	"fmt"
-	"reflect"
-
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
@@ -14,7 +11,7 @@ func (flow *FlowAnalysisImpl) Optimize(c *context.ParsingContext) {
 	for _, b := range cfg.blocks {
 		block := b
 		if block.stmt != nil {
-			fmt.Printf("OPTIMIZE %v\n", reflect.TypeOf(block.stmt))
+			//fmt.Printf("OPTIMIZE %v\n", reflect.TypeOf(block.stmt))
 			if rmb, ok := block.stmt.(NodeWithRemovableVariableAsignment); ok {
 				liveVars := liveness.BlockIn(block.stmt)
 				refVars := flow.graph.ReferencedVars(block.stmt)

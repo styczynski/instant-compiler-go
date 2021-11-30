@@ -2,6 +2,8 @@ package hindley_milner
 
 import (
 	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
 type Union struct {
@@ -13,6 +15,34 @@ func NewUnionType(types []Type) *Union {
 	return &Union{
 		types: types,
 	}
+}
+
+func (t *Union) FindMatchingFunction(source generic_ast.Expression, args []Type) (error, Type) {
+	for _, alternative := range t.types {
+		if altFn, ok := alternative.(*FunctionType); !ok {
+			allArgs := []Type{}
+			allArgs = append(allArgs, args...)
+			allArgs = append(allArgs, TVar(0))
+			return UnificationWrongTypeError{
+				TypeA: t,
+				TypeB: NewFnType(allArgs...),
+				Constraint: Constraint{
+					a:       t,
+					b:       NewFnType(allArgs...),
+					context: CreateCodeContext(source),
+				},
+				Details: fmt.Sprintf("Value is not a function. You can call only functions. Got type: %v", t),
+			}, nil
+		} else {
+			allArgs := []Type{}
+			allArgs = append(allArgs, args...)
+			allArgs = append(allArgs, altFn.Ret(true))
+			if TypeEq(alternative, NewFnType(allArgs...)) {
+				return nil, alternative
+			}
+		}
+	}
+	return nil, nil
 }
 
 func (t *Union) Name() string {

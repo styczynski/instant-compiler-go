@@ -122,6 +122,9 @@ func (ast *Comparison) ConstFold() generic_ast.TraversableNode {
 			p1 := const1.(*Primary)
 			p2 := const2.(*Primary)
 			v := p1.Compare(p2, ast.Op)
+			if v == nil {
+				return ast
+			}
 			// Change pointers
 			ast.Addition.Multiplication.Unary.UnaryApplication.Index.Primary = v
 			ast.Op = ast.Next.Op

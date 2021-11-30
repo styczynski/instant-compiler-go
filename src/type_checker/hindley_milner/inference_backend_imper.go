@@ -16,6 +16,7 @@ type ImperInferenceBackend struct {
 	returns         []Type
 	blockScopeLevel int
 	config          *InferConfiguration
+	count           int
 }
 
 func CreateImperInferenceBackend(env Env, config *InferConfiguration) *ImperInferenceBackend {
@@ -27,11 +28,16 @@ func CreateImperInferenceBackend(env Env, config *InferConfiguration) *ImperInfe
 		t:               nil,
 		retEnv:          env,
 		blockScopeLevel: 0,
+		count:           0,
 	}
 }
 
 func (infer *ImperInferenceBackend) Fresh() TypeVariable {
-	return TVar(0)
+	retVal := infer.count
+	infer.count++
+	return TypeVariable{
+		value: int16(retVal),
+	}
 }
 
 func (infer *ImperInferenceBackend) lookup(isLiteral bool, name string, source generic_ast.Expression) error {
@@ -105,6 +111,26 @@ func (infer *ImperInferenceBackend) TypeOf(et generic_ast.Expression, contextExp
 func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error) {
 
 	defer func() {
+		newCS := Constraints{}
+		for _, cs := range infer.cs {
+
+			// Problem?
+			if cs.FreeTypeVar().Len() > 0 {
+				subs, err0 := Unify(cs.a, cs.b, cs, infer.env.GetIntrospecionListener())
+				if err != nil {
+					err = err0
+				}
+				infer.t.Apply(subs)
+			} else if !cs.a.Eq(cs.b) {
+				newCS = append(newCS, cs)
+			}
+		}
+		infer.cs = newCS
+		for _, cs := range infer.cs {
+			if cs.FreeTypeVar().Len() > 0 {
+				err = fmt.Errorf("Output constraints contains type variables")
+			}
+		}
 		logf(">> [END] Generate constrints: %v %v (%v)\n", reflect.TypeOf(expr), infer.cs, infer.t)
 	}()
 
@@ -382,18 +408,59 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			context: CreateCodeContext(expr),
 		})
 		infer.cs = cs
-		infer.t = aType
+		if defaultTyper, ok := expr.(DefaultTyper); ok {
+			infer.t = Instantiate(infer, defaultTyper.DefaultType(infer))
+		} else if infer.config.CreateDefaultEmptyType() != nil {
+			infer.t = Instantiate(infer, infer.config.CreateDefaultEmptyType())
+		}
 		return nil
 
 	case E_APPLICATION:
 		et := expr.(Apply)
 		firstExec := true
+
+		// collect all argument types
+		argTypes := []Type{}
+		batchErr := ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
+			if err = infer.GenerateConstraints(body, E_NONE, false, false); err != nil {
+				return err
+			}
+			argTypes = append(argTypes, infer.t)
+			return nil
+		})
+		if batchErr != nil {
+			return batchErr
+		}
+
 		logf("\n\nAPPLICATION START %v\n", expr)
 		var originalFnType *FunctionType
-		batchErr := ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
+		batchErr = ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
 			if firstExec {
 				if err = infer.GenerateConstraints(et.Fn(infer), E_NONE, false, false); err != nil {
 					return err
+				}
+				if unionType, ok := infer.t.(*Union); ok {
+					allArgs := []Type{}
+					allArgs = append(allArgs, argTypes...)
+					allArgs = append(allArgs, TVar(0))
+					err, resolvedType := unionType.FindMatchingFunction(et, argTypes)
+					//fmt.Printf("UNIONIZED %v FOR %v %v\n", err, resolvedType, argTypes)
+					if err != nil {
+						return err
+					}
+					if resolvedType == nil {
+						return UnificationWrongTypeError{
+							TypeA: infer.t,
+							TypeB: NewFnType(allArgs...),
+							Constraint: Constraint{
+								a:       infer.t,
+								b:       NewFnType(allArgs...),
+								context: CreateCodeContext(et),
+							},
+							Details: fmt.Sprintf("Function overload not found"),
+						}
+					}
+					infer.t = resolvedType
 				}
 				if _, ok := infer.t.(*FunctionType); !ok {
 					return UnificationWrongTypeError{
@@ -402,7 +469,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 						Constraint: Constraint{
 							a:       infer.t,
 							b:       NewFnType(TVar(0), TVar(1)),
-							context: infer.t.GetContext(),
+							context: CreateCodeContext(et),
 						},
 						Details: fmt.Sprintf("Value is not a function. You can call only functions. Got type: %v", infer.t),
 					}
@@ -424,7 +491,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 					Constraint: Constraint{
 						a:       fnType,
 						b:       NewFnType(TVar(0), TVar(1)),
-						context: bodyType.GetContext(),
+						context: CreateCodeContext(et),
 					},
 					Details: fmt.Sprintf("Function is applied to wrong number of arguments. Expected: %d", originalFnType.CountArgs()),
 				}

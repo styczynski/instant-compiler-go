@@ -66,7 +66,7 @@ func (ast *New) EmbeddedType(c hindley_milner.InferContext) *hindley_milner.Sche
 	base := CreatePrimitive(T_VOID)
 	if *ast.Class == "string" {
 		base = CreatePrimitive(T_STRING)
-	} else if *ast.Class == "bool" {
+	} else if *ast.Class == "boolean" {
 		base = CreatePrimitive(T_BOOL)
 	} else if *ast.Class == "int" {
 		base = CreatePrimitive(T_INT)

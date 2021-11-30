@@ -14,11 +14,11 @@ import (
 type Statement struct {
 	generic_ast.BaseASTNode
 	Empty          *string         `";"`
+	Return         *Return         `| @@`
 	BlockStatement *Block          `| @@`
 	Declaration    *Declaration    `| @@`
 	Assignment     *Assignment     `| @@`
 	UnaryStatement *UnaryStatement `| @@`
-	Return         *Return         `| @@`
 	If             *If             `| @@`
 	While          *While          `| @@`
 	For            *For            `| @@`

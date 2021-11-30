@@ -51,7 +51,7 @@ func IsTypeBasePrimitive(name *string) bool {
 	typeName := *name
 	if typeName == "string" {
 		return true
-	} else if typeName == "bool" {
+	} else if typeName == "boolean" {
 		return true
 	} else if typeName == "int" {
 		return true
