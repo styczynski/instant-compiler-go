@@ -33,4 +33,4 @@ jobs:
       - name: Unpack archive
         run: tar -zxvf ./ps386038.tar.gz
       - name: Test make
-        run: make
+        run: cd ps386038 && make
