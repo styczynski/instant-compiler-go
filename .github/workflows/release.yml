@@ -21,3 +21,16 @@ jobs:
         with:
           name: release
           path: ./ps386038.tar.gz
+  test_release:
+    name: Test packaged release
+    runs-on: ubuntu-latest
+    needs: release
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: release
+      - name: Unpack archive
+        run: tar -zxvf ./ps386038.tar.gz
+      - name: Test make
+        run: make
