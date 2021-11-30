@@ -15,7 +15,7 @@ input.ll
 input.bc
 
 # Binaries
-insc
+latc
 
 # Idea files
 .idea/
