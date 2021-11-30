@@ -34,6 +34,7 @@ type levelInfo struct {
 	hasAnyProt bool
 	uid        int
 	baseTV     TypeVariable
+	baseScheme *Scheme
 }
 
 func (i levelInfo) GetUID() int {
@@ -165,7 +166,8 @@ func (e *SimpleEnv) Lookup(f Fresher, name string) (Type, error, bool) {
 	if oldLevels, ok := e.levels[name]; ok && len(oldLevels) > 0 {
 		oldLevel := oldLevels[len(oldLevels)-1]
 		if oldLevel.hasAnyProt {
-			return oldLevel.baseTV, nil, true
+			return oldLevel.baseScheme.Concrete(), nil, true
+			//return oldLevel.baseTV, nil, true
 		}
 	}
 
@@ -218,6 +220,7 @@ func (e *SimpleEnv) Clone() Env {
 				hasAnyProt: i.hasAnyProt,
 				uid:        i.uid,
 				baseTV:     i.baseTV,
+				baseScheme: i.baseScheme,
 			})
 		}
 		retVal.levels[k] = newLevels
@@ -273,11 +276,13 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 				hasAnyProt: isPrototype || oldLevel.hasAnyProt,
 				uid:        e.uid,
 				baseTV:     oldLevel.baseTV,
+				baseScheme: oldLevel.baseScheme,
 			}
 			e.uid++
 			e.levels[name] = append(e.levels[name], inf)
 
-			con1 := NewScheme(nil, inf.baseTV)
+			//con1 := NewScheme(nil, inf.baseTV)
+			con1 := inf.baseScheme
 			con2 := s
 
 			logf("  -> ADD MERGE %v ~ %v\n", con1, con2)
@@ -299,6 +304,7 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 		hasAnyProt: isPrototype,
 		uid:        e.uid,
 		baseTV:     tv,
+		baseScheme: s,
 	}
 	e.uid++
 	e.levels[name] = append(e.levels[name], inf)

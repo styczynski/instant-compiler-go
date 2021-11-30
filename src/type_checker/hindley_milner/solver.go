@@ -11,7 +11,7 @@ func newSolver() *solver {
 
 func (s *solver) solve(cs Constraints, listener IntrospecionListener) {
 
-	//fmt.Printf("DBG: SOLVE CALL\n")
+	//logf("SOLVE CALL\n")
 
 	if s.err != nil {
 		return

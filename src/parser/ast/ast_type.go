@@ -55,6 +55,8 @@ func IsTypeBasePrimitive(name *string) bool {
 		return true
 	} else if typeName == "int" {
 		return true
+	} else if typeName == "void" {
+		return true
 	}
 	return false
 }

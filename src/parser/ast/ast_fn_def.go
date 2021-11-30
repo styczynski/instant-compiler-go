@@ -135,7 +135,7 @@ func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
 func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
 	if len(ast.Arg) == 0 {
 		return hindley_milner.Concreate(hindley_milner.NewFnType(
-			CreatePrimitive(T_VOID),
+			CreatePrimitive(T_VOID_ARG),
 			ast.ReturnType.GetType(nil).Concrete(),
 		))
 	}
@@ -173,7 +173,7 @@ func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
 func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
 	if len(ast.Arg) == 0 {
 		return hindley_milner.NamesWithTypes([]string{""}, map[string]*hindley_milner.Scheme{
-			"void": hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID_ARG)),
+			"": hindley_milner.Concreate(CreatePrimitive(T_VOID_ARG)),
 		})
 	}
 	argsTypes := map[string]*hindley_milner.Scheme{}
@@ -186,7 +186,7 @@ func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
 }
 
 func (ast *FnDef) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
-	return hindley_milner.Name(ast.Name)
+	return hindley_milner.NameWithType(ast.Name, ast.GetDeclarationType())
 }
 
 func (ast *FnDef) Body() generic_ast.Expression {

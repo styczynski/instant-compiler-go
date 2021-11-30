@@ -147,7 +147,10 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 	if config.OnConstrintGenerationStarted != nil {
 		(*config.OnConstrintGenerationStarted)()
 	}
+	logf("Start\n")
 	err := infer.GenerateConstraints(expr, E_NONE, true, true)
+	logf("Generated constrints now: %v\n", infer.Constraints())
+
 	if config.OnConstrintGenerationFinished != nil {
 		(*config.OnConstrintGenerationFinished)()
 	}

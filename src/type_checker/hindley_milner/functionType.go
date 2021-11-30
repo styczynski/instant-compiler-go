@@ -70,6 +70,13 @@ func (t *FunctionType) Eq(other Type) bool {
 
 func (t *FunctionType) Arg() Type { return t.a }
 
+func (t *FunctionType) CountArgs() int {
+	if fnt, ok := t.b.(*FunctionType); ok {
+		return 1 + fnt.CountArgs()
+	}
+	return 1
+}
+
 func (t *FunctionType) Ret(recursive bool) Type {
 	if !recursive {
 		return t.b

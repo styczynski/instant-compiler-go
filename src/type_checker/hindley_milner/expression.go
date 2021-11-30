@@ -38,6 +38,10 @@ func Name(s string) NameGroup {
 	return NameGroup{[]string{s}, nil, false}
 }
 
+func NameWithType(s string, t *Scheme) NameGroup {
+	return NameGroup{[]string{s}, map[string]*Scheme{s: t}, true}
+}
+
 func Names(s []string) NameGroup {
 	return NameGroup{s, nil, false}
 }
