@@ -45,7 +45,7 @@ build-native: install
 
 tests: build-native
 	./latc_test ./tests/bad/*.lat
-	./latc_test ./tests/base/good/*.lat
+	./latc_test ./tests/good/*.lat
 
 build-test-image:
 	docker build -t latc-test-image -f test.Dockerfile .
