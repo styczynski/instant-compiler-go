@@ -1,0 +1,23 @@
+name: 'Build test release'
+on:
+  pull_request:
+    branches:
+      - "**"
+  push:
+    branches:
+      - "**"
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the project
+        uses: actions/checkout@v2
+      - name: Docker tests
+        run: make test
+      - uses: actions/upload-artifact@v2
+        name: Upload artifact with the release
+        with:
+          name: release
+          path: ./ps386038.tar.gz
