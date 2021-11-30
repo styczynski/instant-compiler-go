@@ -4,11 +4,11 @@ tests/**/*.class
 tests/**/*.j
 tests/**/*.jasmine
 tests/**/*.ll
-*.j
-*.class
-*.lat
-*.txt
-*.png
+./*.j
+./*.class
+./*.lat
+./*.txt
+./*.png
 
 *.profile
 
