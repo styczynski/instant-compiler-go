@@ -1,10 +1,7 @@
 package cfg
 
 import (
-	"fmt"
-	"reflect"
 	"sort"
-
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
@@ -157,7 +154,7 @@ func CreateCFGFromNodes(s []generic_ast.NormalNode) *CFG {
 }
 
 func (c *CFG) Exists(s generic_ast.NormalNode) bool {
-	fmt.Printf("check exists for %v\n", reflect.TypeOf(s))
+	//fmt.Printf("check exists for %v\n", reflect.TypeOf(s))
 	block, ok := c.blocks[s]
 	return ok && block != nil
 }

@@ -1,8 +1,6 @@
 package flow_analysis
 
 import (
-	"fmt"
-
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -187,11 +185,11 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				//flow.Optimize(c)
 				//nodeForAnalysis.AfterFlowAnalysis(flow)
 
-				fmt.Printf("Fold done:\n")
-				fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
+				//fmt.Printf("Fold done:\n")
+				//fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
 				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
 				//fmt.Print(flow.Print(ctx))
-				fmt.Printf("Yeah.\n")
+				//fmt.Printf("Yeah.\n")
 
 				customErr := nodeForAnalysis.OnFlowAnalysis(flow)
 				if customErr != nil {

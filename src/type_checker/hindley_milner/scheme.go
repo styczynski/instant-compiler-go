@@ -7,11 +7,22 @@ type Scheme struct {
 	t   Type
 }
 
+func Concreate(t Type) *Scheme {
+	return NewScheme(nil, t)
+}
+
 func NewScheme(tvs TypeVarSet, t Type) *Scheme {
 	return &Scheme{
 		tvs: tvs,
 		t:   t,
 	}
+}
+
+func (s *Scheme) Concrete() Type {
+	if s.tvs.Len() > 0 {
+		panic("Scheme is not concreate")
+	}
+	return s.t
 }
 
 func (s *Scheme) Wrap(wrapperFn func(t Type) Type) {

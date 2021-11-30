@@ -133,6 +133,22 @@ func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
 //////
 
 func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
+	if len(ast.Arg) == 0 {
+		return hindley_milner.Concreate(hindley_milner.NewFnType(
+			CreatePrimitive(T_VOID),
+			ast.ReturnType.GetType(nil).Concrete(),
+		))
+	}
+	argCount := int16(len(ast.Arg))
+	signature := []hindley_milner.Type{}
+	for i := int16(0); i < argCount; i++ {
+		signature = append(signature, ast.Arg[i].ArgumentType.GetType(nil).Concrete())
+	}
+	signature = append(signature, ast.ReturnType.GetType(nil).Concrete())
+
+	s := hindley_milner.Concreate(hindley_milner.NewFnType(signature...))
+	return s
+
 	//if len(ast.Arg) == 0 {
 	//	hindley_milner.NewScheme(hindley_milner.TypeVarSet{hindley_milner.TVar('a')})
 	//	return hindley_milner.NamesWithTypesFromMap([]string{""}, map[string]*hindley_milner.Scheme{
@@ -140,18 +156,18 @@ func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
 	//	})
 	//}
 
-	argCount := int16(len(ast.Arg))
-	if argCount == 0 {
-		argCount = 1
-	}
-	signature := []hindley_milner.Type{}
-	vars := []hindley_milner.TypeVariable{}
-	for i := int16(0); i < argCount+1; i++ {
-		signature = append(signature, hindley_milner.TVar(i))
-		vars = append(vars, hindley_milner.TVar(i))
-	}
-	s := hindley_milner.NewScheme(hindley_milner.TypeVarSet(vars), hindley_milner.NewFnType(signature...))
-	return s
+	// argCount := int16(len(ast.Arg))
+	// if argCount == 0 {
+	// 	argCount = 1
+	// }
+	// signature := []hindley_milner.Type{}
+	// vars := []hindley_milner.TypeVariable{}
+	// for i := int16(0); i < argCount+1; i++ {
+	// 	signature = append(signature, hindley_milner.TVar(i))
+	// 	vars = append(vars, hindley_milner.TVar(i))
+	// }
+	// s := hindley_milner.NewScheme(hindley_milner.TypeVarSet(vars), hindley_milner.NewFnType(signature...))
+	// return s
 }
 
 func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {

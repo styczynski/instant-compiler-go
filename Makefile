@@ -35,13 +35,16 @@ TEST_IMAGE ?= martinheinz/golang:1.12-alpine-test
 
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
-all: install build-native
+all: build-native
 
 install:
 	go install ./...
 
-build-native:
+build-native: install
 	go build -o $(BIN) ./cmd/latte-compiler/main.go
+
+tests: build-native
+	./latc_test ./tests/good/*.lat ./tests/bad/*.lat
 
 # For the following OS/ARCH expansions, we transform OS/ARCH into OS_ARCH
 # because make pattern rules don't match with embedded '/' characters.
@@ -83,7 +86,7 @@ $(OUTBIN): .go/$(OUTBIN).stamp
 	@true
 
 # This will build the binary under ./.go and update the real binary if needed.
-.PHONY: .go/$(OUTBIN).stamp
+.PHONY: tests .go/$(OUTBIN).stamp
 .go/$(OUTBIN).stamp: $(BUILD_DIRS)
 	@echo "making $(OUTBIN)"
 	@docker run                                                 \
