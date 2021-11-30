@@ -1,7 +1,7 @@
 # This is adapted from https://github.com/thockin/go-build-template
 
 # The binary to build (just the basename).
-BIN := insc
+BIN := latc
 
 # Where to push the docker image.
 REGISTRY ?= docker.pkg.github.com/styczynski/latte-compiler
