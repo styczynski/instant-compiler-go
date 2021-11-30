@@ -1,5 +1,7 @@
 # Latte compiler
 
+[![Build test release](https://github.com/styczynski/instant-compiler-go/actions/workflows/release.yml/badge.svg)](https://github.com/styczynski/instant-compiler-go/actions/workflows/release.yml)
+
 ## External code usage 
 
 This project uses [go-project-blueprint](https://github.com/MartinHeinz/go-project-blueprint) as a starter project so
