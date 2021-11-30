@@ -10,7 +10,7 @@ import (
 var SUGGESTED_KEYWORDS = []string{
 	"int",
 	"string",
-	"bool",
+	"boolean",
 	"true",
 	"false",
 	"void",
@@ -25,7 +25,7 @@ func makeBlockFromStatement(statement *Statement) *Block {
 		return statement.BlockStatement
 	}
 	return &Block{
-		Statements: []*Statement{ statement },
+		Statements: []*Statement{statement},
 	}
 }
 
@@ -35,7 +35,7 @@ func makeBlockFromExpression(expression *Expression) *Block {
 	})
 }
 
-func printNode(c *context.ParsingContext, ast generic_ast.TraversableNode,format string, args ...interface{}) string {
+func printNode(c *context.ParsingContext, ast generic_ast.TraversableNode, format string, args ...interface{}) string {
 	if c.PrinterConfiguration.MaxPrintPosition != nil {
 		if ast.Begin().Line > c.PrinterConfiguration.MaxPrintPosition.Line {
 			return ""

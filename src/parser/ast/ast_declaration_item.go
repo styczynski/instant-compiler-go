@@ -11,9 +11,9 @@ import (
 
 type DeclarationItem struct {
 	generic_ast.BaseASTNode
-	Name string `@Ident`
+	Name        string      `@Ident`
 	Initializer *Expression `( "=" @@ )?`
-	ParentNode generic_ast.TraversableNode
+	ParentNode  generic_ast.TraversableNode
 }
 
 func (ast *DeclarationItem) Parent() generic_ast.TraversableNode {
@@ -68,7 +68,7 @@ func (ast *DeclarationItem) Map(parent generic_ast.Expression, mapper generic_as
 		BaseASTNode: ast.BaseASTNode,
 		Name:        ast.Name,
 		Initializer: mapper(ast, ast.Initializer, context, false).(*Expression),
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -95,7 +95,6 @@ func (ast *DeclarationItem) GetUsedVariables(vars cfg.VariableSet, visitedMap ma
 	}
 	return cfg.GetAllUsagesVariables(ast.Initializer, visitedMap)
 }
-
 
 func (ast *DeclarationItem) RenameVariables(subst cfg.VariableSubstitution) {
 	ast.Name = subst.Replace(ast.Name)

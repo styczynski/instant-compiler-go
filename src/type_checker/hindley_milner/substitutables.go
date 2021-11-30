@@ -2,6 +2,9 @@ package hindley_milner
 
 import "fmt"
 
+type UnionableType interface {
+	Union(t2 interface{}, context Constraint, listener IntrospecionListener) (Subs, error)
+}
 
 type Constraints []Constraint
 
@@ -44,29 +47,13 @@ func (cs Constraints) Format(state fmt.State, c rune) {
 	state.Write([]byte{']'})
 }
 
-
 type Types []Type
 
 func (ts Types) Contains(t Type) bool {
 	for _, T := range ts {
-		if t.Eq(T) {
+		if TypeEq(t, T) {
 			return true
 		}
 	}
 	return false
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

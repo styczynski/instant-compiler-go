@@ -6,10 +6,7 @@ import (
 	"github.com/xtgo/set"
 )
 
-
 type TypeVarSet []TypeVariable
-
-
 
 func (s TypeVarSet) Len() int           { return len(s) }
 func (s TypeVarSet) Less(i, j int) bool { return s[i].value < s[j].value }
@@ -56,7 +53,7 @@ func (s TypeVarSet) Difference(other TypeVarSet) TypeVarSet {
 
 func (s TypeVarSet) Contains(tv TypeVariable) bool {
 	for _, v := range s {
-		if v.Eq(tv) {
+		if TypeEq(v, tv) {
 			return true
 		}
 	}
@@ -65,7 +62,7 @@ func (s TypeVarSet) Contains(tv TypeVariable) bool {
 
 func (s TypeVarSet) Index(tv TypeVariable) int {
 	for i, v := range s {
-		if v.Eq(tv) {
+		if TypeEq(v, tv) {
 			return i
 		}
 	}

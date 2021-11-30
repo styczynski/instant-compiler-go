@@ -6,13 +6,11 @@ import (
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
-
 type SignedTuple struct {
-	ts   []Type
-	name string
+	ts      []Type
+	name    string
 	context CodeContext
 }
-
 
 func NewSignedTupleType(name string, ts ...Type) *SignedTuple {
 	return &SignedTuple{
@@ -67,7 +65,7 @@ func (t *SignedTuple) Eq(other Type) bool {
 			return false
 		}
 		for i, v := range t.ts {
-			if !v.Eq(ot.ts[i]) {
+			if !TypeEq(v, ot.ts[i]) {
 				return false
 			}
 		}
@@ -91,8 +89,8 @@ func (t *SignedTuple) Format(f fmt.State, c rune) {
 
 func (t *SignedTuple) MapTypes(mapper TypeMapper) Type {
 	newSignedTuple := &SignedTuple{
-		ts:   []Type{},
-		name: t.name,
+		ts:      []Type{},
+		name:    t.name,
 		context: t.context,
 	}
 	for _, v := range t.ts {
@@ -103,8 +101,8 @@ func (t *SignedTuple) MapTypes(mapper TypeMapper) Type {
 
 func (t *SignedTuple) WithContext(c CodeContext) Type {
 	return &SignedTuple{
-		ts:   t.ts,
-		name: t.name,
+		ts:      t.ts,
+		name:    t.name,
 		context: c,
 	}
 }
@@ -114,7 +112,6 @@ func (t *SignedTuple) GetContext() CodeContext {
 }
 
 func (t *SignedTuple) String() string { return fmt.Sprintf("%s%v", TypeStringPrefix(t), t) }
-
 
 func (t *SignedTuple) Clone() interface{} {
 	retVal := new(SignedTuple)
@@ -132,12 +129,9 @@ func (t *SignedTuple) Clone() interface{} {
 	return retVal
 }
 
-
-
-
 type SignedTupleUnwrapExpr struct {
-	name string
-	len int16
+	name  string
+	len   int16
 	index int16
 	expr  generic_ast.Expression
 }
@@ -164,10 +158,10 @@ func (ast *SignedTupleUnwrapExpr) ExpressionType() ExpressionType {
 	return E_APPLICATION
 }
 
-func (ast *SignedTupleUnwrapExpr) Fn() generic_ast.Expression {
+func (ast *SignedTupleUnwrapExpr) Fn(c InferContext) generic_ast.Expression {
 	args := []TypeVariable{}
 	argsTypes := []Type{}
-	for i := int16(0); i<ast.len; i++ {
+	for i := int16(0); i < ast.len; i++ {
 		args = append(args, TVar(i))
 		argsTypes = append(argsTypes, TVar(i))
 	}
@@ -175,7 +169,7 @@ func (ast *SignedTupleUnwrapExpr) Fn() generic_ast.Expression {
 		GetType: func() *Scheme {
 			return NewScheme(args, NewFnType(
 				NewSignedTupleType(ast.name, argsTypes...),
-				TVar(ast.index)))
+				argsTypes[ast.index]))
 		},
 	}
 }

@@ -1,0 +1,12 @@
+class Animal {}
+class Dog extends Animal {}
+
+class AnimalOwner {
+    Animal getAnimal() { return (Animal)null; }
+}
+
+class DogOwner extends AnimalOwner {
+    Dog getAnimal() { return (Dog)null; }
+}
+
+int main() { return 0; }

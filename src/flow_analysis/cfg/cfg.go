@@ -2,7 +2,6 @@ package cfg
 
 import (
 	"sort"
-
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
@@ -37,7 +36,7 @@ func getEndPos(node generic_ast.NormalNode) (int, int) {
 	return node.End().Line, node.End().Column
 }
 
-type ControlFlowGraphVisitor func (cfg *CFG, block *block, next func(node generic_ast.NormalNode))
+type ControlFlowGraphVisitor func(cfg *CFG, block *block, next func(node generic_ast.NormalNode))
 
 func (cfg *CFG) VisitGraph(node generic_ast.NormalNode, visitor ControlFlowGraphVisitor) {
 	block := cfg.blocks[node]
@@ -147,11 +146,17 @@ type block struct {
 	stmt  generic_ast.NormalNode
 	preds []generic_ast.NormalNode
 	succs []generic_ast.NormalNode
-	ID int
+	ID    int
 }
 
 func CreateCFGFromNodes(s []generic_ast.NormalNode) *CFG {
 	return newBuilder().build(s)
+}
+
+func (c *CFG) Exists(s generic_ast.NormalNode) bool {
+	//fmt.Printf("check exists for %v\n", reflect.TypeOf(s))
+	block, ok := c.blocks[s]
+	return ok && block != nil
 }
 
 func (c *CFG) BlockPredecessors(s generic_ast.NormalNode) []generic_ast.NormalNode {
@@ -199,9 +204,9 @@ type cfgGraphBuilder struct {
 
 func newBuilder() *cfgGraphBuilder {
 	return &cfgGraphBuilder{
-		blocks: map[generic_ast.NormalNode]*block{},
-		entry:  generic_ast.CreateVirtualNode(generic_ast.V_NODE_ENTRY),
-		exit:   generic_ast.CreateVirtualNode(generic_ast.V_NODE_EXIT),
+		blocks:  map[generic_ast.NormalNode]*block{},
+		entry:   generic_ast.CreateVirtualNode(generic_ast.V_NODE_ENTRY),
+		exit:    generic_ast.CreateVirtualNode(generic_ast.V_NODE_EXIT),
 		codeEnd: generic_ast.CreateVirtualNode(generic_ast.V_NODE_CODE_END),
 	}
 }
@@ -213,7 +218,6 @@ func (b *cfgGraphBuilder) build(s []generic_ast.NormalNode) *CFG {
 	b.AddBlockSuccesor(b.codeEnd)
 	b.previousBlocks = []generic_ast.NormalNode{b.codeEnd}
 	b.AddBlockSuccesor(b.exit)
-
 
 	sortedExprs := OrderBlocksByPosition{}
 	for e, _ := range b.blocks {
@@ -280,7 +284,7 @@ func (b *cfgGraphBuilder) BuildNode(node generic_ast.NormalNode) {
 	} else {
 		// Default
 		b.AddBlockSuccesor(node)
-		b.UpdatePrev([]generic_ast.NormalNode{ node })
+		b.UpdatePrev([]generic_ast.NormalNode{node})
 	}
 }
 
@@ -294,7 +298,7 @@ func (b *cfgGraphBuilder) Exit() generic_ast.NormalNode {
 	return b.exit
 }
 
-func (b *cfgGraphBuilder) GetPrev() []generic_ast.NormalNode{
+func (b *cfgGraphBuilder) GetPrev() []generic_ast.NormalNode {
 	return b.previousBlocks
 }
 

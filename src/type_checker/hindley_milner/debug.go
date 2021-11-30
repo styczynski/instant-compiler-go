@@ -1,6 +1,7 @@
 package hindley_milner
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -28,9 +29,14 @@ func enterLoggingContext() {
 
 func logf(format string, others ...interface{}) {
 	if DEBUG {
+		f := bufio.NewWriter(os.Stdout)
+		defer f.Flush()
+
 		s := fmt.Sprintf(format, others...)
 		s = strings.Replace(s, "\n", replacement, -1)
-		_logger_.Println(s)
+		//_logger_.Println(s)
+		f.Write([]byte(fmt.Sprintf("%s\n", s)))
+
 	}
 }
 

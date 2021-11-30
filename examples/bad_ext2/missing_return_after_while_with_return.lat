@@ -1,4 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-int main() {
-	while (readInt() == 42) return 0;
-}

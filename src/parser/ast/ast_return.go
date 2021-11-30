@@ -10,7 +10,7 @@ import (
 )
 
 type Return struct {
-	 generic_ast.BaseASTNode
+	generic_ast.BaseASTNode
 	Expression *Expression `"return" (@@)? ";"`
 	ParentNode generic_ast.TraversableNode
 }
@@ -91,7 +91,7 @@ func (ast *Return) ExpressionType() hindley_milner.ExpressionType { return hindl
 
 func (ast *Return) BuildFlowGraph(builder cfg.CFGBuilder) {
 	builder.AddBlockSuccesor(ast)
-	builder.UpdatePrev([]generic_ast.NormalNode{ ast })
+	builder.UpdatePrev([]generic_ast.NormalNode{ast})
 	builder.AddBlockSuccesor(builder.Exit())
 	builder.UpdatePrev(nil)
 }

@@ -13,9 +13,9 @@ import (
 
 type If struct {
 	generic_ast.BaseASTNode
-	Condition *Expression `"if" "(" @@ ")"`
-	Then *Statement `@@`
-	Else *Statement `( "else" @@ )?`
+	Condition  *Expression `"if" "(" @@ ")"`
+	Then       *Statement  `@@`
+	Else       *Statement  `( "else" @@ )?`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -52,7 +52,7 @@ func (ast *If) HasElseBlock() bool {
 }
 
 func (ast *If) Print(c *context.ParsingContext) string {
-	if ast.HasElseBlock(){
+	if ast.HasElseBlock() {
 		return printNode(c, ast, "if (%s) %s else %s", ast.Condition.Print(c), makeBlockFromStatement(ast.Then).Print(c), makeBlockFromStatement(ast.Else).Print(c))
 	}
 	return printNode(c, ast, "if (%s) %s", ast.Condition.Print(c), ast.Then.Print(c))
@@ -88,16 +88,15 @@ func (ast *If) Visit(parent generic_ast.Expression, mapper generic_ast.Expressio
 	mapper(parent, ast, context)
 }
 
-func (ast *If) Fn() generic_ast.Expression {
+func (ast *If) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	//return &BuiltinFunction{
 	//	BaseASTNode: ast.BaseASTNode,
 	//	name: "if",
 	//}
 	return &hindley_milner.EmbeddedTypeExpr{GetType: func() *hindley_milner.Scheme {
-		return hindley_milner.NewScheme(
-			hindley_milner.TypeVarSet{hindley_milner.TVar('a'), hindley_milner.TVar('b')},
-			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), hindley_milner.TVar('a'), hindley_milner.TVar('b'), CreatePrimitive(T_VOID)))
-	}, Source: ast,}
+		return hindley_milner.Concreate(
+			hindley_milner.NewFnType(CreatePrimitive(T_BOOL), CreatePrimitive(T_VOID), CreatePrimitive(T_VOID), CreatePrimitive(T_VOID)))
+	}, Source: ast}
 }
 
 func (ast *If) Body() generic_ast.Expression {

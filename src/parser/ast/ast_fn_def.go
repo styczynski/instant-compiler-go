@@ -14,11 +14,11 @@ import (
 
 type FnDef struct {
 	generic_ast.BaseASTNode
-	ReturnType Type `@@`
-	Name string `@Ident`
-	Arg []*Arg `"(" (@@ ( "," @@ )*)? ")"`
+	ReturnType   Type   `@@`
+	Name         string `@Ident`
+	Arg          []*Arg `"(" (@@ ( "," @@ )*)? ")"`
 	FunctionBody *Block `@@`
-	ParentNode generic_ast.TraversableNode
+	ParentNode   generic_ast.TraversableNode
 }
 
 func (ast *FnDef) Parent() generic_ast.TraversableNode {
@@ -42,7 +42,7 @@ func (ast *FnDef) GetNode() interface{} {
 }
 
 func (ast *FnDef) GetChildren() []generic_ast.TraversableNode {
-	nodes := make([]generic_ast.TraversableNode, len(ast.Arg) + 3)
+	nodes := make([]generic_ast.TraversableNode, len(ast.Arg)+3)
 	nodes = append(nodes, &ast.ReturnType)
 	nodes = append(nodes, generic_ast.MakeTraversableNodeToken(ast, ast.Name, ast.Pos, ast.EndPos))
 
@@ -70,22 +70,22 @@ func (ast *FnDef) Print(c *context.ParsingContext) string {
 /////
 
 func (ast *FnDef) canBeInputType(t hindley_milner.Type) bool {
-	return !( t.Eq(CreatePrimitive(T_VOID_ARG)) || t.Eq(CreatePrimitive(T_VOID)) )
+	return !(t.Eq(CreatePrimitive(T_VOID_ARG)) || t.Eq(CreatePrimitive(T_VOID)))
 }
 
 func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
 	//fmt.Printf("Validate! HUJUPIZDO %s\n", ast.Name)
 	if _, ok := ast.Parent().(*TopDef); ok {
 		if ast.Name == "main" {
-			returnedType, _ := ast.ReturnType.GetType().Type()
+			returnedType, _ := ast.ReturnType.GetType(nil).Type()
 			expectedType := CreatePrimitive(T_INT)
 			if !returnedType.Eq(expectedType) {
 				message := fmt.Sprintf("main() function has return type of %v. Expected it to be %v.", returnedType, expectedType)
 				return generic_ast.NewNodeError(
 					"Invalid main()",
-					 ast,
-					 message,
-					 message)
+					ast,
+					message,
+					message)
 			}
 			if len(ast.Arg) != 0 {
 				message := fmt.Sprintf("main() function cannot accept any arguments, but it has %d parameter/-s in definiton.", len(ast.Arg))
@@ -97,7 +97,7 @@ func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
 			}
 		}
 		for _, arg := range ast.Arg {
-			t, _ := arg.ArgumentType.GetType().Type()
+			t, _ := arg.ArgumentType.GetType(nil).Type()
 			if !ast.canBeInputType(t) {
 				filteredArgsStrs := []string{}
 				for _, newArg := range ast.Arg {
@@ -109,7 +109,7 @@ func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
 					t.String(),
 					ast.ReturnType.Print(c),
 					ast.Name,
-					strings.Join(filteredArgsStrs, ", "),)
+					strings.Join(filteredArgsStrs, ", "))
 				return generic_ast.NewNodeError(
 					"Type not allowed",
 					ast,
@@ -133,6 +133,22 @@ func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
 //////
 
 func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
+	if len(ast.Arg) == 0 {
+		return hindley_milner.Concreate(hindley_milner.NewFnType(
+			CreatePrimitive(T_VOID_ARG),
+			ast.ReturnType.GetType(nil).Concrete(),
+		))
+	}
+	argCount := int16(len(ast.Arg))
+	signature := []hindley_milner.Type{}
+	for i := int16(0); i < argCount; i++ {
+		signature = append(signature, ast.Arg[i].ArgumentType.GetType(nil).Concrete())
+	}
+	signature = append(signature, ast.ReturnType.GetType(nil).Concrete())
+
+	s := hindley_milner.Concreate(hindley_milner.NewFnType(signature...))
+	return s
+
 	//if len(ast.Arg) == 0 {
 	//	hindley_milner.NewScheme(hindley_milner.TypeVarSet{hindley_milner.TVar('a')})
 	//	return hindley_milner.NamesWithTypesFromMap([]string{""}, map[string]*hindley_milner.Scheme{
@@ -140,47 +156,49 @@ func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
 	//	})
 	//}
 
-	argCount := int16(len(ast.Arg))
-	if argCount == 0 {
-		argCount = 1
-	}
-	signature := []hindley_milner.Type{}
-	vars := []hindley_milner.TypeVariable{}
-	for i:=int16(0); i<argCount+1; i++ {
-		signature = append(signature, hindley_milner.TVar(i))
-		vars = append(vars, hindley_milner.TVar(i))
-	}
-	s := hindley_milner.NewScheme(hindley_milner.TypeVarSet(vars), hindley_milner.NewFnType(signature...))
-	return s
+	// argCount := int16(len(ast.Arg))
+	// if argCount == 0 {
+	// 	argCount = 1
+	// }
+	// signature := []hindley_milner.Type{}
+	// vars := []hindley_milner.TypeVariable{}
+	// for i := int16(0); i < argCount+1; i++ {
+	// 	signature = append(signature, hindley_milner.TVar(i))
+	// 	vars = append(vars, hindley_milner.TVar(i))
+	// }
+	// s := hindley_milner.NewScheme(hindley_milner.TypeVarSet(vars), hindley_milner.NewFnType(signature...))
+	// return s
 }
 
-func (ast *FnDef) Args() hindley_milner.NameGroup {
+func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
 	if len(ast.Arg) == 0 {
-		return hindley_milner.NamesWithTypesFromMap([]string{""}, map[string]*hindley_milner.Scheme{
-			"void": hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID_ARG)),
+		return hindley_milner.NamesWithTypes([]string{""}, map[string]*hindley_milner.Scheme{
+			"": hindley_milner.Concreate(CreatePrimitive(T_VOID_ARG)),
 		})
 	}
 	argsTypes := map[string]*hindley_milner.Scheme{}
 	names := []string{}
 	for _, arg := range ast.Arg {
-		argsTypes[arg.Name] = arg.ArgumentType.GetType()
+		argsTypes[arg.Name] = arg.ArgumentType.GetType(c)
 		names = append(names, arg.Name)
 	}
-	return hindley_milner.NamesWithTypesFromMap(names, argsTypes)
+	return hindley_milner.NamesWithTypes(names, argsTypes)
 }
 
-func (ast *FnDef) Var() hindley_milner.NameGroup {
-	return hindley_milner.Name(ast.Name)
+func (ast *FnDef) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
+	return hindley_milner.NameWithType(ast.Name, ast.GetDeclarationType())
 }
 
 func (ast *FnDef) Body() generic_ast.Expression {
 	return ast.FunctionBody
 }
 
-func (ast *FnDef) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_FUNCTION_DECLARATION }
+func (ast *FnDef) ExpressionType() hindley_milner.ExpressionType {
+	return hindley_milner.E_FUNCTION_DECLARATION
+}
 
-func (ast *FnDef) DefaultType() *hindley_milner.Scheme {
-	return ast.ReturnType.GetType()
+func (ast *FnDef) DefaultType(c hindley_milner.InferContext) *hindley_milner.Scheme {
+	return ast.ReturnType.GetType(c)
 }
 
 func (ast *FnDef) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
@@ -190,7 +208,7 @@ func (ast *FnDef) Map(parent generic_ast.Expression, mapper generic_ast.Expressi
 		Name:         ast.Name,
 		Arg:          ast.Arg,
 		FunctionBody: mapper(ast, ast.FunctionBody, context, false).(*Block),
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:   parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 func (ast *FnDef) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {

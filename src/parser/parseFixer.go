@@ -31,14 +31,18 @@ func tryInsertingBracket(done chan struct{}, parser *participle.Parser, bracket 
 				} else {
 					return input, false, lineNo, pos
 				}
-				for i := pos; i>=0; i-- {
+				for i := pos - 1; i >= 0; i-- {
 					if line[i] == ' ' {
 						pos = i
 						break
 					}
 				}
 			}
-			line = line[:pos] + bracket + line[pos:]
+			if pos < len(line) {
+				line = line[:pos] + bracket + line[pos:]
+			} else {
+				line = line + bracket
+			}
 		}
 		contentLines = append(contentLines, line)
 		curLineNo++
@@ -53,7 +57,7 @@ func tryInsertingBracket(done chan struct{}, parser *participle.Parser, bracket 
 	parserError := err.(participle.Error)
 	//fmt.Printf(string(newContent))
 	//fmt.Printf("GOT IMPROVEMENT L: %d->%d C: %d->%d\n", lineNo, parserError.Position().Line, pos, parserError.Position().Column)
-	if parserError.Position().Line > lineNo || (parserError.Position().Line == lineNo && parserError.Position().Column > pos + 3) {
+	if parserError.Position().Line > lineNo || (parserError.Position().Line == lineNo && parserError.Position().Column > pos+3) {
 		t1, _, l1, c1 := tryInsertingBracket(done, parser, bracket, newContent, parserError.Position().Line, parserError.Position().Column, true)
 		t2, _, l2, c2 := tryInsertingBracket(done, parser, bracket, newContent, parserError.Position().Line, parserError.Position().Column, false)
 		if l1 > l2 || (l1 == l2 && c1 > c2) {
@@ -64,14 +68,13 @@ func tryInsertingBracket(done chan struct{}, parser *participle.Parser, bracket 
 	return input, false, lineNo, pos
 }
 
-
 func tryInsertingBrackets(parser *participle.Parser, input []byte, lineNo int, pos int) string {
-	brackets := []string{ ")", "(", "{", "}" }
+	brackets := []string{")", "(", "{", "}"}
 	maxL := lineNo
 	maxC := pos
 	bestBracket := ""
 	for _, bracket := range brackets {
-		for _, goPast := range []bool{ true, false } {
+		for _, goPast := range []bool{true, false} {
 			done := make(chan struct{})
 			go func() {
 				_, isOk, l, c := tryInsertingBracket(done, parser, bracket, input, lineNo, pos, goPast)

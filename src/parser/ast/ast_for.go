@@ -13,10 +13,10 @@ import (
 
 type For struct {
 	generic_ast.BaseASTNode
-	ElementType *Type `"for" "(" @@`
-	Destructor *ForDestructor `@@ ")"`
-	Do *Statement `@@`
-	ParentNode generic_ast.TraversableNode
+	ElementType *Type          `"for" "(" @@`
+	Destructor  *ForDestructor `@@ ")"`
+	Do          *Statement     `@@`
+	ParentNode  generic_ast.TraversableNode
 }
 
 func (ast *For) Parent() generic_ast.TraversableNode {
@@ -86,13 +86,13 @@ func (ast *For) Visit(parent generic_ast.Expression, mapper generic_ast.Expressi
 	mapper(parent, ast, context)
 }
 
-func (ast *For) Var() hindley_milner.NameGroup {
+func (ast *For) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
 	types := map[string]*hindley_milner.Scheme{}
-	types[ast.Destructor.ElementVar] = ast.ElementType.GetType()
-	return hindley_milner.NamesWithTypes([]string{ ast.Destructor.ElementVar }, types)
+	types[ast.Destructor.ElementVar] = ast.ElementType.GetType(c)
+	return hindley_milner.NamesWithTypes([]string{ast.Destructor.ElementVar}, types)
 }
 
-func (ast *For) Def() generic_ast.Expression {
+func (ast *For) Def(c hindley_milner.InferContext) generic_ast.Expression {
 	return ast.Destructor
 }
 
@@ -113,17 +113,17 @@ func (ast *For) BuildFlowGraph(builder cfg.CFGBuilder) {
 	// previous -> [ init -> ] for -> body -> [ post -> ] for -> next
 
 	var post generic_ast.NormalNode = ast
-	
+
 	builder.AddBlockSuccesor(ast.Destructor)
-	builder.UpdatePrev([]generic_ast.NormalNode{ ast.Destructor })
+	builder.UpdatePrev([]generic_ast.NormalNode{ast.Destructor})
 	builder.AddBlockSuccesor(ast)
 
-	builder.UpdatePrev([]generic_ast.NormalNode{ ast })
+	builder.UpdatePrev([]generic_ast.NormalNode{ast})
 	builder.BuildNode(ast.Do)
 
 	builder.AddBlockSuccesor(post)
 
-	ctrlExits := []generic_ast.NormalNode{ ast }
+	ctrlExits := []generic_ast.NormalNode{ast}
 
 	// handle any branches; if no label or for me: handle and remove from branches.
 	for i := 0; i < len(builder.Branches()); i++ {

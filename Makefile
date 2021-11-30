@@ -31,14 +31,27 @@ TAG := $(VERSION)__$(OS)_$(ARCH)
 
 BUILD_IMAGE ?= golang:1.12-alpine
 # Tweaked image used for test runs (see `test.Dockerfile`)
-TEST_IMAGE ?= martinheinz/golang:1.12-alpine-test
+TEST_IMAGE ?= latc-test-image
 
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
 all: build-native
 
-build-native:
+install:
+	go install ./...
+
+build-native: install
 	go build -o $(BIN) ./cmd/latte-compiler/main.go
+
+tests: build-native
+	./latc_test ./tests/bad/*.lat
+	./latc_test ./tests/good/*.lat
+
+build-test-image:
+	docker build -t latc-test-image -f test.Dockerfile .
+
+ps386038.tar.gz:
+	bash ./pack.sh
 
 # For the following OS/ARCH expansions, we transform OS/ARCH into OS_ARCH
 # because make pattern rules don't match with embedded '/' characters.
@@ -80,7 +93,7 @@ $(OUTBIN): .go/$(OUTBIN).stamp
 	@true
 
 # This will build the binary under ./.go and update the real binary if needed.
-.PHONY: .go/$(OUTBIN).stamp
+.PHONY: build-test-image tests .go/$(OUTBIN).stamp
 .go/$(OUTBIN).stamp: $(BUILD_DIRS)
 	@echo "making $(OUTBIN)"
 	@docker run                                                 \
@@ -156,7 +169,7 @@ say_push_name_latest:
 version:
 	@echo $(VERSION)
 
-test: $(BUILD_DIRS)
+test: $(BUILD_DIRS) build-test-image
 	@docker run                                                 \
 	    -i                                                      \
 	    --rm                                                    \

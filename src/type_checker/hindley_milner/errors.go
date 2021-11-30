@@ -8,8 +8,8 @@ import (
 )
 
 type UnificationLengthError struct {
-	TypeA Type
-	TypeB Type
+	TypeA      Type
+	TypeB      Type
 	Constraint Constraint
 }
 
@@ -32,9 +32,10 @@ func (err UnificationLengthError) Source() generic_ast.Expression {
 }
 
 type UnificationWrongTypeError struct {
-	TypeA Type
-	TypeB Type
+	TypeA      Type
+	TypeB      Type
 	Constraint Constraint
+	Details    string
 }
 
 func (err UnificationWrongTypeError) IsCausedByBuiltin() bool {
@@ -45,6 +46,13 @@ func (err UnificationWrongTypeError) GetCauseName() string {
 	return err.Constraint.context.Name
 }
 
+func (err UnificationWrongTypeError) HasSource() bool {
+	if err.Constraint.context.Source == nil {
+		return false
+	}
+	return true
+}
+
 func (err UnificationWrongTypeError) Source() generic_ast.Expression {
 	if err.Constraint.context.Source == nil {
 		logf("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
@@ -53,17 +61,22 @@ func (err UnificationWrongTypeError) Source() generic_ast.Expression {
 }
 
 func (err UnificationWrongTypeError) Error() string {
-	return fmt.Sprintf("Failed to unify types %s and %s. Mismatched types.",
+	details := ""
+	if len(err.Details) > 0 {
+		details = fmt.Sprintf("\n    Details:\n      %s\n   ", err.Details)
+	}
+	return fmt.Sprintf("Failed to unify types %s and %s. Mismatched types.%s",
 		err.TypeA.String(),
 		err.TypeB.String(),
+		details,
 	)
 }
 
 type UnificationRecurrentTypeError struct {
-	Type Type
-	Variable TypeVariable
+	Type               Type
+	Variable           TypeVariable
 	VariableTypeSource Type
-	Constraint Constraint
+	Constraint         Constraint
 }
 
 func (err UnificationRecurrentTypeError) Source() generic_ast.Expression {
@@ -79,9 +92,9 @@ func (err UnificationRecurrentTypeError) Error() string {
 }
 
 type UndefinedSymbol struct {
-	Name string
-	Source generic_ast.Expression
-	IsLiteral bool
+	Name       string
+	Source     generic_ast.Expression
+	IsLiteral  bool
 	IsVariable bool
 }
 
@@ -99,9 +112,9 @@ func (err UndefinedSymbol) Error() string {
 }
 
 type InvalidOverloadCandidatesError struct {
-	Name string
+	Name       string
 	Candidates []*Scheme
-	Context CodeContext
+	Context    CodeContext
 }
 
 func (err InvalidOverloadCandidatesError) Error() string {
@@ -120,9 +133,9 @@ func (err InvalidOverloadCandidatesError) Source() generic_ast.Expression {
 }
 
 type VariableRedefinedError struct {
-	Name string
+	Name               string
 	PreviousDefinition CodeContext
-	Context CodeContext
+	Context            CodeContext
 }
 
 func (err VariableRedefinedError) Error() string {
@@ -136,7 +149,7 @@ func (err VariableRedefinedError) Source() generic_ast.Expression {
 }
 
 type BuiltinRedefinedError struct {
-	Name string
+	Name    string
 	Context CodeContext
 }
 

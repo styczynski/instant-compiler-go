@@ -15,7 +15,7 @@ import (
 type LatteProgram struct {
 	generic_ast.BaseASTNode
 	Definitions []*TopDef `@@*`
-	ParentNode generic_ast.TraversableNode
+	ParentNode  generic_ast.TraversableNode
 }
 
 func (ast *LatteProgram) Parent() generic_ast.TraversableNode {
@@ -26,17 +26,17 @@ func (ast *LatteProgram) OverrideParent(node generic_ast.TraversableNode) {
 	// No-op
 }
 
-func (ast *LatteProgram) GetIdentifierDeps() hindley_milner.NameGroup {
+func (ast *LatteProgram) GetIdentifierDeps(c hindley_milner.InferContext, pre bool) hindley_milner.NameGroup {
 	idents := []string{}
 	nameMapping := map[string]*hindley_milner.Scheme{}
 	for _, def := range ast.Definitions {
-		names, types := def.GetDefinedIdentifier()
+		names, types := def.GetDefinedIdentifier(c, pre)
 		for i, name := range names {
 			idents = append(idents, name)
 			nameMapping[name] = types[i]
 		}
 	}
-	return hindley_milner.NamesWithTypesFromMap(idents, nameMapping)
+	return hindley_milner.NamesWithTypes(idents, nameMapping)
 }
 
 func (ast *LatteProgram) Begin() lexer.Position {
@@ -102,7 +102,7 @@ func (ast *LatteProgram) Map(parent generic_ast.Expression, mapper generic_ast.E
 	return mapper(parent, &LatteProgram{
 		BaseASTNode: ast.BaseASTNode,
 		Definitions: mappedDef,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true).(*LatteProgram)
 }
 

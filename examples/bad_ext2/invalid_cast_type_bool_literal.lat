@@ -1,5 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-int main() {
-    (true)null == null;
-    return 0;
-}

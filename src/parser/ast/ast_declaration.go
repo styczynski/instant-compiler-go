@@ -13,9 +13,9 @@ import (
 
 type Declaration struct {
 	generic_ast.BaseASTNode
-	DeclarationType Type `@@`
-	Items []*DeclarationItem `( @@ ( "," @@ )* ) ";"`
-	ParentNode generic_ast.TraversableNode
+	DeclarationType Type               `@@`
+	Items           []*DeclarationItem `( @@ ( "," @@ )* ) ";"`
+	ParentNode      generic_ast.TraversableNode
 }
 
 func (ast *Declaration) Parent() generic_ast.TraversableNode {
@@ -56,11 +56,11 @@ func (ast *Declaration) Print(c *context.ParsingContext) string {
 }
 
 func (ast *Declaration) canBeInputType(t hindley_milner.Type) bool {
-	return !( t.Eq(CreatePrimitive(T_VOID_ARG)) || t.Eq(CreatePrimitive(T_VOID)) )
+	return !(t.Eq(CreatePrimitive(T_VOID_ARG)) || t.Eq(CreatePrimitive(T_VOID)))
 }
 
 func (ast *Declaration) Validate(c *context.ParsingContext) generic_ast.NodeError {
-	t, _ := ast.DeclarationType.GetType().Type()
+	t, _ := ast.DeclarationType.GetType(nil).Type()
 	if !ast.canBeInputType(t) {
 		message := fmt.Sprintf("Declarations cannot set variable with type %s. Change the type to other possible alternatives.", t.String())
 		return generic_ast.NewNodeError(
@@ -80,10 +80,10 @@ func (ast *Declaration) Body() generic_ast.Expression {
 
 func (ast *Declaration) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Declaration{
-		BaseASTNode: ast.BaseASTNode,
+		BaseASTNode:     ast.BaseASTNode,
 		DeclarationType: ast.DeclarationType,
-		Items: ast.Items,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		Items:           ast.Items,
+		ParentNode:      parent.(generic_ast.TraversableNode),
 	}, context, true).(*Declaration)
 }
 
@@ -98,17 +98,17 @@ func (ast *Declaration) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_DECLARATION
 }
 
-func (ast *Declaration) Var() hindley_milner.NameGroup {
+func (ast *Declaration) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
 	names := []string{}
 	types := map[string]*hindley_milner.Scheme{}
 	for _, item := range ast.Items {
 		names = append(names, item.Name)
-		types[item.Name] = ast.DeclarationType.GetType()
+		types[item.Name] = ast.DeclarationType.GetType(c)
 	}
 	return hindley_milner.NamesWithTypes(names, types)
 }
 
-func (ast *Declaration) Def() generic_ast.Expression {
+func (ast *Declaration) Def(c hindley_milner.InferContext) generic_ast.Expression {
 	defs := []generic_ast.Expression{}
 	for _, item := range ast.Items {
 		defs = append(defs, item)
@@ -118,3 +118,16 @@ func (ast *Declaration) Def() generic_ast.Expression {
 	}
 }
 
+func (ast *Declaration) RemoveVariableAssignment(variableNames map[string]struct{}) generic_ast.NormalNode {
+	newDecls := []*DeclarationItem{}
+	for _, declItem := range ast.Items {
+		if _, ok := variableNames[declItem.Name]; !ok {
+			newDecls = append(newDecls, declItem)
+		}
+	}
+	ast.Items = newDecls
+	if len(ast.Items) == 0 {
+		return nil
+	}
+	return ast
+}

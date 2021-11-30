@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./latc --backend jvm --status-updater updater-silent $@

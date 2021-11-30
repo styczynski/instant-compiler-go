@@ -10,9 +10,8 @@ import (
 
 type Type struct {
 	generic_ast.BaseASTNode
-	Name *string `@( "string" | "boolean" | "int" | "void" )`
-	Dimensions *string `(@( "["`
-	Size *Expression `@@? "]" ))?`
+	Name       *string   `@Ident`
+	Dimensions *Accessor `( @@ )?`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -46,16 +45,41 @@ func (ast *Type) Print(c *context.ParsingContext) string {
 	return printNode(c, ast, "%s", *ast.Name)
 }
 
-
 /////
 
-func (ast *Type) GetType() *hindley_milner.Scheme {
-	if ast.Dimensions != nil {
-		return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("array", PrimitiveType{
-			name:    *ast.Name,
-		}))
+func IsTypeBasePrimitive(name *string) bool {
+	typeName := *name
+	if typeName == "string" {
+		return true
+	} else if typeName == "boolean" {
+		return true
+	} else if typeName == "int" {
+		return true
+	} else if typeName == "void" {
+		return true
 	}
-	return hindley_milner.NewScheme(nil, PrimitiveType{
-		name:    *ast.Name,
-	})
+	return false
+}
+
+func (ast *Type) GetType(c hindley_milner.InferContext) *hindley_milner.Scheme {
+	var baseType hindley_milner.Type
+	if *ast.Name == "auto" {
+		return hindley_milner.TypeHelperAny()
+	} else if *ast.Name == "class" {
+		return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("class", hindley_milner.NewFnType(
+			CreatePrimitive(T_VOID),
+			hindley_milner.NewSignedStructType("", map[string]hindley_milner.Type{}),
+		)))
+	} else if IsTypeBasePrimitive(ast.Name) {
+		baseType = PrimitiveType{
+			name: *ast.Name,
+		}
+	} else {
+		baseType = hindley_milner.NewSignedStructType(*ast.Name, map[string]hindley_milner.Type{})
+	}
+
+	if ast.Dimensions != nil {
+		return hindley_milner.NewScheme(nil, ast.Dimensions.BuildType(baseType))
+	}
+	return hindley_milner.NewScheme(nil, baseType)
 }

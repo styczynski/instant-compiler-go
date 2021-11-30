@@ -10,10 +10,10 @@ import (
 
 type Expression struct {
 	generic_ast.ComplexASTNode
-	NewType       *New      `@@`
-	Typename *Typename `| @@`
+	NewType          *New              `@@`
+	Typename         *Typename         `| @@`
 	LogicalOperation *LogicalOperation `| @@`
-	ParentNode generic_ast.TraversableNode
+	ParentNode       generic_ast.TraversableNode
 }
 
 func (ast *Expression) ExtractConst() (generic_ast.TraversableNode, bool) {
@@ -57,20 +57,20 @@ func (ast *Expression) IsTypename() bool {
 
 func (ast *Expression) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsLogicalOperation() {
-		return []generic_ast.TraversableNode{ast.LogicalOperation,}
+		return []generic_ast.TraversableNode{ast.LogicalOperation}
 	} else if ast.IsNewType() {
-		return []generic_ast.TraversableNode{ ast.NewType.GetTraversableNode(), }
+		return []generic_ast.TraversableNode{ast.NewType.GetTraversableNode()}
 	} else if ast.IsTypename() {
-		return []generic_ast.TraversableNode{ ast.Typename.GetTraversableNode(), }
+		return []generic_ast.TraversableNode{ast.Typename.GetTraversableNode()}
 	}
 	panic("Invalid Expression type")
 }
 
-func printBinaryOperation(c *context.ParsingContext, ast generic_ast.TraversableNode, arg1 string, operator string, arg2 string) string{
+func printBinaryOperation(c *context.ParsingContext, ast generic_ast.TraversableNode, arg1 string, operator string, arg2 string) string {
 	return printNode(c, ast, "%s %s %s", arg1, operator, arg2)
 }
 
-func printUnaryOperation(c *context.ParsingContext, ast generic_ast.TraversableNode, operator string, arg string) string{
+func printUnaryOperation(c *context.ParsingContext, ast generic_ast.TraversableNode, operator string, arg string) string {
 	return printNode(c, ast, "%s%s", operator, arg)
 }
 
@@ -103,19 +103,19 @@ func (ast *Expression) Map(parent generic_ast.Expression, mapper generic_ast.Exp
 		return mapper(parent, &Expression{
 			ComplexASTNode:   ast.ComplexASTNode,
 			LogicalOperation: mapper(ast, ast.LogicalOperation, context, false).(*LogicalOperation),
-			ParentNode: parent.(generic_ast.TraversableNode),
+			ParentNode:       parent.(generic_ast.TraversableNode),
 		}, context, true)
 	} else if ast.IsNewType() {
 		return mapper(parent, &Expression{
-			ComplexASTNode:   ast.ComplexASTNode,
-			NewType: ast.NewType,
-			ParentNode: parent.(generic_ast.TraversableNode),
+			ComplexASTNode: ast.ComplexASTNode,
+			NewType:        ast.NewType,
+			ParentNode:     parent.(generic_ast.TraversableNode),
 		}, context, true)
 	} else if ast.IsTypename() {
 		return mapper(parent, &Expression{
-			ComplexASTNode:   ast.ComplexASTNode,
-			Typename: ast.Typename,
-			ParentNode: parent.(generic_ast.TraversableNode),
+			ComplexASTNode: ast.ComplexASTNode,
+			Typename:       ast.Typename,
+			ParentNode:     parent.(generic_ast.TraversableNode),
 		}, context, true)
 	}
 	panic("Invalid Expression type")

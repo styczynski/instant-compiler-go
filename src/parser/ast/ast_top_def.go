@@ -14,8 +14,8 @@ import (
 
 type TopDef struct {
 	generic_ast.BaseASTNode
-	Class *Class `@@`
-	Function *FnDef `| @@`
+	Class      *Class `@@`
+	Function   *FnDef `| @@`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -27,19 +27,15 @@ func (ast *TopDef) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
-func (ast *TopDef) GetDefinedIdentifier() ([]string, []*hindley_milner.Scheme) {
+func (ast *TopDef) GetDefinedIdentifier(c hindley_milner.InferContext, pre bool) ([]string, []*hindley_milner.Scheme) {
 	if ast.IsFunction() {
 		return []string{
-			ast.Function.Name,
-		}, []*hindley_milner.Scheme{
-			ast.Function.GetDeclarationType(),
-		}
+				ast.Function.Name,
+			}, []*hindley_milner.Scheme{
+				ast.Function.GetDeclarationType(),
+			}
 	} else if ast.IsClass() {
-		return []string{
-			ast.Class.Name,
-		}, []*hindley_milner.Scheme{
-			ast.Class.GetDeclarationType(),
-		}
+		return ast.Class.GetDeclarationIdentifiers()
 	}
 	return []string{}, []*hindley_milner.Scheme{}
 }
@@ -81,7 +77,6 @@ func (ast *TopDef) IsFunction() bool {
 
 ///
 
-
 func (ast *TopDef) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_OPAQUE_BLOCK
 }
@@ -91,13 +86,13 @@ func (ast *TopDef) Map(parent generic_ast.Expression, mapper generic_ast.Express
 		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
 			Function:    mapper(ast, ast.Function, context, false).(*FnDef),
-			ParentNode: parent.(generic_ast.TraversableNode),
+			ParentNode:  parent.(generic_ast.TraversableNode),
 		}, context, true)
 	} else if ast.IsClass() {
 		return mapper(parent, &TopDef{
 			BaseASTNode: ast.BaseASTNode,
-			Class:    mapper(ast, ast.Class, context, false).(*Class),
-			ParentNode: parent.(generic_ast.TraversableNode),
+			Class:       mapper(ast, ast.Class, context, false).(*Class),
+			ParentNode:  parent.(generic_ast.TraversableNode),
 		}, context, true)
 	} else {
 		panic("Invalid TopDef type.")
@@ -127,9 +122,9 @@ func (ast *TopDef) GetContents() hindley_milner.Batch {
 
 func (ast *TopDef) Expressions() []generic_ast.Expression {
 	if ast.IsFunction() {
-		return []generic_ast.Expression{ ast.Function, }
+		return []generic_ast.Expression{ast.Function}
 	} else if ast.IsClass() {
-		return []generic_ast.Expression{ ast.Class, }
+		return []generic_ast.Expression{ast.Class}
 	} else {
 		panic("Invalid TopDef type.")
 	}
@@ -150,7 +145,7 @@ func (ast *TopDef) BuildFlowGraph(builder cfg.CFGBuilder) {
 func (ast *TopDef) OnFlowAnalysis(flow cfg.FlowAnalysis) error {
 	if ast.IsFunction() {
 		// Validate flow graph
-		retType, _ := ast.Function.ReturnType.GetType().Type()
+		retType, _ := ast.Function.ReturnType.GetType(nil).Type()
 		if !retType.Eq(CreatePrimitive(T_VOID)) {
 
 			gateways := flow.Graph().GetAllEndGateways()
@@ -171,4 +166,29 @@ func (ast *TopDef) OnFlowAnalysis(flow cfg.FlowAnalysis) error {
 		}
 	}
 	return nil
+}
+
+/*
+graph := flow.Graph()
+	output := []generic_ast.NormalNode{}
+	for _, stmt := range flow.input {
+		block := graph.blocks[stmt]
+		if block != nil {
+			output = append(output, stmt)
+		}
+	}
+	return output
+*/
+
+func (ast *TopDef) AfterFlowAnalysis(flow cfg.FlowAnalysis) {
+	if ast.IsFunction() {
+		output := []*Statement{}
+		graph := flow.Graph()
+		for _, stmt := range ast.Function.FunctionBody.Statements {
+			if graph.Exists(stmt.GetChildren()[0].(generic_ast.NormalNode)) {
+				output = append(output, stmt)
+			}
+		}
+		ast.Function.FunctionBody.Statements = output
+	}
 }

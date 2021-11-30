@@ -5,7 +5,25 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/styczynski/latte-compiler/src/config"
 )
+
+func init() {
+	config.RegisterEntityFactory(config.ENTITY_SUMMARIZER, CliSummaryShortStatusFactory{})
+}
+
+type CliSummaryShortStatusFactory struct{}
+
+func (CliSummaryShortStatusFactory) CreateEntity(c config.EntityConfig) interface{} {
+	return CreateCliSummaryShortStatus()
+}
+
+func (CliSummaryShortStatusFactory) Params(argSpec *config.EntityArgSpec) {
+}
+
+func (CliSummaryShortStatusFactory) EntityName() string {
+	return "summary-short-cli"
+}
 
 type CliSummaryShortStatus struct {
 }
@@ -19,8 +37,7 @@ var formatShortStatusErrBg = color.New(color.BgRed).SprintFunc()
 var formatShortStatusInputFilenameFg = color.New(color.FgBlue).SprintFunc()
 
 func CreateCliSummaryShortStatus() CliSummaryShortStatus {
-	return CliSummaryShortStatus{
-	}
+	return CliSummaryShortStatus{}
 }
 
 func (s CliSummaryShortStatus) FormatCliSummaryShortStatus(metricsPromise CollectedMetricsPromise) string {
@@ -28,16 +45,16 @@ func (s CliSummaryShortStatus) FormatCliSummaryShortStatus(metricsPromise Collec
 	timings := metrics.GetTimingsAggregation()
 
 	return fmt.Sprintf("%s: Processed everything in %s (%d inputs):\n%s\n",
-			formatOkMessageBg(formatOkMessageFg("Done")),
-			timings.Duration,
-			len(metrics.Inputs()),
-			FormatTimingAggregation(timings))
+		formatOkMessageBg(formatOkMessageFg("Done")),
+		timings.Duration,
+		len(metrics.Inputs()),
+		FormatTimingAggregation(timings))
 }
 
 func centeredText(text string) string {
 	lineWidth := 28
-	spaceLeft := lineWidth-len(text)
-	leftAlign := spaceLeft/2
+	spaceLeft := lineWidth - len(text)
+	leftAlign := spaceLeft / 2
 	rightAlign := spaceLeft - leftAlign
 	if leftAlign < 0 || rightAlign < 0 {
 		return text[:lineWidth]
@@ -77,14 +94,14 @@ func cutFormatFilename(path string, maxLength int) string {
 		return fillStringPostfix(path, maxLength)
 	}
 
-	tokenRight := substr(path, i, len(path) - i)
+	tokenRight := substr(path, i, len(path)-i)
 	if len(tokenRight) > maxLength-3 {
 		ret := "..." + substr(path, len(path)-maxLength+3, maxLength-3)
 		return fillStringPostfix(ret, maxLength)
 	}
 
 	tokenCenter := "..."
-	tokenLeft := substr(path, 0, maxLength-3-(len(tokenRight) + len(tokenCenter)))
+	tokenLeft := substr(path, 0, maxLength-3-(len(tokenRight)+len(tokenCenter)))
 
 	ret := tokenLeft + tokenCenter + tokenRight
 	return fillStringPostfix(ret, maxLength)

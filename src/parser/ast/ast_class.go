@@ -13,8 +13,9 @@ import (
 
 type Class struct {
 	generic_ast.BaseASTNode
-	Name string `"class" @Ident "{"`
-	Fields []*ClassField `(@@ ";")* "}"`
+	ClassType  string        `@("class" | "scheme")`
+	Name       string        `@Ident "{"`
+	Fields     []*ClassField `(@@)* "}"`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -65,9 +66,9 @@ func (ast *Class) Body() generic_ast.Expression {
 func (ast *Class) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &Class{
 		BaseASTNode: ast.BaseASTNode,
-		Name: ast.Name,
-		Fields: ast.Fields,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		Name:        ast.Name,
+		Fields:      ast.Fields,
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true).(*Class)
 }
 
@@ -79,42 +80,88 @@ func (ast *Class) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_DECLARATION
 }
 
-func (ast *Class) Var() hindley_milner.NameGroup {
-	return hindley_milner.NamesWithTypes([]string{
-		ast.Name,
-	}, map[string]*hindley_milner.Scheme{
+// func (ast *Class) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
+// 	return hindley_milner.NamesWithTypes([]string{
+// 		ast.Name,
+// 	}, map[string]*hindley_milner.Scheme{})
+// 	//names := []string{}
+// 	//types := map[string]*hindley_milner.Scheme{}
+// 	//for _, item := range ast.Fields {
+// 	//	names = append(names, item.Name)
+// 	//	types[item.Name] = ast.DeclarationType.GetType()
+// 	//}
+// 	//return hindley_milner.NamesWithTypes(names, types)
+// }
 
-	})
-	//names := []string{}
-	//types := map[string]*hindley_milner.Scheme{}
-	//for _, item := range ast.Fields {
-	//	names = append(names, item.Name)
-	//	types[item.Name] = ast.DeclarationType.GetType()
-	//}
-	//return hindley_milner.NamesWithTypes(names, types)
-}
-
-func (ast *Class) GetClassInstanceType() hindley_milner.Type {
-	fields := map[string]hindley_milner.Type{}
-	for _, field := range ast.Fields {
-		t, _ := field.ClassFieldType.GetType().Type()
-		fields[field.Name] = t
+func (ast *Class) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
+	types := map[string]*hindley_milner.Scheme{}
+	names, schemes := ast.GetDeclarationIdentifiers()
+	for i, name := range names {
+		types[name] = schemes[i]
 	}
-	return hindley_milner.NewSignedStructType(ast.Name, fields)
+	return hindley_milner.NamesWithTypesFromMap(types)
 }
 
-func (ast *Class) GetDeclarationType() *hindley_milner.Scheme {
-	return hindley_milner.NewScheme(nil, hindley_milner.NewSignedTupleType("class", hindley_milner.NewFnType(
+func (ast *Class) GetDeclarationIdentifiers() ([]string, []*hindley_milner.Scheme) {
+	names := []string{}
+	types := []*hindley_milner.Scheme{}
+
+	instanceType := hindley_milner.NewSignedStructType(ast.Name, map[string]hindley_milner.Type{})
+
+	classType := hindley_milner.NewSignedTupleType("class", hindley_milner.NewFnType(
 		CreatePrimitive(T_VOID),
-		ast.GetClassInstanceType(),
-	)))
+		instanceType,
+	))
+
+	for _, field := range ast.Fields {
+		if field.IsField() {
+			names = append(names, fmt.Sprintf("%s_%s", ast.Name, field.FieldName()))
+			scheme := field.GetType(nil)
+			scheme.Wrap(func(t0 hindley_milner.Type) hindley_milner.Type {
+				return hindley_milner.NewFnType(
+					instanceType,
+					t0,
+				)
+			})
+
+			types = append(types, scheme)
+		}
+	}
+
+	names = append(names, ast.Name)
+	types = append(types, hindley_milner.NewScheme(
+		nil,
+		classType,
+	))
+
+	return names, types
 }
 
-func (ast *Class) Def() generic_ast.Expression {
-	return hindley_milner.EmbeddedTypeExpr{
-		GetType: func() *hindley_milner.Scheme {
-			return ast.GetDeclarationType()
-		},
-		Source: ast,
+func (ast *Class) Def(c hindley_milner.InferContext) generic_ast.Expression {
+	exp := []generic_ast.Expression{}
+	instanceType := hindley_milner.NewSignedStructType(ast.Name, map[string]hindley_milner.Type{})
+
+	for _, field := range ast.Fields {
+		if field.IsField() {
+			exp = append(exp, hindley_milner.EmbeddedTypeExpr{
+				GetType: func() *hindley_milner.Scheme {
+					scheme := field.GetType(c)
+					scheme.Wrap(func(t0 hindley_milner.Type) hindley_milner.Type {
+						return hindley_milner.NewFnType(
+							instanceType,
+							t0,
+						)
+					})
+					return scheme
+				},
+			})
+		}
+	}
+
+	// Node
+	exp = append(exp, hindley_milner.Batch{Exp: []generic_ast.Expression{}})
+
+	return hindley_milner.Batch{
+		Exp: exp,
 	}
 }

@@ -1,7 +1,0 @@
-// Author: Krzysztof Małysa (2020)
-void foo() {}
-
-int main() {
-	foo() + 42;
-	return 0;
-}

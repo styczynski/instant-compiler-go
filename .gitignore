@@ -1,3 +1,22 @@
+# Output test files
+tests/**/*.bc
+tests/**/*.class
+tests/**/*.j
+tests/**/*.jasmine
+tests/**/*.ll
+./*.j
+./*.class
+./*.lat
+./*.txt
+./*.png
+
+*.profile
+
+input.class
+input.j
+input.ll
+input.bc
+
 # Binaries
 latc
 
@@ -20,4 +39,3 @@ bin
 .container-*
 .dockerfile-*
 
-go.sum

@@ -10,9 +10,10 @@ import (
 
 type New struct {
 	generic_ast.BaseASTNode
-	Type       *Type       `"new" ( @@`
-	Class      *string       `| @Ident )`
-	ParentNode generic_ast.TraversableNode
+	Class            *string   `"new" @Ident`
+	ClassInitializer string    `( @("(" ")")`
+	Dimensions       *Accessor `| @@ )`
+	ParentNode       generic_ast.TraversableNode
 }
 
 func (ast *New) Parent() generic_ast.TraversableNode {
@@ -35,40 +36,15 @@ func (ast *New) GetNode() interface{} {
 	return ast
 }
 
-func (ast *New) IsTypeConstructor() bool {
-	return ast.Type != nil
-}
-
-func (ast *New) IsClassConstructor() bool {
-	return ast.Class != nil
-}
-
 func (ast *New) GetTraversableNode() generic_ast.TraversableNode {
-	if ast.IsTypeConstructor() {
-		return ast.Type
-	} else if ast.IsClassConstructor() {
-		return generic_ast.MakeTraversableNodeValue(ast.GetTraversableNode(), *ast.Class, "ident", ast.Pos, ast.EndPos)
-	}
-	panic("Invalid New type")
+	return generic_ast.MakeTraversableNodeValue(ast, *ast.Class, "ident", ast.Pos, ast.EndPos)
 }
 
 func (ast *New) Print(c *context.ParsingContext) string {
-	if ast.IsTypeConstructor() {
-		return ast.Type.Print(c)
-	} else if ast.IsClassConstructor() {
-		return *ast.Class
-	}
-	panic("Invalid New type")
+	return *ast.Class
 }
 
 func (ast *New) GetChildren() []generic_ast.TraversableNode {
-	if ast.IsTypeConstructor() {
-		return []generic_ast.TraversableNode{
-			ast.Type,
-		}
-	} else if ast.IsClassConstructor() {
-		return []generic_ast.TraversableNode{}
-	}
 	return []generic_ast.TraversableNode{}
 }
 
@@ -77,7 +53,6 @@ func (ast *New) GetChildren() []generic_ast.TraversableNode {
 func (ast *New) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &New{
 		BaseASTNode: ast.BaseASTNode,
-		Type:        ast.Type,
 		Class:       ast.Class,
 		ParentNode:  ast.ParentNode,
 	}, context, true)
@@ -87,35 +62,73 @@ func (ast *New) Visit(parent generic_ast.Expression, mapper generic_ast.Expressi
 	// TODO
 }
 
-func (ast *New) EmbeddedType() *hindley_milner.Scheme {
-	return ast.Type.GetType()
+func (ast *New) EmbeddedType(c hindley_milner.InferContext) *hindley_milner.Scheme {
+	base := CreatePrimitive(T_VOID)
+	if *ast.Class == "string" {
+		base = CreatePrimitive(T_STRING)
+	} else if *ast.Class == "boolean" {
+		base = CreatePrimitive(T_BOOL)
+	} else if *ast.Class == "int" {
+		base = CreatePrimitive(T_INT)
+	} else {
+		panic("Invalid type")
+	}
+	if ast.Dimensions != nil {
+		return hindley_milner.NewScheme(nil, ast.Dimensions.BuildType(base))
+	}
+	return hindley_milner.NewScheme(nil, base)
 }
 
 func (ast *New) ExpressionType() hindley_milner.ExpressionType {
-	if ast.IsTypeConstructor() {
+	if IsTypeBasePrimitive(ast.Class) {
 		return hindley_milner.E_TYPE
-	} else if ast.IsClassConstructor() {
-		return hindley_milner.E_APPLICATION
 	}
-	panic("Invalid New type")
-}
-
-func (ast *New) Fn() generic_ast.Expression {
-	return hindley_milner.ExpressionSignedTupleGet("class", 1, 0, &VarName{
-		BaseASTNode: ast.BaseASTNode,
-		name: *ast.Class,
-	})
+	return hindley_milner.E_PROXY
 }
 
 func (ast *New) Body() generic_ast.Expression {
-	return hindley_milner.Batch{
-		Exp: []generic_ast.Expression{
-			hindley_milner.EmbeddedTypeExpr{
-				GetType: func() *hindley_milner.Scheme {
-					return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID),)
+	var ret generic_ast.Expression
+	ret = hindley_milner.ExpressionApplication(
+		ast,
+		hindley_milner.ExpressionSignedTupleGet("class", 1, 0, &VarName{
+			BaseASTNode: ast.BaseASTNode,
+			name:        *ast.Class,
+		}),
+		hindley_milner.Batch{
+			Exp: []generic_ast.Expression{
+				hindley_milner.EmbeddedTypeExpr{
+					GetType: func() *hindley_milner.Scheme {
+						return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
+					},
+					Source: ast,
 				},
-				Source: ast,
 			},
 		},
+	)
+	if ast.Dimensions != nil {
+		ret = hindley_milner.ExpressionApplication(
+			ast,
+			hindley_milner.EmbeddedTypeExpr{
+				GetType: func() *hindley_milner.Scheme {
+					return hindley_milner.NewScheme(hindley_milner.TypeVarSet{hindley_milner.TVar(0)}, hindley_milner.NewFnType(
+						hindley_milner.TVar(0),
+						ast.Dimensions.BuildType(hindley_milner.TVar(0)),
+					))
+				},
+			},
+			ret,
+		)
 	}
+
+	return ret
+	// return hindley_milner.Batch{
+	// 	Exp: []generic_ast.Expression{
+	// 		hindley_milner.EmbeddedTypeExpr{
+	// 			GetType: func() *hindley_milner.Scheme {
+	// 				return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
+	// 			},
+	// 			Source: ast,
+	// 		},
+	// 	},
+	// }
 }

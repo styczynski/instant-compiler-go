@@ -7,7 +7,7 @@ import (
 
 type VarName struct {
 	generic_ast.BaseASTNode
-	name string
+	name       string
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -19,7 +19,7 @@ func (ast *VarName) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
-func (ast *VarName) Name() hindley_milner.NameGroup     { return hindley_milner.Name(ast.name) }
+func (ast *VarName) Name() hindley_milner.NameGroup { return hindley_milner.Name(ast.name) }
 
 func (ast *VarName) Body() generic_ast.Expression { return ast }
 
@@ -36,4 +36,3 @@ func (ast *VarName) Type() hindley_milner.Type {
 }
 
 func (ast *VarName) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_LITERAL }
-

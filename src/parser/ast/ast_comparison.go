@@ -10,9 +10,9 @@ import (
 
 type Comparison struct {
 	generic_ast.BaseASTNode
-	Addition *Addition   `@@`
-	Op       string      `[ @( ">" "=" | "<" "=" | "=" "=" | ">" | "<" )`
-	Next     *Comparison `  @@ ]`
+	Addition   *Addition   `@@`
+	Op         string      `[ @( ">" "=" | "<" "=" | "=" "=" | ">" | "<" )`
+	Next       *Comparison `  @@ ]`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -62,7 +62,6 @@ func (ast *Comparison) Print(c *context.ParsingContext) string {
 	return ast.Addition.Print(c)
 }
 
-
 ////
 
 func (ast *Comparison) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
@@ -75,7 +74,7 @@ func (ast *Comparison) Map(parent generic_ast.Expression, mapper generic_ast.Exp
 		Addition:    mapper(ast, ast.Addition, context, false).(*Addition),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -87,10 +86,10 @@ func (ast *Comparison) Visit(parent generic_ast.Expression, mapper generic_ast.E
 	mapper(parent, ast, context)
 }
 
-func (ast *Comparison) Fn() generic_ast.Expression {
+func (ast *Comparison) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: ast.Op,
+		name:        ast.Op,
 	}
 }
 
@@ -123,6 +122,9 @@ func (ast *Comparison) ConstFold() generic_ast.TraversableNode {
 			p1 := const1.(*Primary)
 			p2 := const2.(*Primary)
 			v := p1.Compare(p2, ast.Op)
+			if v == nil {
+				return ast
+			}
 			// Change pointers
 			ast.Addition.Multiplication.Unary.UnaryApplication.Index.Primary = v
 			ast.Op = ast.Next.Op

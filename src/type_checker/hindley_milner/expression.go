@@ -6,14 +6,13 @@ import (
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
-
 type Namer interface {
 	Name() NameGroup
 }
 
 type NameGroup struct {
-	names []string
-	types map[string]*Scheme
+	names       []string
+	types       map[string]*Scheme
 	hasTypesMap bool
 }
 
@@ -36,7 +35,11 @@ func (g NameGroup) GetTypeOf(name string) *Scheme {
 }
 
 func Name(s string) NameGroup {
-	return NameGroup{[]string { s }, nil, false}
+	return NameGroup{[]string{s}, nil, false}
+}
+
+func NameWithType(s string, t *Scheme) NameGroup {
+	return NameGroup{[]string{s}, map[string]*Scheme{s: t}, true}
 }
 
 func Names(s []string) NameGroup {
@@ -47,18 +50,24 @@ func NamesWithTypes(names []string, types map[string]*Scheme) NameGroup {
 	return NameGroup{names, types, true}
 }
 
-func NamesWithTypesFromMap(names []string, args map[string]*Scheme) NameGroup {
+func NamesWithTypesFromMap(args map[string]*Scheme) NameGroup {
+	names := []string{}
+	for name, _ := range args {
+		names = append(names, name)
+	}
 	return NameGroup{names, args, true}
 }
-
 
 type Typer interface {
 	Type() Type
 }
 
-
 type Inferer interface {
 	Infer(Env, Fresher) (Type, error)
+}
+
+type InferContext interface {
+	TypeOf(et generic_ast.Expression, contextExpressions ...generic_ast.Expression) (Type, error)
 }
 
 type ExpressionType int
@@ -76,6 +85,7 @@ const (
 	E_RETURN
 	E_LET
 	E_LET_RECURSIVE
+	E_REDEFINABLE_LET
 	E_DECLARATION
 	E_FUNCTION_DECLARATION
 	E_CUSTOM
@@ -83,7 +93,6 @@ const (
 	E_NONE
 	E_INTROSPECTION
 )
-
 
 type HMExpression interface {
 	generic_ast.Expression
@@ -148,7 +157,7 @@ func FlattenBatch(exp generic_ast.Expression) []generic_ast.Expression {
 		}
 		return ret
 	} else {
-		return []generic_ast.Expression{ exp }
+		return []generic_ast.Expression{exp}
 	}
 }
 
@@ -162,69 +171,60 @@ func ApplyBatch(exp generic_ast.Expression, fn func(e generic_ast.Expression) er
 	return nil
 }
 
-
 type Var interface {
 	generic_ast.Expression
 	Namer
 	Typer
 }
 
-
 type Literal interface {
 	Var
 }
 
-
 type Apply interface {
 	generic_ast.Expression
-	Fn() generic_ast.Expression
+	Fn(c InferContext) generic_ast.Expression
 }
 
 type LetBase interface {
-
 	generic_ast.Expression
-	Var() NameGroup
+	Var(c InferContext) NameGroup
 }
-
 
 type Let interface {
 	LetBase
-	Def() generic_ast.Expression
+	Def(c InferContext) generic_ast.Expression
 }
-
 
 type Lambda interface {
 	generic_ast.Expression
-	Args() NameGroup
+	Args(c InferContext) NameGroup
 }
-
 
 type EmbeddedType interface {
 	generic_ast.Expression
-	EmbeddedType() *Scheme
+	EmbeddedType(c InferContext) *Scheme
 }
-
 
 type Block interface {
 	generic_ast.Expression
 	GetContents() Batch
 }
 
-
 type Return interface {
 	generic_ast.Expression
 }
 
 type DefaultTyper interface {
-	DefaultType() *Scheme
+	DefaultType(c InferContext) *Scheme
 }
 
 type CustomExpressionEnv struct {
-	Env Env
-	InferencedType Type
-	LookupEnv func(isLiteral bool, name string) error
+	Env                 Env
+	InferencedType      Type
+	LookupEnv           func(isLiteral bool, name string) error
 	GenerateConstraints func(expr generic_ast.Expression) (error, Env, Type, Constraints)
-	FreshTypeVariable func() TypeVariable
+	FreshTypeVariable   func() TypeVariable
 }
 
 type CustomExpression interface {
@@ -232,12 +232,8 @@ type CustomExpression interface {
 	GenerateConstraints(context CustomExpressionEnv) (error, Env, Type, Constraints)
 }
 
-
-
-
-
 type ExpressionWithIdentifiersDeps interface {
-	GetIdentifierDeps() NameGroup
+	GetIdentifierDeps(c InferContext, pre bool) NameGroup
 }
 
 type IntrospectionExpression interface {

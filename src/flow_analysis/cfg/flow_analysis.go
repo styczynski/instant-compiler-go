@@ -21,14 +21,15 @@ type FlowAnalysis interface {
 	Liveness() BlockLiveVariables
 	Reaching() ReachingVariablesInfo
 	Print(c *context.ParsingContext) string
+	Optimize(c *context.ParsingContext)
 	ConstFold(c *context.ParsingContext) ConstFoldingError
 	Output() generic_ast.NormalNode
 	Rebuild()
 }
 
 type FlowAnalysisImpl struct {
-	input []generic_ast.NormalNode
-	graph *CFG
+	input    []generic_ast.NormalNode
+	graph    *CFG
 	liveness *LiveVariablesInfo
 	reaching *ReachingVariablesInfo
 }
@@ -63,7 +64,7 @@ func (flow *FlowAnalysisImpl) ReplaceBlock(old generic_ast.NormalNode, new gener
 
 func CreateFlowAnalysis(input generic_ast.NormalNode) FlowAnalysis {
 	return &FlowAnalysisImpl{
-		input: []generic_ast.NormalNode{ input },
+		input: []generic_ast.NormalNode{input},
 	}
 }
 

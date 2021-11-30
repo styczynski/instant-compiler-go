@@ -2,41 +2,59 @@ package events_collector
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/flow_analysis"
 	"github.com/styczynski/latte-compiler/src/parser"
 	"github.com/styczynski/latte-compiler/src/parser/context"
+	"github.com/styczynski/latte-compiler/src/runner"
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
 
 type EventsCollector struct {
-	eventStream chan EventMessage
-	done chan bool
-	statuses map[string][]InputStatus
+	eventStream        chan EventMessage
+	done               chan bool
+	statuses           map[string][]InputStatus
 	timingsAggregation map[string]time.Duration
-	timingsLabels []string
+	timingsLabels      []string
+	updater            StatusUpdater
+	outputFiles        map[string]map[string]string
+	outputFilsMutex    sync.Mutex
 }
 
 type InputStatus struct {
 	processName string
-	c *context.ParsingContext
-	input context.EventCollectorMessageInput
-	start time.Time
-	end time.Time
+	c           *context.ParsingContext
+	input       context.EventCollectorMessageInput
+	start       time.Time
+	end         time.Time
 }
 
 type EventMessage struct {
-	eventType string
+	eventType   string
 	processName string
-	c *context.ParsingContext
-	input context.EventCollectorMessageInput
+	c           *context.ParsingContext
+	input       context.EventCollectorMessageInput
+}
+
+func (collector *EventsCollector) EmitOutputFiles(processName string, c *context.ParsingContext, outputFiles map[string]map[string]string) {
+	collector.outputFilsMutex.Lock()
+	defer collector.outputFilsMutex.Unlock()
+	for path, files := range outputFiles {
+		if _, ok := collector.outputFiles[path]; !ok {
+			collector.outputFiles[path] = map[string]string{}
+		}
+		for file, description := range files {
+			collector.outputFiles[path][file] = description
+		}
+	}
 }
 
 func (collector *EventsCollector) Start(processName string, c *context.ParsingContext, input context.EventCollectorMessageInput) {
 	collector.eventStream <- EventMessage{
-		eventType: "start",
+		eventType:   "start",
 		processName: processName,
 		c:           c,
 		input:       input,
@@ -45,7 +63,7 @@ func (collector *EventsCollector) Start(processName string, c *context.ParsingCo
 
 func (collector *EventsCollector) End(processName string, c *context.ParsingContext, input context.EventCollectorMessageInput) {
 	collector.eventStream <- EventMessage{
-		eventType: "end",
+		eventType:   "end",
 		processName: processName,
 		c:           c,
 		input:       input,
@@ -79,10 +97,15 @@ func (collector *EventsCollector) runEventsCollectorDeamon() {
 	go func() {
 		defer close(eventStream)
 		gracefulShutdown := false
+		updaterDeinitialized := true
 		for {
 			message := <-eventStream
 			switch message.eventType {
 			case "start":
+				if updaterDeinitialized {
+					collector.updater.Init()
+					updaterDeinitialized = false
+				}
 				filename := message.input.Filename()
 				collector.statuses[filename] = append(collector.statuses[filename], InputStatus{
 					processName: message.processName,
@@ -90,6 +113,7 @@ func (collector *EventsCollector) runEventsCollectorDeamon() {
 					input:       message.input,
 					start:       time.Now(),
 				})
+				collector.updater.UpdateStatus(message.processName)
 				collector.debugOutputEvent("[Event] %s - Start %s\n", filename, message.processName)
 			case "end":
 				filename := message.input.Filename()
@@ -123,6 +147,9 @@ func (collector *EventsCollector) runEventsCollectorDeamon() {
 					}
 				}
 			case "done":
+				collector.updater.Done()
+				updaterDeinitialized = true
+
 				gracefulShutdown = true
 				stillProcessing := false
 				for _, statuses := range collector.statuses {
@@ -139,14 +166,16 @@ func (collector *EventsCollector) runEventsCollectorDeamon() {
 	}()
 }
 
-func StartEventsCollector() *EventsCollector {
+func StartEventsCollector(updater StatusUpdater) *EventsCollector {
 	eventStream := make(chan EventMessage)
 	done := make(chan bool)
 	collector := &EventsCollector{
-		done: done,
-		eventStream: eventStream,
-		statuses: map[string][]InputStatus{},
+		done:               done,
+		eventStream:        eventStream,
+		statuses:           map[string][]InputStatus{},
 		timingsAggregation: map[string]time.Duration{},
+		updater:            updater,
+		outputFiles:        map[string]map[string]string{},
 	}
 	defer collector.runEventsCollectorDeamon()
 	return collector
@@ -160,7 +189,7 @@ type InternalError interface {
 
 type CollectedError struct {
 	filename string
-	err InternalError
+	err      InternalError
 }
 
 func (e CollectedError) ErrorName() string {
@@ -181,7 +210,7 @@ func (e CollectedError) CliMessage() string {
 
 type TimingsAggreagation struct {
 	Duration time.Duration
-	Name string
+	Name     string
 	Children []*TimingsAggreagation
 }
 
@@ -190,13 +219,15 @@ type CollectedMetrics interface {
 	GetTimingsAggregation() TimingsAggreagation
 	Resolve() CollectedMetrics
 	Inputs() []context.EventCollectorMessageInput
+	GetOutputs() map[string]map[string]string
 }
 
 type CollectedMetricsImpl struct {
-	errs []CollectedError
+	errs               []CollectedError
 	timingsAggregation map[string]time.Duration
-	timingsLabels []string
-	inputs []context.EventCollectorMessageInput
+	timingsLabels      []string
+	inputs             []context.EventCollectorMessageInput
+	outputs            map[string]map[string]string
 }
 
 func (c CollectedMetricsImpl) Inputs() []context.EventCollectorMessageInput {
@@ -249,6 +280,10 @@ func (c CollectedMetricsImpl) Resolve() CollectedMetrics {
 	return c
 }
 
+func (c CollectedMetricsImpl) GetOutputs() map[string]map[string]string {
+	return c.outputs
+}
+
 type CollectedMetricsPromise interface {
 	Resolve() CollectedMetrics
 }
@@ -264,7 +299,7 @@ func (ec *EventsCollector) collectSyncParsingError(program parser.LatteParsedPro
 	if result.ParsingError() != nil {
 		return append(out, CollectedError{
 			filename: result.Filename(),
-			err: result.ParsingError(),
+			err:      result.ParsingError(),
 		}), false, result
 	} else {
 		// Do nothing
@@ -287,7 +322,7 @@ func (ec *EventsCollector) collectSyncTypecheckingError(program type_checker.Lat
 	if result.TypeCheckingError != nil {
 		return append(out, CollectedError{
 			filename: result.Filename(),
-			err: result.TypeCheckingError,
+			err:      result.TypeCheckingError,
 		}), false, result
 	} else {
 		out, ok, _ := ec.collectSyncParsingError(result.Program, c, out)
@@ -310,7 +345,7 @@ func (ec *EventsCollector) collectSyncFlowAnalysisError(program flow_analysis.La
 	if result.FlowAnalysisError != nil {
 		return append(out, CollectedError{
 			filename: result.Filename(),
-			err: result.FlowAnalysisError,
+			err:      result.FlowAnalysisError,
 		}), false, result
 	} else {
 		out, ok, _ := ec.collectSyncTypecheckingError(result.Program, c, out)
@@ -323,10 +358,23 @@ func (ec *EventsCollector) collectSyncCompilationError(program compiler.LatteCom
 	if result.CompilationError != nil {
 		return append(out, CollectedError{
 			filename: result.Filename(),
-			err: result.CompilationError,
+			err:      result.CompilationError,
 		}), false, result
 	} else {
 		out, ok, _ := ec.collectSyncFlowAnalysisError(result.Program, c, out)
+		return out, ok, result
+	}
+}
+
+func (ec *EventsCollector) collectSyncCompiledCodeRunError(program runner.LatteRunnedProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, bool, runner.LatteRunnedProgram) {
+	result := program.Resolve()
+	if result.RunError != nil {
+		return append(out, CollectedError{
+			filename: result.Filename(),
+			err:      result.RunError,
+		}), false, result
+	} else {
+		out, ok, _ := ec.collectSyncCompilationError(result.Program, c, out)
 		return out, ok, result
 	}
 }
@@ -341,6 +389,54 @@ func (ec *EventsCollector) collectSyncCompilationErrors(programs []compiler.Latt
 	return out, inputs
 }
 
+func (ec *EventsCollector) collectSyncCompiledCodeRunErrors(programs []runner.LatteRunnedProgramPromise, c *context.ParsingContext, out []CollectedError) ([]CollectedError, []context.EventCollectorMessageInput) {
+	inputs := []context.EventCollectorMessageInput{}
+	for _, program := range programs {
+		var result context.EventCollectorMessageInput
+		out, _, result = ec.collectSyncCompiledCodeRunError(program, c, out)
+		inputs = append(inputs, result)
+	}
+	return out, inputs
+}
+
+///
+
+func (ec *EventsCollector) HandleCompiledCodeRunning(programs []runner.LatteRunnedProgramPromise, c *context.ParsingContext) CollectedMetricsPromise {
+	ret := make(chan CollectedMetrics)
+	go func() {
+		defer close(ret)
+		out := []CollectedError{}
+		var inputs []context.EventCollectorMessageInput
+		out, inputs = ec.collectSyncCompiledCodeRunErrors(programs, c, out)
+		ec.eventStream <- EventMessage{
+			eventType: "done",
+		}
+		<-ec.done
+		ret <- CollectedMetricsImpl{
+			errs:               out,
+			timingsAggregation: ec.timingsAggregation,
+			timingsLabels:      ec.timingsLabels,
+			inputs:             inputs,
+			outputs:            ec.outputFiles,
+		}
+	}()
+	return CollectedErrorsPromiseChan(ret)
+}
+
+func (ec *EventsCollector) SummarizeCompiledCodeRunning(summarizer Summarizer, programs []runner.LatteRunnedProgramPromise, c *context.ParsingContext) (string, []runner.LatteRunnedProgram, bool) {
+	progs := []runner.LatteRunnedProgram{}
+	progsP := []runner.LatteRunnedProgramPromise{}
+	for _, p := range programs {
+		pResolved := p.Resolve()
+		progs = append(progs, pResolved)
+		progsP = append(progsP, pResolved)
+	}
+	message, ok := summarizer.Summarize(ec.HandleCompiledCodeRunning(progsP, c))
+	return message, progs, ok
+}
+
+///
+
 func (ec *EventsCollector) HandleCompilation(programs []compiler.LatteCompiledProgramPromise, c *context.ParsingContext) CollectedMetricsPromise {
 	ret := make(chan CollectedMetrics)
 	go func() {
@@ -349,14 +445,15 @@ func (ec *EventsCollector) HandleCompilation(programs []compiler.LatteCompiledPr
 		var inputs []context.EventCollectorMessageInput
 		out, inputs = ec.collectSyncCompilationErrors(programs, c, out)
 		ec.eventStream <- EventMessage{
-			eventType:   "done",
+			eventType: "done",
 		}
-		<- ec.done
+		<-ec.done
 		ret <- CollectedMetricsImpl{
-			errs: out,
+			errs:               out,
 			timingsAggregation: ec.timingsAggregation,
-			timingsLabels: ec.timingsLabels,
-			inputs: inputs,
+			timingsLabels:      ec.timingsLabels,
+			inputs:             inputs,
+			outputs:            ec.outputFiles,
 		}
 	}()
 	return CollectedErrorsPromiseChan(ret)
@@ -374,14 +471,15 @@ func (ec *EventsCollector) HandleTypechecking(programs []type_checker.LatteTypec
 		var inputs []context.EventCollectorMessageInput
 		out, inputs = ec.collectSyncTypecheckingErrors(programs, c, out)
 		ec.eventStream <- EventMessage{
-			eventType:   "done",
+			eventType: "done",
 		}
-		<- ec.done
+		<-ec.done
 		ret <- CollectedMetricsImpl{
-			errs: out,
+			errs:               out,
 			timingsAggregation: ec.timingsAggregation,
-			timingsLabels: ec.timingsLabels,
-			inputs: inputs,
+			timingsLabels:      ec.timingsLabels,
+			inputs:             inputs,
+			outputs:            ec.outputFiles,
 		}
 	}()
 	return CollectedErrorsPromiseChan(ret)
@@ -399,14 +497,15 @@ func (ec *EventsCollector) HandleParsing(programs []parser.LatteParsedProgramPro
 		var inputs []context.EventCollectorMessageInput
 		out, inputs = ec.collectSyncParsingErrors(programs, c, out)
 		ec.eventStream <- EventMessage{
-			eventType:   "done",
+			eventType: "done",
 		}
-		<- ec.done
+		<-ec.done
 		ret <- CollectedMetricsImpl{
-			errs: out,
+			errs:               out,
 			timingsAggregation: ec.timingsAggregation,
-			timingsLabels: ec.timingsLabels,
-			inputs: inputs,
+			timingsLabels:      ec.timingsLabels,
+			inputs:             inputs,
+			outputs:            ec.outputFiles,
 		}
 	}()
 	return CollectedErrorsPromiseChan(ret)

@@ -12,9 +12,9 @@ import (
 
 type Index struct {
 	generic_ast.BaseASTNode
-	Primary   *Primary   ` @@ `
-	IndexingExpr *Expression `( "[" @@ "]" )?`
-	ParentNode generic_ast.TraversableNode
+	Primary      *Primary  ` @@ `
+	IndexingExpr *Accessor `( @@ )?`
+	ParentNode   generic_ast.TraversableNode
 }
 
 func (ast *Index) ExtractConst() (generic_ast.TraversableNode, bool) {
@@ -63,27 +63,26 @@ func (ast *Index) HasIndexingExpr() bool {
 
 func (ast *Index) Print(c *context.ParsingContext) string {
 	if ast.HasIndexingExpr() {
-		return fmt.Sprintf("%s[%s]", ast.Primary.Print(c), ast.IndexingExpr.Print(c))
+		return fmt.Sprintf("%s%s", ast.Primary.Print(c), ast.IndexingExpr.Print(c))
 	}
 	return ast.Primary.Print(c)
 }
 
 ////
 
-
 func (ast *Index) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	if ast.HasIndexingExpr() {
 		return mapper(parent, &Index{
-			BaseASTNode:      ast.BaseASTNode,
-			Primary: mapper(ast, ast.Primary, context, false).(*Primary),
-			IndexingExpr: mapper(ast, ast.IndexingExpr, context, false).(*Expression),
-			ParentNode: parent.(generic_ast.TraversableNode),
+			BaseASTNode:  ast.BaseASTNode,
+			Primary:      mapper(ast, ast.Primary, context, false).(*Primary),
+			IndexingExpr: mapper(ast, ast.IndexingExpr, context, false).(*Accessor),
+			ParentNode:   parent.(generic_ast.TraversableNode),
 		}, context, true)
 	} else {
 		return mapper(parent, &Index{
-			BaseASTNode:      ast.BaseASTNode,
-			Primary: mapper(ast, ast.Primary, context, false).(*Primary),
-			ParentNode: parent.(generic_ast.TraversableNode),
+			BaseASTNode: ast.BaseASTNode,
+			Primary:     mapper(ast, ast.Primary, context, false).(*Primary),
+			ParentNode:  parent.(generic_ast.TraversableNode),
 		}, context, true)
 	}
 }
@@ -96,28 +95,13 @@ func (ast *Index) Visit(parent generic_ast.Expression, mapper generic_ast.Expres
 	mapper(parent, ast, context)
 }
 
-func (ast *Index) Fn() generic_ast.Expression {
-	return &BuiltinFunction{
-		BaseASTNode: ast.BaseASTNode,
-		name: "[]",
-	}
-}
-
 func (ast *Index) Body() generic_ast.Expression {
 	if !ast.HasIndexingExpr() {
 		return ast.Primary
 	}
-	return hindley_milner.Batch{
-		Exp: []generic_ast.Expression{
-			ast.Primary,
-			ast.IndexingExpr,
-		},
-	}
+	return ast.IndexingExpr.GetLastAccessor()
 }
 
 func (ast *Index) ExpressionType() hindley_milner.ExpressionType {
-	if !ast.HasIndexingExpr() {
-		return hindley_milner.E_PROXY
-	}
-	return hindley_milner.E_APPLICATION
+	return hindley_milner.E_PROXY
 }

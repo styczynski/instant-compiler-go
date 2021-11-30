@@ -12,10 +12,10 @@ import (
 )
 
 type UnaryApplication struct {
-	 generic_ast.BaseASTNode
-	Target *string   `( @Ident`
-	Arguments []*Expression   `"(" (@@ ("," @@)*)? ")" )`
-	Index *Index `| @@`
+	generic_ast.BaseASTNode
+	Target     *string       `( @Ident`
+	Arguments  []*Expression `"(" (@@ ("," @@)*)? ")" )`
+	Index      *Index        `| @@`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -48,7 +48,7 @@ func (ast *UnaryApplication) GetNode() interface{} {
 
 func (ast *UnaryApplication) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsApplication() {
-		nodes := make([]generic_ast.TraversableNode, len(ast.Arguments) + 1)
+		nodes := make([]generic_ast.TraversableNode, len(ast.Arguments)+1)
 		nodes = append(nodes, generic_ast.MakeTraversableNodeToken(ast, *ast.Target, ast.Pos, ast.EndPos))
 		for _, child := range ast.Arguments {
 			nodes = append(nodes, child)
@@ -95,13 +95,13 @@ func (ast *UnaryApplication) Map(parent generic_ast.Expression, mapper generic_a
 			BaseASTNode: ast.BaseASTNode,
 			Target:      ast.Target,
 			Arguments:   args,
-			ParentNode: parent.(generic_ast.TraversableNode),
+			ParentNode:  parent.(generic_ast.TraversableNode),
 		}, context, true)
 	} else if ast.IsIndex() {
 		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
-			Index: mapper(ast, ast.Index, context, false).(*Index),
-			ParentNode: parent.(generic_ast.TraversableNode),
+			Index:       mapper(ast, ast.Index, context, false).(*Index),
+			ParentNode:  parent.(generic_ast.TraversableNode),
 		}, context, true)
 	}
 	panic("Invalid UnaryApplication operation type")
@@ -118,10 +118,10 @@ func (ast *UnaryApplication) Visit(parent generic_ast.Expression, mapper generic
 	mapper(parent, ast, context)
 }
 
-func (ast *UnaryApplication) Fn() generic_ast.Expression {
+func (ast *UnaryApplication) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &VarName{
 		BaseASTNode: ast.BaseASTNode,
-		name: *ast.Target,
+		name:        *ast.Target,
 	}
 }
 

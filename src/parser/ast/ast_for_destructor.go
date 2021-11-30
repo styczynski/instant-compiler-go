@@ -11,9 +11,9 @@ import (
 )
 
 type ForDestructor struct {
-	 generic_ast.BaseASTNode
-	ElementVar string `@Ident`
-	Target *Expression `":" @@`
+	generic_ast.BaseASTNode
+	ElementVar string      `@Ident`
+	Target     *Expression `":" @@`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -51,13 +51,12 @@ func (ast *ForDestructor) Print(c *context.ParsingContext) string {
 
 ////
 
-
 func (ast *ForDestructor) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &ForDestructor{
 		BaseASTNode: ast.BaseASTNode,
 		ElementVar:  ast.ElementVar,
 		Target:      mapper(ast, ast.Target, context, false).(*Expression),
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -66,10 +65,10 @@ func (ast *ForDestructor) Visit(parent generic_ast.Expression, mapper generic_as
 	mapper(parent, ast, context)
 }
 
-func (ast *ForDestructor) Fn() generic_ast.Expression {
+func (ast *ForDestructor) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: "[_]",
+		name:        "[_]",
 	}
 }
 

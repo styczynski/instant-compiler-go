@@ -12,7 +12,7 @@ import (
 type UnaryStatement struct {
 	generic_ast.BaseASTNode
 	TargetName *string `@Ident`
-	Operation string `@( "+" "+" | "-" "-" ) ";"`
+	Operation  string  `@( "+" "+" | "-" "-" ) ";"`
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -52,9 +52,9 @@ func (ast *UnaryStatement) Print(c *context.ParsingContext) string {
 func (ast *UnaryStatement) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
 	return mapper(parent, &UnaryStatement{
 		BaseASTNode: ast.BaseASTNode,
-		TargetName: ast.TargetName,
-		Operation: ast.Operation,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		TargetName:  ast.TargetName,
+		Operation:   ast.Operation,
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -62,10 +62,10 @@ func (ast *UnaryStatement) Visit(parent generic_ast.Expression, mapper generic_a
 	mapper(parent, ast, context)
 }
 
-func (ast *UnaryStatement) Fn() generic_ast.Expression {
+func (ast *UnaryStatement) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: ast.Operation,
+		name:        ast.Operation,
 	}
 }
 
@@ -74,7 +74,7 @@ func (ast *UnaryStatement) Body() generic_ast.Expression {
 		Exp: []generic_ast.Expression{
 			&VarName{
 				BaseASTNode: ast.BaseASTNode,
-				name: *ast.TargetName,
+				name:        *ast.TargetName,
 			},
 		},
 	}

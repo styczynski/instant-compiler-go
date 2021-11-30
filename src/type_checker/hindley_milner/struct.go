@@ -4,13 +4,11 @@ import (
 	"fmt"
 )
 
-
 type SignedStruct struct {
-	ts map[string]Type
-	name string
+	ts      map[string]Type
+	name    string
 	context CodeContext
 }
-
 
 func NewSignedStructType(name string, ts map[string]Type) *SignedStruct {
 	return &SignedStruct{
@@ -27,10 +25,68 @@ func (t *SignedStruct) Apply(subs Subs) Substitutable {
 	return NewSignedStructType(t.name, ts)
 }
 
+func (t *SignedStruct) IsPrototype() bool {
+	return len(t.name) == 0
+}
+
+func (t *SignedStruct) Union(other interface{}, context Constraint, listener IntrospecionListener) (Subs, error) {
+	if ot, ok := other.(*SignedStruct); ok {
+		if t.name != ot.name && !t.IsPrototype() && !ot.IsPrototype() {
+			return nil, fmt.Errorf("Two different entities %s and %s are not compatible.", ot.name, t.name)
+		}
+
+		for i, _ := range t.ts {
+			if _, ok := ot.ts[i]; !ok && !ot.IsPrototype() {
+				return nil, fmt.Errorf("Type %s is missing propery %s", ot.name, i)
+			}
+		}
+
+		for i, _ := range ot.ts {
+			if _, ok := t.ts[i]; !ok && !t.IsPrototype() {
+				return nil, fmt.Errorf("Type %s is missing propery %s", t.name, i)
+			}
+		}
+
+		// Checks finished
+
+		ret := SubsConcat()
+
+		for i, t1 := range t.ts {
+			if t2, ok := ot.ts[i]; ok {
+				subs, err := Unify(t1, t2, context, listener)
+				if err != nil {
+					return nil, err
+				}
+				ret = SubsConcat(ret, subs)
+			}
+		}
+
+		if t.IsPrototype() && !ot.IsPrototype() {
+
+		} else if !t.IsPrototype() && ot.IsPrototype() {
+
+		}
+
+		// for i, t1 := range ot.ts {
+		// 	if t2, ok := t.ts[i]; ok {
+		// 		subs, err := Unify(t1, t2, context)
+		// 		if err != nil {
+		// 			return nil, err
+		// 		}
+		// 		ret = SubsConcat(ret, subs)
+		// 	}
+		// }
+
+		return ret, nil
+	}
+
+	return nil, fmt.Errorf("Invalid type")
+}
+
 func (t *SignedStruct) FreeTypeVar() TypeVarSet {
 	var tvs TypeVarSet
 	for _, v := range t.ts {
-		tvs = v.FreeTypeVar().Union(tvs)
+		tvs = tvs.Union(v.FreeTypeVar())
 	}
 	return tvs
 }
@@ -65,11 +121,18 @@ func (t *SignedStruct) Eq(other Type) bool {
 		if len(ot.ts) != len(t.ts) {
 			return false
 		}
-		if ot.name != t.name {
+		if ot.name != t.name && !ot.IsPrototype() && !t.IsPrototype() {
 			return false
 		}
-		for i, v := range t.ts {
-			if !v.Eq(ot.ts[i]) {
+
+		for i, tv := range t.ts {
+			if ov, ok := ot.ts[i]; (!ok && !ot.IsPrototype()) || !TypeEq(tv, ov) {
+				return false
+			}
+		}
+
+		for i, ov := range ot.ts {
+			if tv, ok := t.ts[i]; (!ok && !t.IsPrototype()) || !TypeEq(tv, ov) {
 				return false
 			}
 		}
@@ -79,7 +142,11 @@ func (t *SignedStruct) Eq(other Type) bool {
 }
 
 func (t *SignedStruct) Format(f fmt.State, c rune) {
-	f.Write([]byte(fmt.Sprintf("%s<", t.name)))
+	if t.IsPrototype() {
+		f.Write([]byte("*<"))
+	} else {
+		f.Write([]byte(fmt.Sprintf("%s<", t.name)))
+	}
 	f.Write([]byte(TypeStringPrefix(t)))
 	count := 0
 	for range t.ts {
@@ -90,16 +157,17 @@ func (t *SignedStruct) Format(f fmt.State, c rune) {
 		if i < count-1 {
 			fmt.Fprintf(f, "%s=%v, ", k, v)
 		} else {
-			fmt.Fprintf(f, "%s=%v>", k, v)
+			fmt.Fprintf(f, "%s=%v", k, v)
 		}
 		i++
 	}
+	f.Write([]byte(">"))
 }
 
 func (t *SignedStruct) MapTypes(mapper TypeMapper) Type {
 	newSignedStruct := &SignedStruct{
-		ts: map[string]Type{},
-		name: t.name,
+		ts:      map[string]Type{},
+		name:    t.name,
 		context: t.context,
 	}
 	for k, v := range t.ts {
@@ -110,8 +178,8 @@ func (t *SignedStruct) MapTypes(mapper TypeMapper) Type {
 
 func (t *SignedStruct) WithContext(c CodeContext) Type {
 	return &SignedStruct{
-		ts:   t.ts,
-		name: t.name,
+		ts:      t.ts,
+		name:    t.name,
 		context: c,
 	}
 }
@@ -121,7 +189,6 @@ func (t *SignedStruct) GetContext() CodeContext {
 }
 
 func (t *SignedStruct) String() string { return fmt.Sprintf("%s%v", TypeStringPrefix(t), t) }
-
 
 func (t *SignedStruct) Clone() interface{} {
 	retVal := new(SignedStruct)

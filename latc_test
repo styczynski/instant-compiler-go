@@ -1,0 +1,4 @@
+#!/bin/bash
+
+#./latc --backend jvm --status-updater updater-silent --summary summary-short-cli $@
+go run cmd/latte-compiler/main.go --backend jvm --status-updater updater-silent --summary summary-short-cli $@

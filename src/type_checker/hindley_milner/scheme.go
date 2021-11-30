@@ -2,13 +2,13 @@ package hindley_milner
 
 import "fmt"
 
-
-
-
-
 type Scheme struct {
 	tvs TypeVarSet
 	t   Type
+}
+
+func Concreate(t Type) *Scheme {
+	return NewScheme(nil, t)
 }
 
 func NewScheme(tvs TypeVarSet, t Type) *Scheme {
@@ -16,6 +16,17 @@ func NewScheme(tvs TypeVarSet, t Type) *Scheme {
 		tvs: tvs,
 		t:   t,
 	}
+}
+
+func (s *Scheme) Concrete() Type {
+	if s.tvs.Len() > 0 {
+		panic("Scheme is not concreate")
+	}
+	return s.t
+}
+
+func (s *Scheme) Wrap(wrapperFn func(t Type) Type) {
+	s.t = wrapperFn(s.t)
 }
 
 func (s *Scheme) Apply(sub Subs) Substitutable {
@@ -78,14 +89,12 @@ func (s *Scheme) Format(state fmt.State, c rune) {
 	fmt.Fprintf(state, "]: %v", s.t)
 }
 
-
 func (s *Scheme) Type() (t Type, isMonoType bool) {
 	if len(s.tvs) == 0 {
 		return s.t, true
 	}
 	return s.t, false
 }
-
 
 func (s *Scheme) Normalize() (err error) {
 	tfv := s.t.FreeTypeVar()

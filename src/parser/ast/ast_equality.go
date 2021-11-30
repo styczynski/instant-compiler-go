@@ -9,7 +9,7 @@ import (
 )
 
 type Equality struct {
-	 generic_ast.BaseASTNode
+	generic_ast.BaseASTNode
 	Comparison *Comparison `@@`
 	Op         string      `[ @( "!" "=" | "=" "=" )`
 	Next       *Equality   `  @@ ]`
@@ -73,10 +73,10 @@ func (ast *Equality) Map(parent generic_ast.Expression, mapper generic_ast.Expre
 	}
 	return mapper(parent, &Equality{
 		BaseASTNode: ast.BaseASTNode,
-		Comparison:    mapper(ast, ast.Comparison, context, false).(*Comparison),
+		Comparison:  mapper(ast, ast.Comparison, context, false).(*Comparison),
 		Op:          ast.Op,
 		Next:        next,
-		ParentNode: parent.(generic_ast.TraversableNode),
+		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }
 
@@ -88,10 +88,10 @@ func (ast *Equality) Visit(parent generic_ast.Expression, mapper generic_ast.Exp
 	mapper(parent, ast, context)
 }
 
-func (ast *Equality) Fn() generic_ast.Expression {
+func (ast *Equality) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 	return &BuiltinFunction{
 		BaseASTNode: ast.BaseASTNode,
-		name: ast.Op,
+		name:        ast.Op,
 	}
 }
 
@@ -108,7 +108,7 @@ func (ast *Equality) Body() generic_ast.Expression {
 }
 
 func (ast *Equality) ExpressionType() hindley_milner.ExpressionType {
-		if !ast.HasNext() {
+	if !ast.HasNext() {
 		return hindley_milner.E_PROXY
 	}
 	return hindley_milner.E_APPLICATION
