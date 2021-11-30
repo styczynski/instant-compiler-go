@@ -32,5 +32,8 @@ jobs:
           name: release
       - name: Unpack archive
         run: tar -zxvf ./ps386038.tar.gz
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.17'
       - name: Test make
         run: cd ps386038 && make
