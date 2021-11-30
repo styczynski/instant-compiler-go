@@ -1,6 +1,6 @@
 # Instant compiler
 
-## External code usage
+[![Build test release](https://github.com/styczynski/instant-compiler-go/actions/workflows/release.yml/badge.svg)](https://github.com/styczynski/instant-compiler-go/actions/workflows/release.yml)
 
 This project uses [go-project-blueprint](https://github.com/MartinHeinz/go-project-blueprint) as a starter project so
 the original Dockerfile/go.mod and config comes from this repository.
