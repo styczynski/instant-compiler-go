@@ -25,10 +25,10 @@ func (t *Union) FindMatchingFunction(source generic_ast.Expression, args []Type)
 			allArgs = append(allArgs, TVar(0))
 			return UnificationWrongTypeError{
 				TypeA: t,
-				TypeB: NewFnType(allArgs...),
+				TypeB: NewFnType(allArgs...).WithContext(CreateCodeContext(source)),
 				Constraint: Constraint{
 					a:       t,
-					b:       NewFnType(allArgs...),
+					b:       NewFnType(allArgs...).WithContext(CreateCodeContext(source)),
 					context: CreateCodeContext(source),
 				},
 				Details: fmt.Sprintf("Value is not a function. You can call only functions. Got type: %v", t),

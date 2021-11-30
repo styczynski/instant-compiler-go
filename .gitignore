@@ -8,6 +8,9 @@ tests/**/*.ll
 *.class
 *.lat
 *.txt
+*.png
+
+*.profile
 
 input.class
 input.j

@@ -14,6 +14,7 @@ type ImperInferenceBackend struct {
 	t               Type
 	cs              Constraints
 	returns         []Type
+	callQueue       []generic_ast.Expression
 	blockScopeLevel int
 	config          *InferConfiguration
 	count           int
@@ -25,6 +26,7 @@ func CreateImperInferenceBackend(env Env, config *InferConfiguration) *ImperInfe
 		config:          config,
 		returns:         []Type{},
 		cs:              Constraints{},
+		callQueue:       []generic_ast.Expression{},
 		t:               nil,
 		retEnv:          env,
 		blockScopeLevel: 0,
@@ -111,30 +113,70 @@ func (infer *ImperInferenceBackend) TypeOf(et generic_ast.Expression, contextExp
 func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error) {
 
 	defer func() {
+		if err != nil {
+			return
+		}
 		newCS := Constraints{}
+		allSubs, _ := SubsDisjointConcat()
 		for _, cs := range infer.cs {
 
 			// Problem?
 			if cs.FreeTypeVar().Len() > 0 {
 				subs, err0 := Unify(cs.a, cs.b, cs, infer.env.GetIntrospecionListener())
-				if err != nil {
+				if err0 != nil {
 					err = err0
+					return
 				}
-				infer.t.Apply(subs)
-			} else if !cs.a.Eq(cs.b) {
+				subsOk := true
+				if allSubs, subsOk = SubsDisjointConcat(allSubs, subs); !subsOk {
+					err = UnificationWrongTypeError{
+						TypeA:      cs.a,
+						TypeB:      cs.b,
+						Constraint: cs,
+						Details:    fmt.Sprintf("Polymorphic function cannot be bound to concrete types"),
+					}
+					return
+				}
+				//infer.t = infer.t.Apply(subs).(Type)
+			} else if !TypeEq(cs.a, cs.b) {
 				newCS = append(newCS, cs)
 			}
 		}
+		infer.t = infer.t.Apply(allSubs).(Type)
 		infer.cs = newCS
 		for _, cs := range infer.cs {
 			if cs.FreeTypeVar().Len() > 0 {
 				err = fmt.Errorf("Output constraints contains type variables")
+				return
 			}
 		}
+		if infer.t.GetContext().Source == nil {
+			for i := len(infer.callQueue) - 1; i >= 0; i-- {
+				queueItem := infer.callQueue[i]
+				ok := false
+				for s := 0; s < 10; s++ {
+					if b, ok := queueItem.(Batch); ok {
+						if len(b.Exp) == 0 {
+							break
+						}
+						queueItem = b.Exp[0]
+					} else {
+						ok = true
+						break
+					}
+				}
+				if !ok {
+					continue
+				}
+				infer.t = infer.t.WithContext(CreateCodeContext(queueItem))
+				break
+			}
+		}
+		infer.callQueue = infer.callQueue[:len(infer.callQueue)-1]
 		logf(">> [END] Generate constrints: %v %v (%v)\n", reflect.TypeOf(expr), infer.cs, infer.t)
 	}()
 
-	//infer.t = defaultEmptyType
+	infer.callQueue = append(infer.callQueue, expr)
 
 	if expr == nil {
 		return nil
@@ -238,11 +280,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		// 	infer.t = NewUnionType(types)
 		// 	return nil
 		// }
-
-		err := infer.lookup(true, name, et)
-		PrintEnv(infer.env)
-		logf("LITERAL TYPE = (%s) %v\n", name, infer.t)
-		return err
+		return infer.lookup(true, name, et)
 
 	case E_VAR:
 		et := expr.(Var)
@@ -268,6 +306,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		if err = infer.GenerateConstraints(et.Body(), E_NONE, false, false); err != nil {
 			return err
 		}
+		infer.t = infer.t.WithContext(CreateCodeContext(et))
 		infer.returns = append(infer.returns, infer.t)
 
 		if defaultTyper, ok := et.(DefaultTyper); ok {
@@ -434,6 +473,8 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 
 		logf("\n\nAPPLICATION START %v\n", expr)
 		var originalFnType *FunctionType
+		index := 0
+		//argCS := infer.cs
 		batchErr = ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
 			if firstExec {
 				if err = infer.GenerateConstraints(et.Fn(infer), E_NONE, false, false); err != nil {
@@ -454,7 +495,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 							TypeB: NewFnType(allArgs...),
 							Constraint: Constraint{
 								a:       infer.t,
-								b:       NewFnType(allArgs...),
+								b:       NewFnType(allArgs...).WithContext(CreateCodeContext(et)),
 								context: CreateCodeContext(et),
 							},
 							Details: fmt.Sprintf("Function overload not found"),
@@ -465,10 +506,10 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				if _, ok := infer.t.(*FunctionType); !ok {
 					return UnificationWrongTypeError{
 						TypeA: infer.t,
-						TypeB: NewFnType(TVar(0), TVar(1)),
+						TypeB: NewFnType(TVar(0), TVar(1)).WithContext(CreateCodeContext(et)),
 						Constraint: Constraint{
 							a:       infer.t,
-							b:       NewFnType(TVar(0), TVar(1)),
+							b:       NewFnType(TVar(0), TVar(1)).WithContext(CreateCodeContext(et)),
 							context: CreateCodeContext(et),
 						},
 						Details: fmt.Sprintf("Value is not a function. You can call only functions. Got type: %v", infer.t),
@@ -477,12 +518,15 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				originalFnType = infer.t.(*FunctionType)
 				firstExec = false
 			}
-			fnType, fnCs := infer.t, infer.cs
-
-			if err = infer.GenerateConstraints(body, E_NONE, false, false); err != nil {
-				return err
+			fnType := infer.t
+			bodyType := infer.t
+			if false {
+				if err = infer.GenerateConstraints(body, E_NONE, false, false); err != nil {
+					return err
+				}
+			} else {
+				bodyType = argTypes[index]
 			}
-			bodyType, bodyCs := infer.t, infer.cs
 
 			if _, ok := fnType.(*FunctionType); !ok {
 				return UnificationWrongTypeError{
@@ -502,18 +546,16 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				fnType.(*FunctionType).Ret(false),
 			)
 			applyCs := Constraint{fnType, saveExprContext(expectedType, &expr), CreateCodeContext(expr)}
-			cs := append(fnCs, bodyCs...)
-			cs = append(cs, applyCs)
+			infer.cs = append(infer.cs, applyCs)
 
 			logf("FUNCTION RETURN DEBUG: %v from %v\n", fnType, expectedType)
 
 			infer.t = fnType.(*FunctionType).Ret(false)
-
 			infer.t = saveExprContext(infer.t, &expr)
-			infer.cs = cs
 
 			logf(" KURWAAA -> [%v] (%v) bodyType is (%v) and fn type is (%v) --> %v\n", nil, infer.t, bodyType, fnType, applyCs)
 
+			index++
 			return nil
 		})
 		logf("\n\nAPPLICATION END %v WITH %v AND %v\n\n", expr, infer.cs, infer.t)

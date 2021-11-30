@@ -22,6 +22,19 @@ func SubsConcat(con ...Subs) Subs {
 	return ret
 }
 
+func SubsDisjointConcat(con ...Subs) (Subs, bool) {
+	var ret Subs = mSubs{}
+	for _, subs := range con {
+		for _, sub := range subs.Iter() {
+			if oldT, has := ret.Get(sub.Tv); has && !TypeEq(oldT, sub.T) {
+				return nil, false
+			}
+			ret = ret.Add(sub.Tv, sub.T)
+		}
+	}
+	return ret, true
+}
+
 type Substitution struct {
 	Tv TypeVariable
 	T  Type
@@ -98,17 +111,17 @@ func (s *sSubs) Format(state fmt.State, c rune) {
 	state.Write([]byte{'}'})
 }
 
-type mSubs map[TypeVariable]Type
+type mSubs map[int16]Type
 
-func (s mSubs) Get(tv TypeVariable) (Type, bool) { retVal, ok := s[tv]; return retVal, ok }
-func (s mSubs) Add(tv TypeVariable, t Type) Subs { s[tv] = t; return s }
-func (s mSubs) Remove(tv TypeVariable) Subs      { delete(s, tv); return s }
+func (s mSubs) Get(tv TypeVariable) (Type, bool) { retVal, ok := s[tv.value]; return retVal, ok }
+func (s mSubs) Add(tv TypeVariable, t Type) Subs { s[tv.value] = t; return s }
+func (s mSubs) Remove(tv TypeVariable) Subs      { delete(s, tv.value); return s }
 
 func (s mSubs) Iter() []Substitution {
 	retVal := make([]Substitution, len(s))
 	var i int
 	for k, v := range s {
-		retVal[i] = Substitution{k, v}
+		retVal[i] = Substitution{TVar(k), v}
 		i++
 	}
 	return retVal

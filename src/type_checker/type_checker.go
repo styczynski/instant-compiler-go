@@ -150,7 +150,8 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			errorName:   errorName,
 		}
 	} else if wrongType, ok := err.(hindley_milner.UnificationWrongTypeError); ok {
-		src := wrongType.Source().(interface{}).(generic_ast.NodeWithPosition)
+		srcNode := wrongType.Source().(interface{})
+		src := srcNode.(generic_ast.NodeWithPosition)
 		causeInfo := []string{}
 
 		if wrongType.IsCausedByBuiltin() {
