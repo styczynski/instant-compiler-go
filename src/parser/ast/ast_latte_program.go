@@ -26,17 +26,18 @@ func (ast *LatteProgram) OverrideParent(node generic_ast.TraversableNode) {
 	// No-op
 }
 
-func (ast *LatteProgram) GetIdentifierDeps(c hindley_milner.InferContext, pre bool) hindley_milner.NameGroup {
-	idents := []string{}
-	nameMapping := map[string]*hindley_milner.Scheme{}
+func (ast *LatteProgram) GetIdentifierDeps(c hindley_milner.InferContext, pre bool) (error, *hindley_milner.NameGroup) {
+	n := hindley_milner.EmptyNameGroup()
 	for _, def := range ast.Definitions {
-		names, types := def.GetDefinedIdentifier(c, pre)
-		for i, name := range names {
-			idents = append(idents, name)
-			nameMapping[name] = types[i]
+		addN := def.GetDefinedIdentifiers(c, pre)
+		err, mergedN := hindley_milner.MergeDefinitionsWithOverloads(n, addN)
+		n = mergedN
+		if err != nil {
+			return err, nil
 		}
 	}
-	return hindley_milner.NamesWithTypes(idents, nameMapping)
+	fmt.Printf("ELO = %v\n", n)
+	return nil, n
 }
 
 func (ast *LatteProgram) Begin() lexer.Position {

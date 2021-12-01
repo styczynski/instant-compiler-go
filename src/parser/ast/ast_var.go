@@ -19,7 +19,7 @@ func (ast *VarName) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
-func (ast *VarName) Name() hindley_milner.NameGroup { return hindley_milner.Name(ast.name) }
+func (ast *VarName) Name() *hindley_milner.NameGroup { return hindley_milner.Name(ast.name) }
 
 func (ast *VarName) Body() generic_ast.Expression { return ast }
 

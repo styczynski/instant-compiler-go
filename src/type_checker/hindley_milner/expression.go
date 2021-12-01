@@ -7,7 +7,7 @@ import (
 )
 
 type Namer interface {
-	Name() NameGroup
+	Name() *NameGroup
 }
 
 type NameGroup struct {
@@ -16,15 +16,48 @@ type NameGroup struct {
 	hasTypesMap bool
 }
 
-func (g NameGroup) GetNames() []string {
+func (g *NameGroup) RemoveAll(name string) {
+	newNames := []string{}
+	for _, n := range g.names {
+		if n != name {
+			newNames = append(newNames, n)
+		}
+	}
+	g.names = newNames
+	delete(g.types, name)
+}
+
+func (g *NameGroup) Add(name string, t *Scheme) bool {
+	if g.HasTypes() {
+		g.names = append(g.names, name)
+		g.types[name] = t
+		return true
+	}
+	return false
+}
+
+func (g *NameGroup) GetNames() []string {
 	return g.names
 }
 
-func (g NameGroup) HasTypes() bool {
+func (g *NameGroup) HasTypes() bool {
 	return g.hasTypesMap
 }
 
-func (g NameGroup) GetTypeOf(name string) *Scheme {
+func (g *NameGroup) Has(name string) bool {
+	if !g.HasTypes() {
+		for _, n := range g.names {
+			if n == name {
+				return true
+			}
+		}
+		return false
+	}
+	_, ok := g.types[name]
+	return ok
+}
+
+func (g *NameGroup) GetTypeOf(name string) *Scheme {
 	if !g.hasTypesMap {
 		return nil
 	}
@@ -34,28 +67,52 @@ func (g NameGroup) GetTypeOf(name string) *Scheme {
 	return nil
 }
 
-func Name(s string) NameGroup {
-	return NameGroup{[]string{s}, nil, false}
+func (g *NameGroup) Format(state fmt.State, c rune) {
+	state.Write([]byte("{"))
+	for i, name := range g.names {
+		if g.HasTypes() {
+			if i < len(g.names)-1 {
+				fmt.Fprintf(state, "%s => %v, ", name, g.types[name])
+			} else {
+				fmt.Fprintf(state, "%s => %v", name, g.types[name])
+			}
+		} else {
+			if i < len(g.names)-1 {
+				fmt.Fprintf(state, "%s, ", name)
+			} else {
+				fmt.Fprintf(state, "%s", name)
+			}
+		}
+	}
+	state.Write([]byte{'}'})
 }
 
-func NameWithType(s string, t *Scheme) NameGroup {
-	return NameGroup{[]string{s}, map[string]*Scheme{s: t}, true}
+func EmptyNameGroup() *NameGroup {
+	return NamesWithTypesFromMap(make(map[string]*Scheme))
 }
 
-func Names(s []string) NameGroup {
-	return NameGroup{s, nil, false}
+func Name(s string) *NameGroup {
+	return &NameGroup{[]string{s}, nil, false}
 }
 
-func NamesWithTypes(names []string, types map[string]*Scheme) NameGroup {
-	return NameGroup{names, types, true}
+func NameWithType(s string, t *Scheme) *NameGroup {
+	return &NameGroup{[]string{s}, map[string]*Scheme{s: t}, true}
 }
 
-func NamesWithTypesFromMap(args map[string]*Scheme) NameGroup {
+func Names(s []string) *NameGroup {
+	return &NameGroup{s, nil, false}
+}
+
+func NamesWithTypes(names []string, types map[string]*Scheme) *NameGroup {
+	return &NameGroup{names, types, true}
+}
+
+func NamesWithTypesFromMap(args map[string]*Scheme) *NameGroup {
 	names := []string{}
 	for name, _ := range args {
 		names = append(names, name)
 	}
-	return NameGroup{names, args, true}
+	return &NameGroup{names, args, true}
 }
 
 type Typer interface {
@@ -188,7 +245,7 @@ type Apply interface {
 
 type LetBase interface {
 	generic_ast.Expression
-	Var(c InferContext) NameGroup
+	Var(c InferContext) *NameGroup
 }
 
 type Let interface {
@@ -198,7 +255,7 @@ type Let interface {
 
 type Lambda interface {
 	generic_ast.Expression
-	Args(c InferContext) NameGroup
+	Args(c InferContext) *NameGroup
 }
 
 type EmbeddedType interface {
@@ -233,7 +290,7 @@ type CustomExpression interface {
 }
 
 type ExpressionWithIdentifiersDeps interface {
-	GetIdentifierDeps(c InferContext, pre bool) NameGroup
+	GetIdentifierDeps(c InferContext, pre bool) (error, *NameGroup)
 }
 
 type IntrospectionExpression interface {

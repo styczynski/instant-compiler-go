@@ -190,7 +190,10 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 	expr, exprType = infer.resolveProxy(expr, exprType)
 
 	if exprWithDeps, ok := expr.(ExpressionWithIdentifiersDeps); ok {
-		idents := exprWithDeps.GetIdentifierDeps(infer, false)
+		err, idents := exprWithDeps.GetIdentifierDeps(infer, false)
+		if err != nil {
+			return err
+		}
 		for _, name := range idents.GetNames() {
 			if objType := idents.GetTypeOf(name); objType != nil {
 				infer.env.AddPrototype(infer, name,
@@ -485,7 +488,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 					allArgs = append(allArgs, argTypes...)
 					allArgs = append(allArgs, TVar(0))
 					err, resolvedType := unionType.FindMatchingFunction(et, argTypes)
-					//fmt.Printf("UNIONIZED %v FOR %v %v\n", err, resolvedType, argTypes)
+					fmt.Printf("UNIONIZED %v FOR %v %v\n", err, resolvedType, argTypes)
 					if err != nil {
 						return err
 					}
@@ -636,6 +639,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 						types = append(types, vars.GetTypeOf(names[i]))
 					}
 				}
+				fmt.Printf("DEFSGEJ: %v\n", vars)
 			}
 		} else {
 			panic("Invalid number of identifiers returned by Var() of the declaration/let: zero.")
@@ -703,27 +707,27 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			logf("HERE E %v\n", infer.cs)
 			if nonVal {
 				if defExpectedType != nil {
+					fmt.Printf("SKURWYSYSYN %v\n", defExpectedType)
 					infer.t = Instantiate(infer, defExpectedType)
 				} else {
 					return fmt.Errorf("Expected concrete type in function node")
 				}
 			} else if exprType == E_FUNCTION_DECLARATION {
-
 				if err = infer.GenerateConstraints(def, E_FUNCTION, false, false); err != nil {
 					return err
 				}
 			} else {
-
-				logf("HELLO F!\n")
+				logf("HELLO F! ==> %v <%v>\n", def, reflect.TypeOf(et))
 				if err = infer.GenerateConstraints(def, E_NONE, false, false); err != nil {
 					return err
 				}
 			}
-			logf("HERE F %v => %v\n", infer.cs, infer.t)
+			logf("HERE F %v => %v <%s?> context {\n%v\n}\n", infer.cs, infer.t, name, et)
 			defType, defCs := infer.t, infer.cs
 
 			s := newSolver()
 			s.solve(defCs, infer.env.GetIntrospecionListener())
+			fmt.Printf("HERE F (SOLVED)\n")
 			if s.err != nil {
 				return err
 			}
@@ -736,7 +740,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			if !has {
 				infer.env.Remove(name)
 			}
-			logf("HERE G %v\n", infer.cs)
+			logf("HERE G %v <%s?> with new def: %v\n", infer.cs, name, sc)
 			_, os1, os2, varEnvDef2, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel, redef)
 			if err != nil {
 				if _, isDup := err.(*envError); isDup && varEnvDef.GetUID() == varEnvDef2.GetUID() {

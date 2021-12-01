@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 )
 
-const DEBUG = false
+const DEBUG = true
 
 var tabcount uint32
 

@@ -130,20 +130,25 @@ func (ast *Accessor) Fn(c hindley_milner.InferContext) generic_ast.Expression {
 			name:        "[]",
 		}
 	} else if ast.IsProperty() {
-		return &hindley_milner.EmbeddedTypeExpr{
-			Source: ast,
-			GetType: func() *hindley_milner.Scheme {
-				return hindley_milner.NewScheme(
-					hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
-					hindley_milner.NewFnType(
-						hindley_milner.NewSignedStructType("", map[string]hindley_milner.Type{
-							*ast.Property: hindley_milner.TVar('a'),
-						}),
-						CreatePrimitive(T_STRING),
-						hindley_milner.TVar('a'),
-					))
-			},
+		return &VarName{
+			name:        fmt.Sprintf(".%s", *ast.Property),
+			BaseASTNode: ast.BaseASTNode,
+			ParentNode:  ast,
 		}
+		// return &hindley_milner.EmbeddedTypeExpr{
+		// 	Source: ast,
+		// 	GetType: func() *hindley_milner.Scheme {
+		// 		return hindley_milner.NewScheme(
+		// 			hindley_milner.TypeVarSet{hindley_milner.TVar('a')},
+		// 			hindley_milner.NewFnType(
+		// 				hindley_milner.NewSignedStructType("", map[string]hindley_milner.Type{
+		// 					*ast.Property: hindley_milner.TVar('a'),
+		// 				}),
+		// 				CreatePrimitive(T_STRING),
+		// 				hindley_milner.TVar('a'),
+		// 			))
+		// 	},
+		// }
 	} else {
 		panic("Invalid accessor")
 	}
@@ -173,18 +178,24 @@ func (ast *Accessor) Body() generic_ast.Expression {
 	 *                                getel(getel(target, index1), index2)
 	 */
 	cur := ast.GetIndexingNode()
+	var expr generic_ast.Expression
 	if ast.IsTop() {
+		expr = ast.ParentNode.(*Index).Primary
+	} else {
+		expr = ast.ParentNode.(generic_ast.Expression)
+	}
+
+	if !ast.IsProperty() {
 		return hindley_milner.Batch{
 			Exp: []generic_ast.Expression{
-				ast.ParentNode.(*Index).Primary,
+				expr,
 				cur,
 			},
 		}
 	} else {
 		return hindley_milner.Batch{
 			Exp: []generic_ast.Expression{
-				ast.ParentNode.(generic_ast.Expression),
-				cur,
+				expr,
 			},
 		}
 	}

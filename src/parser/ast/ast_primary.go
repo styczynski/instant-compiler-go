@@ -296,7 +296,7 @@ func (ast *Primary) Print(c *context.ParsingContext) string {
 
 ////
 
-func (ast *Primary) Name() hindley_milner.NameGroup {
+func (ast *Primary) Name() *hindley_milner.NameGroup {
 	if ast.IsVariable() {
 		return hindley_milner.Name(*ast.Variable)
 	}

@@ -98,7 +98,7 @@ func (ast *Declaration) ExpressionType() hindley_milner.ExpressionType {
 	return hindley_milner.E_DECLARATION
 }
 
-func (ast *Declaration) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
+func (ast *Declaration) Var(c hindley_milner.InferContext) *hindley_milner.NameGroup {
 	names := []string{}
 	types := map[string]*hindley_milner.Scheme{}
 	for _, item := range ast.Items {

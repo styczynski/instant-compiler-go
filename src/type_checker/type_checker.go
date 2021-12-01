@@ -311,10 +311,11 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			errorName:   errorName,
 		}
 	}
-	panic(fmt.Sprintf("Unknown error: [%v]\n", err))
+	// panic(fmt.Sprintf("Unknown error: [%v]\n", err))
+	// TODO: Format error
 	return &TypeCheckingError{
-		message:     "Unknown error\n",
-		textMessage: "Unknown error\n",
+		message:     err.Error(),
+		textMessage: err.Error(),
 		errorName:   "Unknown error",
 	}
 }

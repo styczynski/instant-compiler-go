@@ -247,7 +247,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 }
 
 func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Subs, err error) {
-	//fmt.Printf("UNION %v %v\n", a, b)
+	fmt.Printf("UNION %v %v\n", a, b)
 
 	// aTV, bTV := false, false
 
@@ -259,8 +259,8 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 	if unionA, ok := a.(*Union); ok {
 		allSubs := []Subs{}
 		for _, v := range unionA.types {
-			if subs, err := Unify(b, v.(Type), context, listener); err != nil {
-				return nil, fmt.Errorf("Cannot match union type: %w", err)
+			if subs, err := Unify(b, v, context, listener); err != nil {
+				return nil, err
 			} else {
 				allSubs = append(allSubs, subs)
 			}
@@ -271,8 +271,8 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 		allSubs := []Subs{}
 		var lastErr error = nil
 		for _, v := range unionB.types {
-			if subs, err := Unify(a, v.(Type), context, listener); err != nil {
-				lastErr = fmt.Errorf("Cannot match union type: %w", err)
+			if subs, err := Unify(a, v, context, listener); err != nil {
+				lastErr = err
 			} else {
 				allSubs = append(allSubs, subs)
 				lastErr = nil

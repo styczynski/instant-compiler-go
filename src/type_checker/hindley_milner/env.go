@@ -272,7 +272,7 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 
 			inf := levelInfo{
 				level:      blockScopeLevel,
-				isProt:     isPrototype && oldLevel.isProt,
+				isProt:     isPrototype || oldLevel.isProt, // hm?
 				hasAnyProt: isPrototype || oldLevel.hasAnyProt,
 				uid:        e.uid,
 				baseTV:     oldLevel.baseTV,
@@ -282,10 +282,10 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 			e.levels[name] = append(e.levels[name], inf)
 
 			//con1 := NewScheme(nil, inf.baseTV)
-			con1 := inf.baseScheme
-			con2 := s
+			con2 := inf.baseScheme
+			con1 := s
 
-			logf("  -> ADD MERGE %v ~ %v\n", con1, con2)
+			logf("  -> ADD MERGE %v ~ %v <%s>\n", con1, con2, name)
 			if !oldLevel.isProt && !isPrototype {
 
 				return e, con1, con2, oldLevel, &envError{

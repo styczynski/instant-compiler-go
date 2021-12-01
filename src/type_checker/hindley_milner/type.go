@@ -8,7 +8,7 @@ type TypeMapper = func(t Type) Type
 
 func TypeEq(a Type, b Type) bool {
 	//a, b = b, a
-	//fmt.Printf("EQ %v %v\n", a, b)
+	fmt.Printf("EQ %v %v\n", a, b)
 
 	if unionA, ok := a.(*Union); ok {
 		for _, v := range unionA.types {

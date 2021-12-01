@@ -170,7 +170,7 @@ func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
 	// return s
 }
 
-func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
+func (ast *FnDef) Args(c hindley_milner.InferContext) *hindley_milner.NameGroup {
 	if len(ast.Arg) == 0 {
 		return hindley_milner.NamesWithTypes([]string{""}, map[string]*hindley_milner.Scheme{
 			"": hindley_milner.Concreate(CreatePrimitive(T_VOID_ARG)),
@@ -185,7 +185,7 @@ func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
 	return hindley_milner.NamesWithTypes(names, argsTypes)
 }
 
-func (ast *FnDef) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
+func (ast *FnDef) Var(c hindley_milner.InferContext) *hindley_milner.NameGroup {
 	return hindley_milner.NameWithType(ast.Name, ast.GetDeclarationType())
 }
 

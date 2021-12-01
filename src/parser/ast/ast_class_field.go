@@ -86,7 +86,7 @@ func (ast *ClassField) GetType(c hindley_milner.InferContext) *hindley_milner.Sc
 		}
 		fmt.Printf("class method type ==> %s\n", methodType)
 		//return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
-		return hindley_milner.NewScheme(hindley_milner.TypeVarSet{}, methodType)
+		return hindley_milner.Concreate(methodType)
 	} else {
 		return ast.ClassFieldType.GetType(c)
 	}

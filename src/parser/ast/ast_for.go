@@ -86,7 +86,7 @@ func (ast *For) Visit(parent generic_ast.Expression, mapper generic_ast.Expressi
 	mapper(parent, ast, context)
 }
 
-func (ast *For) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
+func (ast *For) Var(c hindley_milner.InferContext) *hindley_milner.NameGroup {
 	types := map[string]*hindley_milner.Scheme{}
 	types[ast.Destructor.ElementVar] = ast.ElementType.GetType(c)
 	return hindley_milner.NamesWithTypes([]string{ast.Destructor.ElementVar}, types)

@@ -160,7 +160,10 @@ func (infer *HMInferenceBackend) GenerateConstraints(expr generic_ast.Expression
 		// 	})
 		// }
 
-		idents := exprWithDeps.GetIdentifierDeps(infer, true)
+		err, idents := exprWithDeps.GetIdentifierDeps(infer, true)
+		if err != nil {
+			return err
+		}
 		for _, name := range idents.GetNames() {
 			if objType := idents.GetTypeOf(name); objType != nil {
 
@@ -195,7 +198,10 @@ func (infer *HMInferenceBackend) GenerateConstraints(expr generic_ast.Expression
 			}
 		}
 
-		idents = exprWithDeps.GetIdentifierDeps(infer, false)
+		err, idents = exprWithDeps.GetIdentifierDeps(infer, false)
+		if err != nil {
+			return err
+		}
 		for _, name := range idents.GetNames() {
 			if objType := idents.GetTypeOf(name); objType != nil {
 

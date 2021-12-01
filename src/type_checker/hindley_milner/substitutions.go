@@ -15,8 +15,10 @@ type Subs interface {
 func SubsConcat(con ...Subs) Subs {
 	var ret Subs = mSubs{}
 	for _, subs := range con {
-		for _, sub := range subs.Iter() {
-			ret = ret.Add(sub.Tv, sub.T)
+		if subs != nil {
+			for _, sub := range subs.Iter() {
+				ret = ret.Add(sub.Tv, sub.T)
+			}
 		}
 	}
 	return ret
