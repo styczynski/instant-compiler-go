@@ -5,6 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
+	"github.com/styczynski/latte-compiler/src/logs"
+	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
 type HMInferenceBackend struct {
@@ -27,6 +29,10 @@ func CreateHMInferenceBackend(env Env, config *InferConfiguration) *HMInferenceB
 		env:    env,
 		config: config,
 	}
+}
+
+func (infer *HMInferenceBackend) LogContext(c *context.ParsingContext) map[string]interface{} {
+	return map[string]interface{}{"t": infer.t}
 }
 
 func (infer *HMInferenceBackend) Fresh() TypeVariable {
@@ -127,7 +133,7 @@ func (infer *HMInferenceBackend) TypeOf(et generic_ast.Expression, contextExpres
 
 	infer.env = env
 
-	logf("TYPEOF [%s]: {%v}\n", et, tv)
+	logs.Debug(infer, "Typeof variable %s: %v", et, tv)
 	return tv, nil
 }
 
@@ -505,7 +511,7 @@ func (infer *HMInferenceBackend) GenerateConstraints(expr generic_ast.Expression
 	case E_APPLICATION:
 		et := expr.(Apply)
 		firstExec := true
-		logf("\n\nAPPLICATION START %v\n", expr)
+		logs.Debug(infer, "Infer application expression")
 		batchErr := ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
 			if firstExec {
 				if err = infer.GenerateConstraints(et.Fn(infer), E_NONE, false, false); err != nil {
@@ -529,11 +535,11 @@ func (infer *HMInferenceBackend) GenerateConstraints(expr generic_ast.Expression
 			infer.t = saveExprContext(infer.t, &expr)
 			infer.cs = cs
 
-			logf("  -> [%v] (%v) bodyType is (%v) and fn type is (%v) --> %v\n", tv, infer.t, bodyType, fnType, applyCs)
+			logs.Debug(infer, "Application type variable: %v with type: %v. BodyType is %v and function type is %v", tv, infer.t, bodyType, fnType)
 
 			return nil
 		})
-		logf("\n\nAPPLICATION END %v\n\n", expr)
+		logs.Debug(infer, "Application finished")
 		if batchErr != nil {
 			return batchErr
 		}
@@ -542,7 +548,7 @@ func (infer *HMInferenceBackend) GenerateConstraints(expr generic_ast.Expression
 		et := expr.(Block)
 		env := infer.env
 		if exprType != E_OPAQUE_BLOCK {
-			logf("BLOCK_SCOPE level++ (old value: %d)\n", infer.blockScopeLevel)
+			logs.Debug(infer, "Block scope level: %d", infer.blockScopeLevel)
 			infer.blockScopeLevel++
 		}
 
@@ -574,7 +580,7 @@ func (infer *HMInferenceBackend) GenerateConstraints(expr generic_ast.Expression
 		}
 
 		if exprType != E_OPAQUE_BLOCK {
-			logf("BLOCK_SCOPE level-- (old value: %d)\n", infer.blockScopeLevel)
+			logs.Debug(infer, "Block scope level: %d", infer.blockScopeLevel)
 			infer.blockScopeLevel--
 		}
 		infer.t = tv
@@ -685,15 +691,12 @@ func (infer *HMInferenceBackend) GenerateConstraints(expr generic_ast.Expression
 			defType, defCs := infer.t, infer.cs
 
 			s := newSolver()
-			s.solve(defCs, infer.env.GetIntrospecionListener())
+			s.solve(infer, defCs, infer.env.GetIntrospecionListener())
 			if s.err != nil {
 				return err
 			}
-			logf("\nDefinition type [%s]: %v\n", name, saveExprContext(defType.Apply(s.sub).(Type), &expr))
-			//Instantiate(infer, defExpectedType)
-			logf("\n |-> Expected type [%s]: %v\n", name, defExpectedType)
-
-			sc := Generalize(infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
+			logs.Debug(infer, "Infer let type. Defintion for %s is of type %v. Expected type: %v", name, saveExprContext(defType.Apply(s.sub).(Type), &expr), defExpectedType)
+			sc := Generalize(infer, infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 
 			if !has {
 				infer.env.Remove(name)
@@ -772,13 +775,13 @@ func (infer *HMInferenceBackend) GenerateConstraints(expr generic_ast.Expression
 		defType, defCs := infer.t, infer.cs
 
 		s := newSolver()
-		s.solve(defCs, infer.env.GetIntrospecionListener())
+		s.solve(infer, defCs, infer.env.GetIntrospecionListener())
 		if s.err != nil {
 			return err
 		}
 
-		logf("PATRZ CWELU: %v\n", defType.Apply(s.sub).(Type))
-		sc := Generalize(env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
+		logs.Debug(infer, "Inferred let type: %v", defType.Apply(s.sub).(Type))
+		sc := Generalize(infer, env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 		infer.env = infer.env.Clone()
 
 		_, s1, s2, _, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel, exprType == E_REDEFINABLE_LET)

@@ -55,7 +55,7 @@ func (err UnificationWrongTypeError) HasSource() bool {
 
 func (err UnificationWrongTypeError) Source() generic_ast.Expression {
 	if err.Constraint.context.Source == nil {
-		logf("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
+		//logs.Debug("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
 	}
 	return *(err.Constraint.context.Source)
 }

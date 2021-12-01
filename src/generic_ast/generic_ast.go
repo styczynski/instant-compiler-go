@@ -326,3 +326,16 @@ func (e *NodeErrorImpl) GetCliMessage() string {
 func (e *NodeErrorImpl) GetSource() Expression {
 	return e.Source
 }
+
+func UnknownLocation() lexer.Position {
+	return lexer.Position{
+		Filename: "",
+		Offset:   -1,
+		Line:     -1,
+		Column:   -1,
+	}
+}
+
+func IsUnknownLocation(p lexer.Position) bool {
+	return len(p.Filename) == 0 || p.Offset < 0 || p.Line < 0 || p.Column < 0
+}

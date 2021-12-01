@@ -2,10 +2,11 @@ package hindley_milner
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/pkg/errors"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
+	"github.com/styczynski/latte-compiler/src/logs"
+	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
 type ImperInferenceBackend struct {
@@ -31,6 +32,25 @@ func CreateImperInferenceBackend(env Env, config *InferConfiguration) *ImperInfe
 		retEnv:          env,
 		blockScopeLevel: 0,
 		count:           0,
+	}
+}
+
+func (infer *ImperInferenceBackend) LogContext(c *context.ParsingContext) map[string]interface{} {
+	exprStr := ""
+	if len(infer.callQueue) > 0 {
+		expr := infer.callQueue[len(infer.callQueue)-1]
+		//fmt.Printf("ELO :=> %v\n", reflect.TypeOf(expr))
+		if posExpr, ok := expr.(generic_ast.NodeWithPosition); ok {
+			begin := posExpr.Begin()
+			end := posExpr.End()
+			if !generic_ast.IsUnknownLocation(begin) && !generic_ast.IsUnknownLocation(end) {
+				exprStr = fmt.Sprintf("%s:%d:%d-%d:%d", begin.Filename, begin.Line, begin.Column, end.Line, end.Column)
+			}
+		}
+	}
+	return map[string]interface{}{
+		"t":    infer.t,
+		"expr": exprStr,
 	}
 }
 
@@ -122,7 +142,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 
 			// Problem?
 			if cs.FreeTypeVar().Len() > 0 {
-				subs, err0 := Unify(cs.a, cs.b, cs, infer.env.GetIntrospecionListener())
+				subs, err0 := Unify(cs.a, cs.b, cs, infer, infer.env.GetIntrospecionListener())
 				if err0 != nil {
 					err = err0
 					return
@@ -173,7 +193,6 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			}
 		}
 		infer.callQueue = infer.callQueue[:len(infer.callQueue)-1]
-		logf(">> [END] Generate constrints: %v %v (%v)\n", reflect.TypeOf(expr), infer.cs, infer.t)
 	}()
 
 	infer.callQueue = append(infer.callQueue, expr)
@@ -209,13 +228,13 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 	// PrintEnv(infer.env)
 	// fmt.Printf("END")
 
-	logf(">> Generate constrints %v (%v)\n", reflect.TypeOf(expr), exprType)
+	logs.Debug(infer, "Generate constraints")
 
 	switch et := expr.(type) {
 	case Typer:
 		if infer.t = et.Type(); infer.t != nil {
 			infer.t = saveExprContext(infer.t, &expr)
-			logf("TYPED = %v\n", infer.t)
+			logs.Debug(infer, "Expression types with Typer interface: %v", infer.t)
 			return nil
 		}
 	case Inferer:
@@ -328,11 +347,11 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 
 		args := et.Args(infer)
 		names := args.GetNames()
-		logf("FUC A: %v\n", args)
+		logs.Debug(infer, "Lambda/funct expression with args: %v", args)
 		for _, name := range names {
-			logf("FUC B: %v\n", name)
+			logs.Debug(infer, "Lambda/funct argument get type: %s", name)
 			varType := args.GetTypeOf(name)
-			logf("FUC B2: %v\n", varType)
+			logs.Debug(infer, "Lambda/funct argument type is: %v", varType)
 
 			sc := varType
 			types = append(types, sc)
@@ -340,12 +359,12 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			env = append(env, infer.env)
 
 			infer.env = infer.env.Clone()
-			logf("FUC C\n")
+			logs.Debug(infer, "Add lambda/funct argumnent to env")
 			_, s1, s2, _, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel, false)
 			if err != nil {
 				return wrapEnvError(err, &expr)
 			}
-			logf("FUC D\n")
+			logs.Debug(infer, "Lambda/funct add constraints")
 			if s1 != nil && s2 != nil {
 				infer.cs = append(infer.cs, Constraint{
 					a:       Instantiate(infer, s1),
@@ -354,7 +373,6 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				})
 			}
 
-			logf("FUC E\n")
 			if varType != nil {
 				infer.cs = append(infer.cs, Constraint{
 					a:       sc.t,
@@ -365,19 +383,20 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		}
 
 		if exprType == E_FUNCTION {
-			logf("FUC F\n")
+			logs.Debug(infer, "Evaluate function Body()")
 			if err = infer.GenerateConstraints(et.Body(), E_NONE, false, false); err != nil {
 				return err
 			}
 		} else {
+			logs.Debug(infer, "Evaluate lambda Body()")
 			if err = infer.GenerateConstraints(et.Body(), E_NONE, false, false); err != nil {
 				return err
 			}
 		}
-		logf("FUC G\n")
 
 		// Add return type
 		if true {
+			logs.Debug(infer, "Add return type contraints")
 			if defaultTyper, ok := et.(DefaultTyper); ok {
 				rT := defaultTyper.DefaultType(infer)
 				infer.t = rT.Concrete()
@@ -394,22 +413,22 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			types = types[:len(types)-1]
 		}
 
-		logf("FUC H => %v\n", infer.t)
+		logs.Debug(infer, "Function generated type is: %v", infer.t)
 		if len(names) == 0 {
 			infer.t = NewFnType(infer.t).WithContext(CreateCodeContext(expr))
 		}
-		logf("FUC H0 => <%v> %v\n", et.Args(nil), infer.t)
+		logs.Debug(infer, "Function args: %v", et.Args(nil))
 
 		for _, ret := range infer.returns {
 			r := infer.t.(*FunctionType).Ret(true)
-			logf("RETURN CONSTRAINT HERE: %v ~ %v\n", r, ret)
+			logs.Debug(infer, "Return function constraints: %v ~ %v", r, ret)
 			infer.cs = append(infer.cs, Constraint{
 				a:       r.WithContext(ret.GetContext()),
 				b:       ret.WithContext(CreateCodeContext(expr)),
 				context: ret.GetContext(),
 			})
 		}
-		logf("FUC I\n")
+		logs.Debug(infer, "Determine return type of function and add default type")
 
 		r := infer.t.(*FunctionType).Ret(true)
 		if defaultTyper, ok := et.(DefaultTyper); ok {
@@ -429,7 +448,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				})
 			}
 		}
-		logf("FUC J\n")
+		logs.Debug(infer, "Finished generating function")
 
 		infer.returns = rets
 
@@ -474,7 +493,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			return batchErr
 		}
 
-		logf("\n\nAPPLICATION START %v\n", expr)
+		logs.Debug(infer, "Generate application contraints")
 		var originalFnType *FunctionType
 		index := 0
 		//argCS := infer.cs
@@ -488,7 +507,9 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 					allArgs = append(allArgs, argTypes...)
 					allArgs = append(allArgs, TVar(0))
 					err, resolvedType := unionType.FindMatchingFunction(et, argTypes)
-					fmt.Printf("UNIONIZED %v FOR %v %v\n", err, resolvedType, argTypes)
+
+					logs.Debug(infer, "Choice of type for union function call: %v (arguments: %v)", resolvedType, argTypes)
+
 					if err != nil {
 						return err
 					}
@@ -551,17 +572,15 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			applyCs := Constraint{fnType, saveExprContext(expectedType, &expr), CreateCodeContext(expr)}
 			infer.cs = append(infer.cs, applyCs)
 
-			logf("FUNCTION RETURN DEBUG: %v from %v\n", fnType, expectedType)
+			logs.Debug(infer, "Function application type constraints: %v, expected type: %v. Body type: %v", fnType, expectedType, bodyType)
 
 			infer.t = fnType.(*FunctionType).Ret(false)
 			infer.t = saveExprContext(infer.t, &expr)
 
-			logf(" KURWAAA -> [%v] (%v) bodyType is (%v) and fn type is (%v) --> %v\n", nil, infer.t, bodyType, fnType, applyCs)
-
 			index++
 			return nil
 		})
-		logf("\n\nAPPLICATION END %v WITH %v AND %v\n\n", expr, infer.cs, infer.t)
+		logs.Debug(infer, "Function application generated: %v", infer.t)
 		if batchErr != nil {
 			return batchErr
 		}
@@ -570,7 +589,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		et := expr.(Block)
 		env := infer.env
 		if exprType != E_OPAQUE_BLOCK {
-			logf("BLOCK_SCOPE level++ (old value: %d)\n", infer.blockScopeLevel)
+			logs.Debug(infer, "Block scope level: %d", infer.blockScopeLevel)
 			infer.blockScopeLevel++
 		}
 
@@ -591,7 +610,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		}
 
 		if exprType != E_OPAQUE_BLOCK {
-			logf("BLOCK_SCOPE level-- (old value: %d)\n", infer.blockScopeLevel)
+			logs.Debug(infer, "Block scope level: %d", infer.blockScopeLevel)
 			infer.blockScopeLevel--
 		}
 		if exprType != E_OPAQUE_BLOCK {
@@ -639,20 +658,20 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 						types = append(types, vars.GetTypeOf(names[i]))
 					}
 				}
-				fmt.Printf("DEFSGEJ: %v\n", vars)
+				logs.Debug(infer, "Triggered Def() for definition type with vars: %v", vars)
 			}
 		} else {
 			panic("Invalid number of identifiers returned by Var() of the declaration/let: zero.")
 		}
 
-		logf("HERE A\n")
+		logs.Debug(infer, "Let generate constrints")
 
 		if len(types) != len(names) {
 			types = []*Scheme{}
 		}
 
 		for i, _ := range names {
-			logf("HERE B\n")
+			logs.Debug(infer, "Generate let constraints for ident: %s", names[i])
 
 			redef := false
 
@@ -669,23 +688,21 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				return fmt.Errorf("Missing expected vars type for function parameter.")
 			}
 
-			logf("HERE B2: %v\n", defExpectedType.t)
+			logs.Debug(infer, "Let expected type: %v", defExpectedType.t)
 			tv := defExpectedType.t.WithContext(CreateCodeContext(expr))
-			logf("HERE B2 NEXT\n")
 
 			infer.env = infer.env.Clone()
-			logf("HERE B3\n")
+			logs.Debug(infer, "Let check if identifier is already present in env")
 			has := infer.env.Has(name)
 			if !has {
-				logf("HERE B4 %v\n", infer.cs)
+				logs.Debug(infer, "Remove identifier: %s", name)
 				infer.env.Remove(name)
 			}
-			logf("HERE C %v\n", infer.cs)
+			logs.Debug(infer, "Add identifier to the env: %s", name)
 			_, s1, s2, varEnvDef, err := infer.env.Add(infer, name, Concreate(tv), infer.blockScopeLevel, redef)
 			if err != nil {
 				return wrapEnvError(err, &expr)
 			}
-			logf("HERE C2 %v\n", infer.cs)
 			if s1 != nil && s2 != nil {
 				infer.cs = append(infer.cs, Constraint{
 					a:       Instantiate(infer, s1),
@@ -694,8 +711,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				})
 			}
 
-			logf("HERE D %v\n", infer.cs)
-
+			logs.Debug(infer, "Check if initializer is present")
 			nonVal := false
 			defResolved, _ := infer.resolveProxy(def, def.(HMExpression).ExpressionType())
 			if block, ok := defResolved.(Block); ok && exprType == E_DECLARATION {
@@ -704,10 +720,10 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				}
 			}
 
-			logf("HERE E %v\n", infer.cs)
+			logs.Debug(infer, "Generate initializer constraints")
 			if nonVal {
 				if defExpectedType != nil {
-					fmt.Printf("SKURWYSYSYN %v\n", defExpectedType)
+					logs.Debug(infer, "Expected type is: %v", defExpectedType)
 					infer.t = Instantiate(infer, defExpectedType)
 				} else {
 					return fmt.Errorf("Expected concrete type in function node")
@@ -717,30 +733,29 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 					return err
 				}
 			} else {
-				logf("HELLO F! ==> %v <%v>\n", def, reflect.TypeOf(et))
+				logs.Debug(infer, "Get initializer type: %v", def)
 				if err = infer.GenerateConstraints(def, E_NONE, false, false); err != nil {
 					return err
 				}
 			}
-			logf("HERE F %v => %v <%s?> context {\n%v\n}\n", infer.cs, infer.t, name, et)
+			logs.Debug(infer, "Proceed to constraint solving")
 			defType, defCs := infer.t, infer.cs
 
 			s := newSolver()
-			s.solve(defCs, infer.env.GetIntrospecionListener())
-			fmt.Printf("HERE F (SOLVED)\n")
+			s.solve(infer, defCs, infer.env.GetIntrospecionListener())
+			logs.Debug(infer, "Let constraints solved")
 			if s.err != nil {
 				return err
 			}
-			logf("\nDefinition type [%s]: %v\n", name, saveExprContext(defType.Apply(s.sub).(Type), &expr))
-			//Instantiate(infer, defExpectedType)
-			logf("\n |-> Expected type [%s]: %v\n", name, defExpectedType)
 
-			sc := Generalize(infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
+			logs.Debug(infer, "Definition type of %s is %v and expected type is %v", name, saveExprContext(defType.Apply(s.sub).(Type), &expr), defExpectedType)
+			sc := Generalize(infer, infer.env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 
 			if !has {
 				infer.env.Remove(name)
 			}
-			logf("HERE G %v <%s?> with new def: %v\n", infer.cs, name, sc)
+
+			logs.Debug(infer, "Let def for %s is %v", name, sc)
 			_, os1, os2, varEnvDef2, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel, redef)
 			if err != nil {
 				if _, isDup := err.(*envError); isDup && varEnvDef.GetUID() == varEnvDef2.GetUID() {
@@ -771,7 +786,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				infer.t = saveExprContext(infer.t, &expr)
 				infer.cs = infer.cs.Apply(s.sub).(Constraints)
 			}
-			logf("HERE H %v\n", infer.cs)
+			logs.Debug(infer, "Finalizing let")
 
 			infer.cs = append(infer.cs, defCs...)
 
@@ -781,7 +796,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 					actualType = sc.t
 				}
 
-				logf("CHECK RETURN: %v ~ %v\n", actualType, defExpectedType)
+				logs.Debug(infer, "Let constraints present: %v ~ %v", actualType, defExpectedType)
 				infer.cs = append(infer.cs, Constraint{
 					a:       actualType,
 					b:       Instantiate(infer, defExpectedType),
@@ -808,13 +823,13 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		defType, defCs := infer.t, infer.cs
 
 		s := newSolver()
-		s.solve(defCs, infer.env.GetIntrospecionListener())
+		s.solve(infer, defCs, infer.env.GetIntrospecionListener())
 		if s.err != nil {
 			return err
 		}
 
-		logf("PATRZ CWELU: %v\n", defType.Apply(s.sub).(Type))
-		sc := Generalize(env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
+		logs.Debug(infer, "Let type: %v", defType.Apply(s.sub).(Type))
+		sc := Generalize(infer, env.Apply(s.sub).(Env), saveExprContext(defType.Apply(s.sub).(Type), &expr))
 		infer.env = infer.env.Clone()
 
 		_, s1, s2, _, err := infer.env.Add(infer, name, sc, infer.blockScopeLevel, exprType == E_REDEFINABLE_LET)

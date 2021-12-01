@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/styczynski/latte-compiler/src/events_utils"
+	"github.com/styczynski/latte-compiler/src/logs"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
@@ -24,7 +25,7 @@ type LatteInput interface {
 }
 
 type LatteInputImpl struct {
-	read func() ([]byte, error)
+	read     func() ([]byte, error)
 	filename func() string
 }
 
@@ -47,6 +48,10 @@ func CreateLatteInputReader(input []string) *LatteInputReader {
 	}
 }
 
+func (reader *LatteInputReader) LogContext(c *context.ParsingContext) map[string]interface{} {
+	return map[string]interface{}{}
+}
+
 func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, error) {
 	c.EventsCollectorStream.Start("Read input", c, events_utils.GeneralEventSource{})
 	defer c.EventsCollectorStream.End("Read input", c, events_utils.GeneralEventSource{})
@@ -66,13 +71,15 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 				},
 				filename: func() string { return input },
 			})
-		} else if (inp == "-") {
-			allInputs = append(allInputs,&LatteInputImpl{
+			logs.Debug(reader, "Read %s", inp)
+		} else if inp == "-" {
+			allInputs = append(allInputs, &LatteInputImpl{
 				read: func() ([]byte, error) {
 					return ioutil.ReadAll(bufio.NewReader(os.Stdin))
 				},
 				filename: func() string { return "<standard input>" },
 			})
+			logs.Debug(reader, "Read stdin")
 		} else {
 			// Use glob
 			matches, err := filepath.Glob(inp)
@@ -91,8 +98,13 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 				}
 				ret = append(ret, subinputs...)
 			}
+			logs.Debug(reader, "Glob \"%s\" was resolved to %d files", inp, len(ret))
 			allInputs = append(allInputs, ret...)
 		}
+	}
+
+	if len(allInputs) == 0 {
+		logs.Warning(reader, "No inputs were detected.")
 	}
 
 	return allInputs, nil

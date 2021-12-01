@@ -36,7 +36,6 @@ func (ast *LatteProgram) GetIdentifierDeps(c hindley_milner.InferContext, pre bo
 			return err, nil
 		}
 	}
-	fmt.Printf("ELO = %v\n", n)
 	return nil, n
 }
 
