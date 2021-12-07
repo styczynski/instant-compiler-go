@@ -108,17 +108,15 @@ func (ast *Class) GetDeclarationIdentifiers() *hindley_milner.NameGroup {
 	))
 
 	for _, field := range ast.Fields {
-		if field.IsField() {
-			name := fmt.Sprintf(".%s", field.FieldName())
-			scheme := field.GetType(nil)
-			scheme.Wrap(func(t0 hindley_milner.Type) hindley_milner.Type {
-				return hindley_milner.NewFnType(
-					instanceType,
-					t0,
-				)
-			})
-			n.Add(name, scheme)
-		}
+		name := fmt.Sprintf(".%s", field.FieldName())
+		scheme := field.GetType(nil)
+		scheme.Wrap(func(t0 hindley_milner.Type) hindley_milner.Type {
+			return hindley_milner.NewFnType(
+				instanceType,
+				t0,
+			)
+		})
+		n.Add(name, scheme)
 	}
 	n.Add(ast.Name, hindley_milner.Concreate(classType))
 	return n
@@ -129,20 +127,18 @@ func (ast *Class) Def(c hindley_milner.InferContext) generic_ast.Expression {
 	instanceType := hindley_milner.NewSignedStructType(ast.Name, map[string]hindley_milner.Type{})
 
 	for _, field := range ast.Fields {
-		if field.IsField() {
-			scheme := field.GetType(c)
-			exp = append(exp, hindley_milner.EmbeddedTypeExpr{
-				GetType: func() *hindley_milner.Scheme {
-					scheme.Wrap(func(t0 hindley_milner.Type) hindley_milner.Type {
-						return hindley_milner.NewFnType(
-							instanceType,
-							t0,
-						)
-					})
-					return scheme
-				},
-			})
-		}
+		scheme := field.GetType(c)
+		exp = append(exp, hindley_milner.EmbeddedTypeExpr{
+			GetType: func() *hindley_milner.Scheme {
+				scheme.Wrap(func(t0 hindley_milner.Type) hindley_milner.Type {
+					return hindley_milner.NewFnType(
+						instanceType,
+						t0,
+					)
+				})
+				return scheme
+			},
+		})
 	}
 
 	// Node

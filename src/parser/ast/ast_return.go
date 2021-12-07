@@ -87,6 +87,13 @@ func (ast *Return) Visit(parent generic_ast.Expression, mapper generic_ast.Expre
 
 func (ast *Return) ExpressionType() hindley_milner.ExpressionType { return hindley_milner.E_RETURN }
 
+func (ast *Return) HasValidReturnType(returnType hindley_milner.Type) bool {
+	if returnType.Eq(CreatePrimitive(T_VOID)) {
+		return false
+	}
+	return true
+}
+
 //
 
 func (ast *Return) BuildFlowGraph(builder cfg.CFGBuilder) {

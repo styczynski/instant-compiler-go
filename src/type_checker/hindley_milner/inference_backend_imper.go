@@ -2,6 +2,7 @@ package hindley_milner
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/pkg/errors"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -228,7 +229,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 	// PrintEnv(infer.env)
 	// fmt.Printf("END")
 
-	logs.Debug(infer, "Generate constraints")
+	logs.Debug(infer, "Generate constraints for: %s", reflect.TypeOf(expr))
 
 	switch et := expr.(type) {
 	case Typer:
@@ -246,6 +247,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		err = nil
 	}
 
+	logs.Debug(infer, "Determine expr type for %s. Type is %v", reflect.TypeOf(expr), exprType)
 	switch exprType {
 	case E_CUSTOM:
 		et := expr.(CustomExpression)
@@ -327,6 +329,12 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		et := expr.(Return)
 		if err = infer.GenerateConstraints(et.Body(), E_NONE, false, false); err != nil {
 			return err
+		}
+		if !et.HasValidReturnType(infer.t) {
+			return InvalidReturnTypeError{
+				ReturnType: infer.t,
+				Context:    CreateCodeContext(et),
+			}
 		}
 		infer.t = infer.t.WithContext(CreateCodeContext(et))
 		infer.returns = append(infer.returns, infer.t)
@@ -480,9 +488,15 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		et := expr.(Apply)
 		firstExec := true
 
+		logs.Debug(infer, "Call application Body()")
+		body := et.Body()
+
 		// collect all argument types
 		argTypes := []Type{}
-		batchErr := ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
+
+		logs.Debug(infer, "Application: Infer all function call arguments: %v", reflect.TypeOf(body))
+		batchErr := ApplyBatch(body, func(body generic_ast.Expression) error {
+			logs.Debug(infer, "Infer arg no. %d", len(argTypes))
 			if err = infer.GenerateConstraints(body, E_NONE, false, false); err != nil {
 				return err
 			}
@@ -490,6 +504,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 			return nil
 		})
 		if batchErr != nil {
+			logs.Debug(infer, "Apply: Batch error")
 			return batchErr
 		}
 
@@ -497,12 +512,15 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		var originalFnType *FunctionType
 		index := 0
 		//argCS := infer.cs
-		batchErr = ApplyBatch(et.Body(), func(body generic_ast.Expression) error {
+		batchErr = ApplyBatch(body, func(body generic_ast.Expression) error {
 			if firstExec {
+				logs.Debug(infer, "Evaluate fn type")
 				if err = infer.GenerateConstraints(et.Fn(infer), E_NONE, false, false); err != nil {
 					return err
 				}
+				logs.Debug(infer, "Evaluated fn type")
 				if unionType, ok := infer.t.(*Union); ok {
+					logs.Debug(infer, "Fn is union")
 					allArgs := []Type{}
 					allArgs = append(allArgs, argTypes...)
 					allArgs = append(allArgs, TVar(0))
@@ -528,6 +546,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 					infer.t = resolvedType
 				}
 				if _, ok := infer.t.(*FunctionType); !ok {
+					logs.Debug(infer, "Fn is not a function")
 					return UnificationWrongTypeError{
 						TypeA: infer.t,
 						TypeB: NewFnType(TVar(0), TVar(1)).WithContext(CreateCodeContext(et)),
@@ -539,6 +558,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 						Details: fmt.Sprintf("Value is not a function. You can call only functions. Got type: %v", infer.t),
 					}
 				}
+				logs.Debug(infer, "Fn is function (proceed)")
 				originalFnType = infer.t.(*FunctionType)
 				firstExec = false
 			}
@@ -565,6 +585,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 				}
 			}
 
+			logs.Debug(infer, "Apply handle arg %d", index)
 			expectedType := NewFnType(
 				bodyType,
 				fnType.(*FunctionType).Ret(false),

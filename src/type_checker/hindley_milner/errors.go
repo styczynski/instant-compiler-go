@@ -132,6 +132,36 @@ func (err InvalidOverloadCandidatesError) Source() generic_ast.Expression {
 	return *(err.Context.Source)
 }
 
+type ASTError struct {
+	Name       string
+	InnerError error
+	Context    CodeContext
+}
+
+func (err ASTError) Error() string {
+	return err.InnerError.Error()
+}
+
+func (err ASTError) Source() generic_ast.Expression {
+	return *(err.Context.Source)
+}
+
+
+type InvalidReturnTypeError struct {
+	ReturnType Type
+	Context    CodeContext
+}
+
+func (err InvalidReturnTypeError) Error() string {
+	return fmt.Sprintf("The return statement has invalid return type: %s",
+		err.ReturnType,
+	)
+}
+
+func (err InvalidReturnTypeError) Source() generic_ast.Expression {
+	return *(err.Context.Source)
+}
+
 type VariableRedefinedError struct {
 	Name               string
 	PreviousDefinition CodeContext

@@ -1,8 +1,6 @@
 package ast
 
 import (
-	"fmt"
-
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -78,15 +76,7 @@ func (ast *ClassField) FieldName() string {
 
 func (ast *ClassField) GetType(c hindley_milner.InferContext) *hindley_milner.Scheme {
 	if ast.IsMethod() {
-		methodType, err := c.TypeOf(&VarName{
-			name: ast.Method.Name,
-		}, ast.Method)
-		if err != nil {
-			panic(err.Error())
-		}
-		fmt.Printf("class method type ==> %s\n", methodType)
-		//return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
-		return hindley_milner.Concreate(methodType)
+		return ast.Method.GetDeclarationType()
 	} else {
 		return ast.ClassFieldType.GetType(c)
 	}

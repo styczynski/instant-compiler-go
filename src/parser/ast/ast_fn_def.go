@@ -74,7 +74,6 @@ func (ast *FnDef) canBeInputType(t hindley_milner.Type) bool {
 }
 
 func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
-	//fmt.Printf("Validate! HUJUPIZDO %s\n", ast.Name)
 	if _, ok := ast.Parent().(*TopDef); ok {
 		if ast.Name == "main" {
 			returnedType, _ := ast.ReturnType.GetType(nil).Type()

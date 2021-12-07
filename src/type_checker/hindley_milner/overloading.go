@@ -85,5 +85,16 @@ func FunctionUnionMerge(a Type, b Type) (error, Type) {
 		return err, nil
 	}
 	aFns = append(aFns, bFns...)
+	var fnRetType Type
+	for _, fn := range aFns {
+		if fnRetType != nil {
+			if fn.Ret(true) != fnRetType {
+				return fmt.Errorf("Duplicate fnction definition"), nil
+			}
+		}
+		fnRetType = fn.Ret(true)
+
+	}
+
 	return FunctionUnionCreate(aFns...)
 }

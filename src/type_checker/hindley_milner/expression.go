@@ -270,6 +270,7 @@ type Block interface {
 
 type Return interface {
 	generic_ast.Expression
+	HasValidReturnType(returnType Type) bool
 }
 
 type DefaultTyper interface {

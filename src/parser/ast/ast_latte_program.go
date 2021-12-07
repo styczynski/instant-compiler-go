@@ -33,7 +33,11 @@ func (ast *LatteProgram) GetIdentifierDeps(c hindley_milner.InferContext, pre bo
 		err, mergedN := hindley_milner.MergeDefinitionsWithOverloads(n, addN)
 		n = mergedN
 		if err != nil {
-			return err, nil
+			return hindley_milner.ASTError{
+				Name:       "Invalid function",
+				InnerError: err,
+				Context:    hindley_milner.CreateCodeContext(ast),
+			}, nil
 		}
 	}
 	return nil, n

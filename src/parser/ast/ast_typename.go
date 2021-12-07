@@ -103,7 +103,6 @@ func (ast *Typename) OnTypeReturned(t hindley_milner.Type) {
 								Unary:       nil,
 								UnaryApplication: &UnaryApplication{
 									BaseASTNode: ast.BaseASTNode,
-									Target:      nil,
 									Arguments:   nil,
 									Index: &Index{
 										BaseASTNode: ast.BaseASTNode,

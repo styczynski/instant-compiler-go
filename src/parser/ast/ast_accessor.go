@@ -180,6 +180,8 @@ func (ast *Accessor) Body() generic_ast.Expression {
 	cur := ast.GetIndexingNode()
 	var expr generic_ast.Expression
 	if ast.IsTop() {
+		var a interface{}
+		fmt.Printf("%v", a.(bool))
 		expr = ast.ParentNode.(*Index).Primary
 	} else {
 		expr = ast.ParentNode.(generic_ast.Expression)
