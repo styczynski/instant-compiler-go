@@ -89,7 +89,7 @@ func (ast *Return) ExpressionType() hindley_milner.ExpressionType { return hindl
 
 func (ast *Return) HasValidReturnType(returnType hindley_milner.Type) bool {
 	if returnType.Eq(CreatePrimitive(T_VOID)) {
-		return false
+		return !ast.HasExpression()
 	}
 	return true
 }
