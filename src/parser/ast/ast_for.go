@@ -135,7 +135,7 @@ func (ast *For) BuildFlowGraph(builder cfg.CFGBuilder) {
 }
 
 func (ast *For) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
-	return cfg.GetAllVariables(ast.Destructor.Target, visitedMap)
+	return cfg.GetAllVariables(ast.Destructor.Target, map[generic_ast.TraversableNode]struct{}{})
 }
 
 func (ast *For) GetDeclaredVariables(visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {

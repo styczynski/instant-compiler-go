@@ -1,6 +1,8 @@
 package cfg
 
 import (
+	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
@@ -10,11 +12,11 @@ func (flow *FlowAnalysisImpl) Optimize(c *context.ParsingContext) {
 
 	for _, b := range cfg.blocks {
 		block := b
-		if block.stmt != nil {
+		if cfg.codeMapping[block.ID] != nil {
 			//fmt.Printf("OPTIMIZE %v\n", reflect.TypeOf(block.stmt))
-			if rmb, ok := block.stmt.(NodeWithRemovableVariableAsignment); ok {
-				liveVars := liveness.BlockIn(block.stmt)
-				refVars := flow.graph.ReferencedVars(block.stmt)
+			if rmb, ok := cfg.codeMapping[block.ID].(NodeWithRemovableVariableAsignment); ok {
+				liveVars := liveness.BlockIn(block.ID)
+				refVars := flow.graph.ReferencedVars(cfg.codeMapping[block.ID])
 				varsToRemove := map[string]struct{}{}
 				for defVarName, _ := range refVars.decl {
 					if !liveVars.HasVariable(defVarName) {
@@ -26,7 +28,8 @@ func (flow *FlowAnalysisImpl) Optimize(c *context.ParsingContext) {
 						varsToRemove[asgtVarName] = struct{}{}
 					}
 				}
-				cfg.ReplaceBlock(block.stmt, rmb.RemoveVariableAssignment(varsToRemove))
+				fmt.Printf("REMOVE %v from block %d (live vars %v)\n", varsToRemove, block.ID, liveVars)
+				cfg.ReplaceBlockCode(block.ID, rmb.RemoveVariableAssignment(varsToRemove))
 			}
 
 			//items = append(items, cfg.ReferencedVars(srcNode).Print())

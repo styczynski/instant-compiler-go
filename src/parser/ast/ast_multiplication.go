@@ -10,10 +10,15 @@ import (
 
 type Multiplication struct {
 	generic_ast.BaseASTNode
-	Unary      *Unary          `@@`
-	Op         string          `[ @( "/" | "*" | "%" )`
-	Next       *Multiplication `  @@ ]`
-	ParentNode generic_ast.TraversableNode
+	Unary        *Unary          `@@`
+	Op           string          `[ @( "/" | "*" | "%" )`
+	Next         *Multiplication `  @@ ]`
+	ParentNode   generic_ast.TraversableNode
+	ResolvedType hindley_milner.Type
+}
+
+func (ast *Multiplication) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *Multiplication) ExtractConst() (generic_ast.TraversableNode, bool) {

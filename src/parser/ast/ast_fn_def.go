@@ -19,6 +19,11 @@ type FnDef struct {
 	Arg          []*Arg `"(" (@@ ( "," @@ )*)? ")"`
 	FunctionBody *Block `@@`
 	ParentNode   generic_ast.TraversableNode
+	ResolvedType hindley_milner.Type
+}
+
+func (ast *FnDef) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *FnDef) Parent() generic_ast.TraversableNode {

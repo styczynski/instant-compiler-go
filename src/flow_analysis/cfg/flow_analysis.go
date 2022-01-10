@@ -12,8 +12,8 @@ type ConstFoldingError interface {
 }
 
 type BlockLiveVariables interface {
-	BlockIn(block generic_ast.NormalNode) VariableSet
-	BlockOut(block generic_ast.NormalNode) VariableSet
+	BlockIn(blockID int) VariableSet
+	BlockOut(blockID int) VariableSet
 }
 
 type FlowAnalysis interface {
@@ -44,22 +44,23 @@ func (flow *FlowAnalysisImpl) Rebuild() {
 	flow.graph = nil
 }
 
-func (flow *FlowAnalysisImpl) ReplaceBlock(old generic_ast.NormalNode, new generic_ast.NormalNode) {
+func (flow *FlowAnalysisImpl) ReplaceBlock(blockID int, new generic_ast.NormalNode) {
+	g := flow.Graph()
 	for i, block := range flow.input {
 		//if block == old {
 		//	flow.input[i] = new
 		//}
-		flow.input[i] = generic_ast.ReplaceExpressionRecursively(block, old, new).(generic_ast.NormalNode)
+		flow.input[i] = generic_ast.ReplaceExpressionRecursively(block, g.codeMapping[blockID], new).(generic_ast.NormalNode)
 	}
 	if flow.graph != nil {
-		flow.graph.ReplaceBlock(old, new)
+		flow.graph.ReplaceBlockCode(blockID, new)
 	}
-	if flow.liveness != nil {
-		flow.liveness.ReplaceBlock(old, new)
-	}
-	if flow.reaching != nil {
-		flow.reaching.ReplaceBlock(old, new)
-	}
+	// if flow.liveness != nil {
+	// 	flow.liveness.ReplaceBlockCode(blockID, new)
+	// }
+	// if flow.reaching != nil {
+	// 	flow.reaching.ReplaceBlockCode(blockID, new)
+	// }
 }
 
 func CreateFlowAnalysis(input generic_ast.NormalNode) FlowAnalysis {

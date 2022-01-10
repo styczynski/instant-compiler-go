@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "github.com/styczynski/latte-compiler/src/compiler/jvm"
+	_ "github.com/styczynski/latte-compiler/src/compiler/assembly"
 	"github.com/styczynski/latte-compiler/src/compiler_pipeline"
 )
 

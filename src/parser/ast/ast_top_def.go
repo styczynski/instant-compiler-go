@@ -177,14 +177,14 @@ graph := flow.Graph()
 */
 
 func (ast *TopDef) AfterFlowAnalysis(flow cfg.FlowAnalysis) {
-	if ast.IsFunction() {
-		output := []*Statement{}
-		graph := flow.Graph()
-		for _, stmt := range ast.Function.FunctionBody.Statements {
-			if graph.Exists(stmt.GetChildren()[0].(generic_ast.NormalNode)) {
-				output = append(output, stmt)
-			}
-		}
-		ast.Function.FunctionBody.Statements = output
-	}
+	// if ast.IsFunction() {
+	// 	output := []*Statement{}
+	// 	graph := flow.Graph()
+	// 	for _, stmt := range ast.Function.FunctionBody.Statements {
+	// 		if graph.Exists(stmt.GetChildren()[0].(generic_ast.NormalNode)) {
+	// 			output = append(output, stmt)
+	// 		}
+	// 	}
+	// 	ast.Function.FunctionBody.Statements = output
+	// }
 }

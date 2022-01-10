@@ -9,38 +9,20 @@ import (
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
-type ReachedBlocks map[generic_ast.NormalNode]struct{}
+type ReachedBlocks map[int]struct{}
 
 type ReachingVariablesInfo struct {
-	usagesMap map[generic_ast.NormalNode]ReachedBlocks
+	usagesMap map[int]ReachedBlocks
 }
 
-func (lvi ReachingVariablesInfo) ReplaceBlock(old generic_ast.NormalNode, new generic_ast.NormalNode) {
-	for block, usages := range lvi.usagesMap {
-		key := block
-		if block == old {
-			delete(lvi.usagesMap, block)
-			lvi.usagesMap[new] = usages
-			key = new
-		}
-		for subBlock, _ := range lvi.usagesMap[key] {
-			if subBlock == old {
-				delete(lvi.usagesMap[key], old)
-				lvi.usagesMap[key][new] = struct{}{}
-			}
-		}
-	}
-}
-
-
-func (lvi ReachingVariablesInfo) ReachedBlocks(block generic_ast.NormalNode) ReachedBlocks {
-	return lvi.usagesMap[block]
+func (lvi ReachingVariablesInfo) ReachedBlocks(blockID int) ReachedBlocks {
+	return lvi.usagesMap[blockID]
 }
 
 func (rb ReachedBlocks) Print(cfg *CFG) string {
 	blockStrs := []string{}
 	for block, _ := range rb {
-		blockStrs = append(blockStrs, fmt.Sprintf("%d", cfg.blocksIDs[block]))
+		blockStrs = append(blockStrs, fmt.Sprintf("%d", block))
 	}
 	return fmt.Sprintf("{%s}", strings.Join(blockStrs, ", "))
 }
@@ -53,51 +35,51 @@ func DefUse(cfg *CFG) ReachingVariablesInfo {
 	}
 }
 
-func DefsReaching(stmt generic_ast.NormalNode, cfg *CFG) map[generic_ast.NormalNode]struct{} {
+func DefsReaching(blockID int, cfg *CFG) map[int]struct{} {
 	blocks, gen, kill := generateVariableInfoKillBitsets(cfg)
 	ins, _ := defineVariableReachingBitsets(cfg, gen, kill)
-	return defineReachingVariablesBlocksBitsets(stmt, blocks, ins)
+	return defineReachingVariablesBlocksBitsets(blockID, blocks, ins)
 }
 
-func generateVariableInfoKillBitsets(cfg *CFG) (blocks []generic_ast.NormalNode, gen, kill map[generic_ast.NormalNode]*bitset.BitSet) {
+func generateVariableInfoKillBitsets(cfg *CFG) (blocks []*Block, gen, kill map[int]*bitset.BitSet) {
 	okills := make(map[Variable]*bitset.BitSet)
-	gen = make(map[generic_ast.NormalNode]*bitset.BitSet)
-	kill = make(map[generic_ast.NormalNode]*bitset.BitSet)
+	gen = make(map[int]*bitset.BitSet)
+	kill = make(map[int]*bitset.BitSet)
 	blocks = cfg.Blocks()
 
 	for _, b := range blocks { // prime
-		gen[b] = new(bitset.BitSet)
-		kill[b] = new(bitset.BitSet)
+		gen[b.ID] = new(bitset.BitSet)
+		kill[b.ID] = new(bitset.BitSet)
 	}
 
 	for i := 0; i < 2; i++ {
 		for j, block := range blocks {
 			j := uint(j)
 
-			def := GetAllDeclaredVariables(block, map[generic_ast.TraversableNode]struct{}{})
+			def := GetAllDeclaredVariables(cfg.codeMapping[block.ID], map[generic_ast.TraversableNode]struct{}{})
 
 			for _, d := range def {
 				if _, ok := okills[d]; !ok {
 					okills[d] = new(bitset.BitSet)
 				}
-				gen[block].Set(j)
+				gen[block.ID].Set(j)
 				okills[d].Set(j)
-				kill[block] = kill[block].Union(okills[d]).Difference(gen[block])
+				kill[block.ID] = kill[block.ID].Union(okills[d]).Difference(gen[block.ID])
 			}
 		}
 	}
 	return blocks, gen, kill
 }
 
-func defineVariableReachingBitsets(cfg *CFG, gen, kill map[generic_ast.NormalNode]*bitset.BitSet) (input, output map[generic_ast.NormalNode]*bitset.BitSet) {
-	input = make(map[generic_ast.NormalNode]*bitset.BitSet)
-	output = make(map[generic_ast.NormalNode]*bitset.BitSet)
+func defineVariableReachingBitsets(cfg *CFG, gen, kill map[int]*bitset.BitSet) (input, output map[int]*bitset.BitSet) {
+	input = make(map[int]*bitset.BitSet)
+	output = make(map[int]*bitset.BitSet)
 	blocks := cfg.Blocks()
 	for i := 0; i < len(blocks); i++ {
 		block := blocks[i]
-		input[block] = new(bitset.BitSet)
-		output[block] = new(bitset.BitSet)
-		if block == cfg.Entry {
+		input[block.ID] = new(bitset.BitSet)
+		output[block.ID] = new(bitset.BitSet)
+		if block.ID == cfg.Entry {
 			blocks = append(blocks[:i], blocks[i+1:]...)
 			i--
 		}
@@ -105,12 +87,12 @@ func defineVariableReachingBitsets(cfg *CFG, gen, kill map[generic_ast.NormalNod
 	for {
 		var anythingChanged bool
 		for _, block := range blocks {
-			for _, p := range cfg.BlockPredecessors(block) {
-				input[block].InPlaceUnion(output[p])
+			for _, p := range cfg.BlockPredecessors(block.ID) {
+				input[block.ID].InPlaceUnion(output[p.ID])
 			}
-			old := output[block].Clone()
-			output[block] = gen[block].Union(input[block].Difference(kill[block]))
-			anythingChanged = anythingChanged || !old.Equal(output[block])
+			old := output[block.ID].Clone()
+			output[block.ID] = gen[block.ID].Union(input[block.ID].Difference(kill[block.ID]))
+			anythingChanged = anythingChanged || !old.Equal(output[block.ID])
 		}
 		if !anythingChanged {
 			break
@@ -119,30 +101,30 @@ func defineVariableReachingBitsets(cfg *CFG, gen, kill map[generic_ast.NormalNod
 	return input, output
 }
 
-func defUseResultSet(blocks []generic_ast.NormalNode, ins map[generic_ast.NormalNode]*bitset.BitSet) map[generic_ast.NormalNode]ReachedBlocks {
-	du := make(map[generic_ast.NormalNode]ReachedBlocks)
+func defUseResultSet(blocks []*Block, ins map[int]*bitset.BitSet) map[int]ReachedBlocks {
+	du := make(map[int]ReachedBlocks)
 	for _, block := range blocks {
-		du[block] = make(map[generic_ast.NormalNode]struct{})
+		du[block.ID] = make(map[int]struct{})
 	}
 	for _, block := range blocks {
 		for i, ok := uint(0), true; ok; i++ {
-			if i, ok = ins[block].NextSet(i); ok {
-				du[blocks[i]][block] = struct{}{}
+			if i, ok = ins[block.ID].NextSet(i); ok {
+				du[blocks[i].ID][block.ID] = struct{}{}
 			}
 		}
 	}
 	return du
 }
 
-func defineReachingVariablesBlocksBitsets(stmt generic_ast.NormalNode, blocks []generic_ast.NormalNode, ins map[generic_ast.NormalNode]*bitset.BitSet) map[generic_ast.NormalNode]struct{} {
-	result := make(map[generic_ast.NormalNode]struct{})
-	insStmt, found := ins[stmt]
+func defineReachingVariablesBlocksBitsets(blockID int, blocks []*Block, ins map[int]*bitset.BitSet) map[int]struct{} {
+	result := make(map[int]struct{})
+	insStmt, found := ins[blockID]
 	if !found {
 		panic("Node is missing from CFG.")
 	}
 	for i, ok := uint(0), true; ok; i++ {
 		if i, ok = insStmt.NextSet(i); ok {
-			result[blocks[i]] = struct{}{}
+			result[blocks[i].ID] = struct{}{}
 		}
 	}
 	return result

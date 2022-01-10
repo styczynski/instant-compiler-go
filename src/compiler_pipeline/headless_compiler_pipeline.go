@@ -69,7 +69,7 @@ func (pipeline *HeadlessCompilerPipeline) deamonHandler() {
 	c := config.EntityConstConfig{
 		Strings: map[string]string{
 			"status-updater": "updater-silent",
-			"backend":        "jvm",
+			"backend":        "x86",
 			"runner":         "runner",
 			"summary":        "summary-cli",
 		},

@@ -1,9 +1,12 @@
 package flow_analysis
 
 import (
+	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
+	"github.com/styczynski/latte-compiler/src/ir"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
@@ -34,6 +37,7 @@ func (e *FlowAnalysisError) CliMessage() string {
 }
 
 type LatteAnalyzedProgram struct {
+	IR                *ir.IRProgram
 	Program           type_checker.LatteTypecheckedProgram
 	FlowAnalysisError *FlowAnalysisError
 	filename          string
@@ -160,6 +164,9 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 
 		var flowErrGlobal *FlowAnalysisError = nil
 
+		irProgram := &ir.IRProgram{
+			Statements: []*ir.IRFunction{},
+		}
 		flowVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
 			if _, ok := visitedNodes[e]; ok {
 				return
@@ -168,6 +175,8 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 			if nodeForAnalysis, ok := (e.(FlowAnalyzableNode)); ok {
 				ast := nodeForAnalysis.(generic_ast.NormalNode)
 				flow := cfg.CreateFlowAnalysis(ast)
+
+				fmt.Printf("START FLOW ANALYSIS\n")
 
 				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
 				//fmt.Print(flow.Print(ctx))
@@ -182,14 +191,17 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				flow.Rebuild()
 				ast = flow.Output()
 
-				//flow.Optimize(c)
-				//nodeForAnalysis.AfterFlowAnalysis(flow)
+				flow.Optimize(c)
+				nodeForAnalysis.AfterFlowAnalysis(flow)
 
-				//fmt.Printf("Fold done:\n")
-				//fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
-				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				//fmt.Print(flow.Print(ctx))
-				//fmt.Printf("Yeah.\n")
+				fmt.Printf("Fold done:\n")
+				fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
+				fmt.Printf("\n\nENTIRE GRAPH:\n\n")
+				fmt.Print(flow.Print(ctx))
+				fmt.Printf("Yeah.\n")
+
+				irCode := ir.CreateIR(e, flow, c)
+				irProgram.Statements = append(irProgram.Statements, irCode)
 
 				customErr := nodeForAnalysis.OnFlowAnalysis(flow)
 				if customErr != nil {
@@ -217,6 +229,7 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 
 		r <- LatteAnalyzedProgram{
 			Program:  program,
+			IR:       irProgram,
 			filename: program.Filename(),
 		}
 	}()

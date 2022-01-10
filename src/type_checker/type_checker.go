@@ -33,6 +33,9 @@ func (tc *LatteTypeChecker) GetEnv() *hindley_milner.SimpleEnv {
 				ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING),
 			),
 		})),
+		"error": hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_VOID),
+		)),
 		"null": hindley_milner.SingleDef(nil,
 			hindley_milner.NewSignedStructType("", nil),
 		),

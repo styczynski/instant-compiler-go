@@ -14,6 +14,11 @@ type Unary struct {
 	Unary            *Unary            `    @@ )`
 	UnaryApplication *UnaryApplication `| @@`
 	ParentNode       generic_ast.TraversableNode
+	ResolvedType     hindley_milner.Type
+}
+
+func (ast *Unary) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *Unary) ExtractConst() (generic_ast.TraversableNode, bool) {

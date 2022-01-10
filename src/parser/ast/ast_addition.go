@@ -14,6 +14,11 @@ type Addition struct {
 	Op             string          `[ @( "-" | "+" )`
 	Next           *Addition       `  @@ ]`
 	ParentNode     generic_ast.TraversableNode
+	ResolvedType   hindley_milner.Type
+}
+
+func (ast *Addition) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *Addition) ExtractConst() (generic_ast.TraversableNode, bool) {

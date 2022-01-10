@@ -14,6 +14,11 @@ type Expression struct {
 	Typename         *Typename         `| @@`
 	LogicalOperation *LogicalOperation `| @@`
 	ParentNode       generic_ast.TraversableNode
+	ResolvedType     hindley_milner.Type
+}
+
+func (ast *Expression) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *Expression) ExtractConst() (generic_ast.TraversableNode, bool) {

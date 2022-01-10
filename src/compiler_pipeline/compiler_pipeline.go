@@ -34,7 +34,7 @@ func (CompilerPipelineFactory) Params(argSpec *config.EntityArgSpec) {
 	argSpec.AddString("log-level", "warning", "Log level")
 	argSpec.AddString("log-output", "stderr", "Logs output. Might be stdout, stderr, none or a filename.")
 	argSpec.AddString("backend",
-		"jvm",
+		"x86",
 		fmt.Sprintf("Use specific compiler backend. Supported options are: %s", strings.Join(config.GetEntityNamesList(config.ENTITY_COMPILER_BACKEND), ", ")))
 	argSpec.AddString("summary",
 		"summary-cli",

@@ -134,6 +134,14 @@ func (infer *ImperInferenceBackend) TypeOf(et generic_ast.Expression, contextExp
 func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error) {
 
 	defer func() {
+		if intro, ok := expr.(IntrospectionExpression); ok {
+			fmt.Printf("Add intro for %s\n", expr)
+			bodyType := infer.t
+			intro.OnTypeReturned(bodyType)
+		}
+	}()
+
+	defer func() {
 		if err != nil {
 			return
 		}

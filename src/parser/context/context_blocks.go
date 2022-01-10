@@ -117,9 +117,9 @@ func (c *ParsingContext) PrintSelectionBlocks(inputBlocks SelectionBlocks) strin
 		//	originalLine = originalLine[:lineWidth]
 		//}
 		for i, letter := range originalLine {
-			curColNo := i+1
+			curColNo := i + 1
 			var curBlock SelectionBlock = nil
-			for j := 0; j<len(blocks); j++ {
+			for j := 0; j < len(blocks); j++ {
 				if isInRange(curLineNo, curColNo, blocks[j]) {
 					if curBlock == nil {
 						curBlock = blocks[j]
@@ -140,7 +140,7 @@ func (c *ParsingContext) PrintSelectionBlocks(inputBlocks SelectionBlocks) strin
 					wasBlockStart = true
 				}
 				if wasBlockStart {
-					colorIndex = (colorIndex+1) % len(colors)
+					colorIndex = (colorIndex + 1) % len(colors)
 					curColBg = &colors[colorIndex]
 					seenBlocksMap[blockID] = curColBg
 					formatBlockSelection := color.New(*curColBg).SprintFunc()
