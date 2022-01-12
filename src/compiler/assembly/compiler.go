@@ -2,14 +2,12 @@ package assembly
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/compiler/assembly/x86"
 	"github.com/styczynski/latte-compiler/src/config"
 	"github.com/styczynski/latte-compiler/src/flow_analysis"
-	"github.com/styczynski/latte-compiler/src/generic_ast"
-	"github.com/styczynski/latte-compiler/src/parser/ast"
+	"github.com/styczynski/latte-compiler/src/ir"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"golang.org/x/arch/x86/x86asm"
 )
@@ -36,65 +34,98 @@ type CompilerX86Backend struct {
 	state *compiler.CompilerState
 }
 
-func (backend CompilerX86Backend) compileExpression(expr generic_ast.Expression) []x86.Entry {
-	if _, ok := (expr.(*ast.Empty)); ok {
-		return []x86.Entry{}
-	}
-	if expr, ok := (expr.(*ast.LatteProgram)); ok {
-		ret := []x86.Entry{}
-		for _, stmt := range expr.Definitions {
-			compiledValue := backend.compileExpression(stmt)
-			ret = append(ret, compiledValue...)
-		}
-		return ret
-	}
-	if block, ok := (expr.(*ast.Block)); ok {
-		blockExprs := []x86.Entry{}
-		for _, expr := range block.Expressions() {
-			fmt.Printf("COMPILE BODY EXPR: %s\n", expr)
-			blockExprs = append(blockExprs, backend.compileExpression(expr)...)
-		}
-		return blockExprs
-	}
-	if topDef, ok := (expr.(*ast.TopDef)); ok {
-		if topDef.IsFunction() {
-			// Compile function
-			// CDECL header
-			bodyExprs := []*x86.Instruction{
-				x86.DoPush(x86asm.EBP),
-				x86.DoMov(x86asm.EBP, x86asm.ESP),
-			}
-			// Function body
-			for _, entry := range backend.compileExpression(topDef.Function.Body()) {
-				bodyExprs = append(bodyExprs, entry.(*x86.Instruction))
-			}
-			return []x86.Entry{
-				&x86.Function{
-					Name:   topDef.Function.Name,
-					Type:   topDef.Function.GetDeclarationType().Concrete(),
-					Source: topDef.BaseASTNode,
-					Body:   bodyExprs,
-				},
-			}
-		}
-	}
-	if _, ok := (expr.(*ast.Return)); ok {
-		inst := x86asm.Inst{}
-		inst.Op = x86asm.RET
+func (backend CompilerX86Backend) compileIRBlock(code *ir.IRBlock) []*x86.Instruction {
+	for _, instr := range code.Statements {
+		if instr.IsConst() {
 
-		return []x86.Entry{
-			x86.DoPop(x86asm.EBP),
-			x86.DoRet(),
 		}
 	}
-	if stmt, ok := (expr.(*ast.Statement)); ok {
-		if stmt.IsReturn() {
-			return backend.compileExpression(stmt.Return)
-		}
-		return []x86.Entry{}
-	}
-	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", reflect.TypeOf(expr)))
+	return []*x86.Instruction{}
 }
+
+func (backend CompilerX86Backend) compileIR(code *ir.IRProgram) []x86.Entry {
+	ret := []x86.Entry{}
+	for _, fn := range code.Statements {
+		//for _, fnBlock := range fn.FunctionBody {
+		// Compile function
+		// CDECL header
+		bodyExprs := []*x86.Instruction{
+			x86.DoPush(x86asm.EBP),
+			x86.DoMov(x86asm.EBP, x86asm.ESP),
+		}
+		// // Function body
+		for _, fnBlock := range fn.FunctionBody {
+			bodyExprs = append(bodyExprs, backend.compileIRBlock(fnBlock)...)
+		}
+		ret = append(ret, &x86.Function{
+			Name:   fn.Name,
+			Source: fn.BaseASTNode,
+			Body:   bodyExprs,
+		})
+
+	}
+	return ret
+}
+
+// func (backend CompilerX86Backend) compileExpression(expr generic_ast.Expression) []x86.Entry {
+// 	if _, ok := (expr.(*ast.Empty)); ok {
+// 		return []x86.Entry{}
+// 	}
+// 	if expr, ok := (expr.(*ast.LatteProgram)); ok {
+// 		ret := []x86.Entry{}
+// 		for _, stmt := range expr.Definitions {
+// 			compiledValue := backend.compileExpression(stmt)
+// 			ret = append(ret, compiledValue...)
+// 		}
+// 		return ret
+// 	}
+// 	if block, ok := (expr.(*ast.Block)); ok {
+// 		blockExprs := []x86.Entry{}
+// 		for _, expr := range block.Expressions() {
+// 			fmt.Printf("COMPILE BODY EXPR: %s\n", expr)
+// 			blockExprs = append(blockExprs, backend.compileExpression(expr)...)
+// 		}
+// 		return blockExprs
+// 	}
+// 	if topDef, ok := (expr.(*ast.TopDef)); ok {
+// 		if topDef.IsFunction() {
+// 			// Compile function
+// 			// CDECL header
+// 			bodyExprs := []*x86.Instruction{
+// 				x86.DoPush(x86asm.EBP),
+// 				x86.DoMov(x86asm.EBP, x86asm.ESP),
+// 			}
+// 			// Function body
+// 			for _, entry := range backend.compileExpression(topDef.Function.Body()) {
+// 				bodyExprs = append(bodyExprs, entry.(*x86.Instruction))
+// 			}
+// 			return []x86.Entry{
+// 				&x86.Function{
+// 					Name:   topDef.Function.Name,
+// 					Type:   topDef.Function.GetDeclarationType().Concrete(),
+// 					Source: topDef.BaseASTNode,
+// 					Body:   bodyExprs,
+// 				},
+// 			}
+// 		}
+// 	}
+// 	if _, ok := (expr.(*ast.Return)); ok {
+// 		inst := x86asm.Inst{}
+// 		inst.Op = x86asm.RET
+
+// 		return []x86.Entry{
+// 			x86.DoPop(x86asm.EBP),
+// 			x86.DoRet(),
+// 		}
+// 	}
+// 	if stmt, ok := (expr.(*ast.Statement)); ok {
+// 		if stmt.IsReturn() {
+// 			return backend.compileExpression(stmt.Return)
+// 		}
+// 		return []x86.Entry{}
+// 	}
+// 	panic(fmt.Sprintf("Invalid instruction given to compileExpression(): %s", reflect.TypeOf(expr)))
+// }
 
 func (backend CompilerX86Backend) RunCompiledCode(runContext compiler.CompiledCodeRunContext, c *context.ParsingContext) ([]string, *compiler.RunError) {
 	return []string{}, nil
@@ -112,8 +143,13 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 		// 	Instructions: outputCode,
 		// }
 
+		for _, fn := range program.IR.Statements {
+			performAllocationForBlocks(fn.FunctionBody)
+		}
+		fmt.Printf("%s", program.IR.Print(c))
+
 		output := x86.Program{
-			Entries: backend.compileExpression(program.Program.Program.AST()),
+			Entries: backend.compileIR(program.IR),
 		}
 
 		var validationErr *compiler.CompilationError

@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
@@ -19,7 +20,33 @@ type IRStatement struct {
 	If         *IRIf         `| @@`
 	Phi        *IRPhi        `| @@`
 	Expression *IRExpression `| @@`
+	Copy       *IRCopy       `| @@`
+	Const      *IRConst      `| @@`
+	Call       *IRCall       `| @@`
 	ParentNode generic_ast.TraversableNode
+
+	VarIn   cfg.VariableSet
+	VarOut  cfg.VariableSet
+	Reached cfg.ReachedBlocks
+	meta    IRMeta
+}
+
+func (ast *IRStatement) SetAllocationInfo(allocInfo IRAllocationMap) {
+	ast.meta.Allocation = allocInfo
+}
+
+func (ast *IRStatement) GetAllocationInfo() IRAllocationMap {
+	return ast.meta.Allocation
+}
+
+func (ast *IRStatement) SetFlowAnalysisProps(
+	VarIn cfg.VariableSet,
+	VarOut cfg.VariableSet,
+	Reached cfg.ReachedBlocks,
+) {
+	ast.VarIn = VarIn
+	ast.VarOut = VarOut
+	ast.Reached = Reached
 }
 
 func WrapIREmpty() *IRStatement {
@@ -29,27 +56,59 @@ func WrapIREmpty() *IRStatement {
 }
 
 func WrapIRPhi(ast *IRPhi) *IRStatement {
-	return &IRStatement{
+	ret := &IRStatement{
 		Phi: ast,
 	}
+	ast.OverrideParent(ret)
+	return ret
 }
 
 func WrapIRIf(ast *IRIf) *IRStatement {
-	return &IRStatement{
+	ret := &IRStatement{
 		If: ast,
 	}
+	ast.OverrideParent(ret)
+	return ret
 }
 
 func WrapIRExit(ast *IRExit) *IRStatement {
-	return &IRStatement{
+	ret := &IRStatement{
 		Exit: ast,
 	}
+	ast.OverrideParent(ret)
+	return ret
+}
+
+func WrapIRCall(ast *IRCall) *IRStatement {
+	ret := &IRStatement{
+		Call: ast,
+	}
+	ast.OverrideParent(ret)
+	return ret
+}
+
+func WrapIRConst(ast *IRConst) *IRStatement {
+	ret := &IRStatement{
+		Const: ast,
+	}
+	ast.OverrideParent(ret)
+	return ret
+}
+
+func WrapIRCopy(ast *IRCopy) *IRStatement {
+	ret := &IRStatement{
+		Copy: ast,
+	}
+	ast.OverrideParent(ret)
+	return ret
 }
 
 func WrapIRExpression(ast *IRExpression) *IRStatement {
-	return &IRStatement{
+	ret := &IRStatement{
 		Expression: ast,
 	}
+	ast.OverrideParent(ret)
+	return ret
 }
 
 func (ast *IRStatement) Parent() generic_ast.TraversableNode {
@@ -76,6 +135,9 @@ func (ast *IRStatement) IsEmpty() bool {
 	return (ast.Empty != nil || (!ast.IsExit() &&
 		!ast.IsIf() &&
 		!ast.IsPhi() &&
+		!ast.IsCopy() &&
+		!ast.IsConst() &&
+		!ast.IsCall() &&
 		!ast.IsExpression()))
 }
 
@@ -89,6 +151,18 @@ func (ast *IRStatement) IsIf() bool {
 
 func (ast *IRStatement) IsPhi() bool {
 	return ast.Phi != nil
+}
+
+func (ast *IRStatement) IsCopy() bool {
+	return ast.Copy != nil
+}
+
+func (ast *IRStatement) IsConst() bool {
+	return ast.Const != nil
+}
+
+func (ast *IRStatement) IsCall() bool {
+	return ast.Call != nil
 }
 
 func (ast *IRStatement) IsExpression() bool {
@@ -105,6 +179,12 @@ func (ast *IRStatement) GetChildren() []generic_ast.TraversableNode {
 		return []generic_ast.TraversableNode{ast.If}
 	} else if ast.IsPhi() {
 		return []generic_ast.TraversableNode{ast.Phi}
+	} else if ast.IsCopy() {
+		return []generic_ast.TraversableNode{ast.Copy}
+	} else if ast.IsConst() {
+		return []generic_ast.TraversableNode{ast.Const}
+	} else if ast.IsCall() {
+		return []generic_ast.TraversableNode{ast.Call}
 	} else if ast.IsExpression() {
 		return []generic_ast.TraversableNode{ast.Expression}
 	}
@@ -116,7 +196,28 @@ func (ast *IRStatement) formatIRStatementInstruction(irstatement string, c *cont
 		c.PrinterConfiguration.SkipStatementIdent = false
 		return irstatement
 	}
-	return utils.PrintASTNode(c, ast, "%s%s", strings.Repeat("  ", c.BlockDepth), irstatement)
+	return utils.PrintASTNode(c, ast, "%s%s %s %s %s", strings.Repeat("  ", c.BlockDepth), irstatement, ast.VarIn.String(), ast.VarOut.String(), ast.meta.String())
+}
+
+func (ast *IRStatement) RenameVariables(substUsed, substDecl cfg.VariableSubstitution) {
+	fmt.Printf("RENAME IN STATMENT :DD %s\n", ast.VarOut)
+	newVarIn := cfg.VariableSet{}
+	for v, d := range ast.VarIn {
+		newName := substDecl.Replace(substUsed.Replace(v))
+		newVarIn[newName] = cfg.NewVariable(newName, d.Value())
+	}
+	newVarOut := cfg.VariableSet{}
+	for v, d := range ast.VarOut {
+		newName := substDecl.Replace(substUsed.Replace(v))
+		newVarOut[newName] = cfg.NewVariable(newName, d.Value())
+	}
+	ast.VarIn = newVarIn
+	ast.VarOut = newVarOut
+	children := ast.GetChildren()
+	if len(children) > 0 {
+		children[0].(cfg.NodeWithVariableReplacement).RenameVariables(substUsed, substDecl)
+	}
+	fmt.Printf("RENAME IN STATMENT :C %s (with %v and %v)\n", ast.VarOut, substDecl, substUsed)
 }
 
 func (ast *IRStatement) Print(c *context.ParsingContext) string {
@@ -130,6 +231,12 @@ func (ast *IRStatement) Print(c *context.ParsingContext) string {
 		ret = ast.If.Print(c)
 	} else if ast.IsPhi() {
 		ret = ast.Phi.Print(c)
+	} else if ast.IsCopy() {
+		ret = ast.Copy.Print(c)
+	} else if ast.IsConst() {
+		ret = ast.Const.Print(c)
+	} else if ast.IsCall() {
+		ret = ast.Call.Print(c)
 	} else if ast.IsExpression() {
 		ret = utils.PrintASTNode(c, ast, "%s;", ast.Expression.Print(c))
 	}
@@ -152,6 +259,12 @@ func (ast *IRStatement) Body() generic_ast.Expression {
 		return ast.Exit
 	} else if ast.IsExpression() {
 		return ast.Expression
+	} else if ast.IsCopy() {
+		return ast.Copy
+	} else if ast.IsConst() {
+		return ast.Const
+	} else if ast.IsCall() {
+		return ast.Call
 	}
 	ast.BaseASTNode = generic_ast.BaseASTNode{}
 	ast.ParentNode = nil
@@ -174,6 +287,21 @@ func feedExpressionIntoIRStatement(node interface{}, base generic_ast.BaseASTNod
 		return &IRStatement{
 			BaseASTNode: base,
 			Expression:  expr,
+		}
+	} else if expr, ok := node.(*IRCopy); ok {
+		return &IRStatement{
+			BaseASTNode: base,
+			Copy:        expr,
+		}
+	} else if expr, ok := node.(*IRConst); ok {
+		return &IRStatement{
+			BaseASTNode: base,
+			Const:       expr,
+		}
+	} else if expr, ok := node.(*IRCall); ok {
+		return &IRStatement{
+			BaseASTNode: base,
+			Call:        expr,
 		}
 	}
 	panic("Invalid irstatement type")
@@ -204,5 +332,46 @@ func (ast *IRStatement) BuildFlowGraph(builder cfg.CFGBuilder) {
 		builder.BuildNode(ast.Phi)
 	} else if ast.IsExpression() {
 		builder.BuildNode(ast.Expression)
+	} else if ast.IsCopy() {
+		builder.BuildNode(ast.Copy)
+	} else if ast.IsConst() {
+		builder.BuildNode(ast.Const)
+	} else if ast.IsCall() {
+		builder.BuildNode(ast.Call)
 	}
+}
+
+func (ast *IRStatement) ResolveTypeOfVar(name string) IRType {
+	if ast.IsEmpty() {
+		return IR_UNKNOWN
+	} else if ast.IsExit() {
+		return IR_UNKNOWN
+	} else if ast.IsIf() {
+		return IR_UNKNOWN
+	} else if ast.IsPhi() {
+		if ast.Phi.TargetName == name {
+			return ast.Phi.Type
+		}
+	} else if ast.IsExpression() {
+		if ast.Expression.TargetName == name {
+			return ast.Expression.Type
+		}
+	} else if ast.IsCopy() {
+		if ast.Copy.TargetName == name {
+			return ast.Copy.Type
+		}
+	} else if ast.IsConst() {
+		if ast.Const.TargetName == name {
+			return ast.Const.Type
+		}
+	} else if ast.IsCall() {
+		if ast.Call.TargetName == name {
+			return ast.Call.Type
+		}
+	}
+	return IR_UNKNOWN
+}
+
+func (ast *IRStatement) LookupBlock(blockID int) *IRBlock {
+	return ast.ParentNode.(*IRBlock).LookupBlock(blockID)
 }

@@ -25,6 +25,7 @@ type FlowAnalysis interface {
 	ConstFold(c *context.ParsingContext) ConstFoldingError
 	Output() generic_ast.NormalNode
 	Rebuild()
+	RebuildCalculatedProperties()
 }
 
 type FlowAnalysisImpl struct {
@@ -36,6 +37,13 @@ type FlowAnalysisImpl struct {
 
 func (flow *FlowAnalysisImpl) Output() generic_ast.NormalNode {
 	return flow.input[0]
+}
+
+func (flow *FlowAnalysisImpl) RebuildCalculatedProperties() {
+	flow.reaching = nil
+	flow.liveness = nil
+	flow.Liveness()
+	flow.Reaching()
 }
 
 func (flow *FlowAnalysisImpl) Rebuild() {

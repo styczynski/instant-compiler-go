@@ -37,6 +37,7 @@ func (flow *FlowAnalysisImpl) Print(c *context.ParsingContext) string {
 		items = append(items, cfg.ReferencedVars(srcNode.(CFGCodeNode)).Print())
 		items = append(items, liveness.BlockIn(srcBlock.ID).String())
 		items = append(items, reaching.ReachedBlocks(src.GetID()).Print(cfg))
+		items = append(items, cfg.GetBlockCode(srcBlock.ID).Print(c))
 		return items
 	}
 

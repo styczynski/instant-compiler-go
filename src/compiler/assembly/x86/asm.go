@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
-	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 	"golang.org/x/arch/x86/x86asm"
 )
 
@@ -32,7 +31,6 @@ type Entry interface {
 
 type Function struct {
 	Name   string
-	Type   hindley_milner.Type
 	Source generic_ast.BaseASTNode
 	Body   []*Instruction
 }
@@ -40,7 +38,7 @@ type Function struct {
 func (f *Function) Generate(c *GenerationContext) []string {
 	retInstrs := []string{}
 	headers := []string{
-		fmt.Sprintf("; Function %s: %s", f.Name, f.Type.String()),
+		fmt.Sprintf("; Function %s", f.Name),
 		fmt.Sprintf("; Source: %s", f.Source.Pos.String()),
 		fmt.Sprintf("_%s:", f.Name),
 	}

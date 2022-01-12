@@ -105,11 +105,13 @@ func (ast *IRBlock) Expressions() []generic_ast.Expression {
 	return ast.GetContents().Exp
 }
 
-func (ast *IRBlock) Body() generic_ast.Expression {
-	panic(fmt.Errorf("Batch Body() method cannot be called."))
+func (ast *IRBlock) ExpressionType() hindley_milner.ExpressionType {
+	return hindley_milner.E_BLOCK
 }
 
-//
+func (ast *IRBlock) Body() generic_ast.Expression {
+	return ast.GetContents()
+}
 
 func (ast *IRBlock) BuildFlowGraph(builder cfg.CFGBuilder) {
 	builder.BuildBlock(ast)
@@ -179,3 +181,13 @@ func (n *VirtualBlock) End() lexer.Position {
 }
 
 */
+
+func (ast *IRBlock) LookupBlock(blockID int) *IRBlock {
+	fn := ast.ParentNode.(*IRFunction)
+	for _, bl := range fn.FunctionBody {
+		if bl.BlockID == blockID {
+			return bl
+		}
+	}
+	return nil
+}

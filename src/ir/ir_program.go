@@ -109,6 +109,7 @@ func (ast *IRProgram) BuildFlowGraph(builder cfg.CFGBuilder) {
 	builder.BuildBlock(ast)
 }
 
+
 /*
 
 type VirtualBlock struct {

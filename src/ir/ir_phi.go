@@ -15,12 +15,13 @@ import (
 type IRPhi struct {
 	generic_ast.BaseASTNode
 	TargetName string
+	Type       IRType
 	Values     []string
 	Blocks     []int
 	ParentNode generic_ast.TraversableNode
 }
 
-func CreateIRPhi(target string, phiBlocks map[int]string) *IRPhi {
+func CreateIRPhi(target string, varType IRType, phiBlocks map[int]string) *IRPhi {
 
 	phiBlocksIDs := []int{}
 	phiValues := []string{}
@@ -32,6 +33,7 @@ func CreateIRPhi(target string, phiBlocks map[int]string) *IRPhi {
 	return &IRPhi{
 		TargetName: target,
 		Values:     phiValues,
+		Type:       varType,
 		Blocks:     phiBlocksIDs,
 	}
 }
@@ -66,7 +68,7 @@ func (ast *IRPhi) Print(c *context.ParsingContext) string {
 		description = append(description, fmt.Sprintf("%d: value %s", ast.Blocks[i], varName))
 	}
 
-	return utils.PrintASTNode(c, ast, "%s = Phi [%s]", ast.TargetName, strings.Join(description, ", "))
+	return utils.PrintASTNode(c, ast, "%s %s = Phi [%s]", ast.Type, ast.TargetName, strings.Join(description, ", "))
 }
 
 func (ast *IRPhi) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {

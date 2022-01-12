@@ -1,6 +1,8 @@
 package ir
 
 import (
+	"fmt"
+
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
@@ -55,4 +57,20 @@ func (ast *IRIf) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_a
 
 func (ast *IRIf) RenameVariables(substUsed, substDecl cfg.VariableSubstitution) {
 	ast.Condition = substUsed.Replace(ast.Condition)
+}
+
+func (ast *IRIf) BuildFlowGraph(builder cfg.CFGBuilder) {
+	fmt.Printf("IRIF BUILD FLOW\n")
+
+	builder.AddBlockSuccesor(ast)
+
+	builder.UpdatePrev([]generic_ast.NormalNode{ast})
+	builder.BuildNode(ast.ParentNode.(*IRStatement).LookupBlock(ast.BlockThen))
+
+	ctrlExits := builder.GetPrev() // aggregate of builder.prev from each condition
+
+	builder.UpdatePrev([]generic_ast.NormalNode{ast})
+	builder.BuildNode(ast.ParentNode.(*IRStatement).LookupBlock(ast.BlockElse))
+	ctrlExits = append(ctrlExits, builder.GetPrev()...)
+	builder.UpdatePrev(ctrlExits)
 }

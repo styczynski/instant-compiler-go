@@ -62,15 +62,11 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 		if e.IsVariable() {
 			return []*IRStatement{}, translateType(e.ResolvedType), *e.Variable
 		} else if e.IsInt() {
-			ret = append(ret, WrapIRExpression(&IRExpression{
+			ret = append(ret, WrapIRConst(&IRConst{
 				BaseASTNode: e.BaseASTNode,
 				TargetName:  resultVar,
-				Operation:   "Load",
 				Type:        translateType(e.ResolvedType),
-				Arguments: []string{
-					e.Print(c),
-				},
-				ArgumentsTypes: []IRType{translateType(e.ResolvedType)},
+				Value:       e.Print(c),
 			}))
 			return ret, translateType(e.ResolvedType), resultVar
 		}
@@ -86,18 +82,17 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			argListT := []IRType{}
 			sTarget, vType, vTarget := generateIRExpr(c, ir, e.Index)
 			ret = append(ret, sTarget...)
-			argList = append(argList, vTarget)
-			argListT = append(argListT, vType)
 			for _, arg := range e.Arguments {
 				s, t, v := generateIRExpr(c, ir, arg)
 				ret = append(ret, s...)
 				argList = append(argList, v)
 				argListT = append(argListT, t)
 			}
-			ret = append(ret, WrapIRExpression(&IRExpression{
+			ret = append(ret, WrapIRCall(&IRCall{
 				BaseASTNode:    e.BaseASTNode,
 				TargetName:     resultVar,
-				Operation:      "Call",
+				CallTarget:     vTarget,
+				CallTargetType: vType,
 				Type:           translateType(e.ResolvedType),
 				Arguments:      argList,
 				ArgumentsTypes: argListT,
@@ -111,7 +106,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			ret = append(ret, WrapIRExpression(&IRExpression{
 				BaseASTNode:    e.BaseASTNode,
 				TargetName:     resultVar,
-				Operation:      e.Op,
+				Operation:      CreateIROperator(e.Op, 1, IR_OP_KIND_ANY),
 				Type:           translateType(e.ResolvedType),
 				Arguments:      []string{v},
 				ArgumentsTypes: []IRType{t},
@@ -129,7 +124,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			ret = append(ret, WrapIRExpression(&IRExpression{
 				BaseASTNode:    e.BaseASTNode,
 				TargetName:     resultVar,
-				Operation:      e.Op,
+				Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_NUMERIC),
 				Type:           translateType(e.ResolvedType),
 				Arguments:      []string{lv, rv},
 				ArgumentsTypes: []IRType{lt, rt},
@@ -147,7 +142,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			ret = append(ret, WrapIRExpression(&IRExpression{
 				BaseASTNode:    e.BaseASTNode,
 				TargetName:     resultVar,
-				Operation:      e.Op,
+				Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_NUMERIC),
 				Type:           translateType(e.ResolvedType),
 				Arguments:      []string{lv, rv},
 				ArgumentsTypes: []IRType{lt, rt},
@@ -165,7 +160,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			ret = append(ret, WrapIRExpression(&IRExpression{
 				BaseASTNode:    e.BaseASTNode,
 				TargetName:     resultVar,
-				Operation:      e.Op,
+				Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_LOGIC),
 				Type:           translateType(e.ResolvedType),
 				Arguments:      []string{lv, rv},
 				ArgumentsTypes: []IRType{lt, rt},
@@ -183,7 +178,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			ret = append(ret, WrapIRExpression(&IRExpression{
 				BaseASTNode:    e.BaseASTNode,
 				TargetName:     resultVar,
-				Operation:      e.Op,
+				Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_LOGIC),
 				Type:           translateType(e.ResolvedType),
 				Arguments:      []string{lv, rv},
 				ArgumentsTypes: []IRType{lt, rt},
@@ -201,7 +196,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			ret = append(ret, WrapIRExpression(&IRExpression{
 				BaseASTNode:    e.BaseASTNode,
 				TargetName:     resultVar,
-				Operation:      e.Op,
+				Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_LOGIC),
 				Type:           translateType(e.ResolvedType),
 				Arguments:      []string{lv, rv},
 				ArgumentsTypes: []IRType{lt, rt},
@@ -244,26 +239,22 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 			if assStmt, ok := (expr.(*ast.Assignment)); ok {
 				exprIR, varType, varName := generateIRExpr(c, ir, assStmt.Value)
 				ret = append(ret, exprIR...)
-				ret = append(ret, WrapIRExpression(&IRExpression{
-					BaseASTNode:    assStmt.BaseASTNode,
-					TargetName:     assStmt.TargetName,
-					Operation:      "Copy",
-					Type:           varType,
-					ArgumentsTypes: []IRType{varType},
-					Arguments:      []string{varName},
+				ret = append(ret, WrapIRCopy(&IRCopy{
+					BaseASTNode: assStmt.BaseASTNode,
+					TargetName:  assStmt.TargetName,
+					Type:        varType,
+					Var:         varName,
 				}))
 			} else if declStmt, ok := (expr.(*ast.Declaration)); ok {
 				for _, item := range declStmt.Items {
 					if item.HasInitializer() {
 						exprIR, varType, varName := generateIRExpr(c, ir, item.Initializer)
 						ret = append(ret, exprIR...)
-						ret = append(ret, WrapIRExpression(&IRExpression{
-							BaseASTNode:    item.BaseASTNode,
-							TargetName:     item.Name,
-							Operation:      "Copy",
-							Type:           varType,
-							Arguments:      []string{varName},
-							ArgumentsTypes: []IRType{varType},
+						ret = append(ret, WrapIRCopy(&IRCopy{
+							BaseASTNode: item.BaseASTNode,
+							TargetName:  item.Name,
+							Type:        varType,
+							Var:         varName,
 						}))
 					}
 				}
@@ -293,103 +284,6 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 
 		//ret = append(ret, WrapIREmpty())
 		return ret
-	})
-}
-
-func convertToSSA(graph *cfg.CFG, ir *IRGeneratorState) {
-	visitedIDs := map[int]struct{}{}
-	nameMapping := cfg.VariableSubstitutionMap{}
-	allBlockOutputMappings := map[int]cfg.VariableSubstitutionMap{}
-	allBlockInputMappings := map[int]cfg.VariableSubstitutionMap{}
-	graph.VisitGraph(graph.Entry, func(g *cfg.CFG, block *cfg.Block, next func(blockID int)) {
-		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
-			return
-		}
-		visitedIDs[block.ID] = struct{}{}
-		code := graph.GetBlockCode(block.ID)
-		if codeBlock, ok := code.(*IRBlock); ok {
-			blockOutputsMapping := cfg.VariableSubstitutionMap{}
-			allBlockInputMappings[block.ID] = nameMapping.Copy()
-			for _, stmt := range codeBlock.Statements {
-				vars := graph.ReferencedVars(stmt)
-				newNameMapping := cfg.VariableSubstitutionMap{}
-				for varName, _ := range vars.Assigned() {
-					if !ir.isTempVar(varName) {
-						newNameMapping[varName] = ir.NextVar(block.ID, varName)
-					}
-				}
-
-				// for varName, _ := range vars.Used() {
-				// 	if !nameMapping.Has(varName) && !ir.isTempVar(varName) {
-				// 		nameMapping[varName] = ir.NextVar(varName)
-				// 	}
-				// }
-				cfg.ReplaceVariables(stmt, nameMapping, newNameMapping, map[generic_ast.TraversableNode]struct{}{})
-				nameMapping.Join(newNameMapping)
-				blockOutputsMapping.Join(nameMapping)
-			}
-			allBlockOutputMappings[block.ID] = blockOutputsMapping
-		}
-
-		for _, stmt := range block.GetSuccs() {
-			if _, wasVisited := visitedIDs[stmt]; wasVisited {
-				continue
-			}
-			next(stmt)
-		}
-	})
-
-	visitedIDs = map[int]struct{}{}
-	graph.VisitGraph(graph.Entry, func(g *cfg.CFG, block *cfg.Block, next func(blockID int)) {
-		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
-			return
-		}
-		visitedIDs[block.ID] = struct{}{}
-		code := graph.GetBlockCode(block.ID)
-		if codeBlock, ok := code.(*IRBlock); ok {
-			blockPreds := block.GetPreds()
-			if len(blockPreds) > 1 {
-				//blockOutputMappings := allBlockOutputMappings[block.ID]
-				blockInputMappings := allBlockInputMappings[block.ID]
-				subst := cfg.VariableSubstitutionMap{}
-
-				headers := []*IRStatement{}
-
-				for origVarName, varName := range blockInputMappings {
-					phiTarget := fmt.Sprintf("%s_phi_%d", origVarName, block.ID)
-					phiBlocks := map[int]string{}
-					phiValues := map[string]struct{}{}
-
-					for _, pred := range blockPreds {
-						predOutputs := allBlockOutputMappings[pred]
-						if predVarName, ok := predOutputs[origVarName]; ok {
-							phiBlocks[pred] = predVarName
-							phiValues[predVarName] = struct{}{}
-						}
-					}
-
-					if len(phiBlocks) > 0 && len(phiValues) > 1 {
-						headers = append(headers, WrapIRPhi(CreateIRPhi(
-							phiTarget,
-							phiBlocks,
-						)))
-						subst[varName] = phiTarget
-					}
-				}
-
-				if len(headers) > 0 {
-					headers = append(headers, codeBlock.Statements...)
-					codeBlock.Statements = headers
-				}
-				cfg.ReplaceVariables(code, subst, cfg.VariableSubstitutionMap{}, map[generic_ast.TraversableNode]struct{}{})
-			}
-		}
-		for _, stmt := range block.GetSuccs() {
-			if _, wasVisited := visitedIDs[stmt]; wasVisited {
-				continue
-			}
-			next(stmt)
-		}
 	})
 }
 
@@ -429,103 +323,6 @@ func MapEntireGraph(graph *cfg.CFG, mapper ControlFlowGraphMapper) {
 	}
 }
 
-func collapseToSimpleBlocks(graph *cfg.CFG) bool {
-	visitedIDs := map[int]struct{}{}
-	idsToRemove := map[int]struct{}{}
-	mergedAnything := false
-	visitor := func(block *cfg.Block) {
-		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
-			return
-		}
-		blockPreds := block.GetPreds()
-		blockSuccs := block.GetSuccs()
-		if len(blockPreds) == 1 && len(blockPreds) == len(blockSuccs) && block.ID != graph.Entry && block.ID != graph.Exit {
-			// Good candidate to merge
-			sibling := graph.GetBlock(blockPreds[0])
-			siblingPreds := sibling.GetPreds()
-			siblingSuccs := sibling.GetSuccs()
-			if len(siblingPreds) == 1 && len(siblingPreds) == len(siblingSuccs) && sibling.ID != graph.Entry && sibling.ID != graph.Exit {
-				if predBlock, ok := graph.GetBlockCode(sibling.ID).(*IRBlock); ok {
-					if curBlock, ok := graph.GetBlockCode(block.ID).(*IRBlock); ok {
-						fmt.Printf("?> Merge %d into %d\n", block.ID, sibling.ID)
-						mergedAnything = true
-						predBlock.Join(curBlock)
-						// rewire
-						idPos := -1
-						for index, id := range siblingSuccs {
-							if id == block.ID {
-								idPos = index
-								break
-							}
-						}
-						siblingSuccs[idPos] = blockSuccs[0]
-						graph.ShadowBlock(block.ID, sibling)
-						idsToRemove[block.ID] = struct{}{}
-						return
-					} else {
-						fmt.Printf("!> (block type is %s) CANNOT Merge %d into %d\n", reflect.TypeOf(graph.GetBlockCode(block.ID)), block.ID, sibling.ID)
-					}
-				} else {
-					fmt.Printf("!> (sibling type is %s) CANNOT Merge %d into %d\n", reflect.TypeOf(graph.GetBlockCode(sibling.ID)), block.ID, sibling.ID)
-				}
-			} else {
-				fmt.Printf("!> (sibling pred/succ %d/%d) CANNOT Merge %d into %d\n", len(siblingPreds), len(siblingSuccs), block.ID, sibling.ID)
-			}
-		} else {
-			fmt.Printf("!> (block pred/succ %d/%d) CANNOT Merge %d into ANY\n", len(blockPreds), len(blockSuccs), block.ID)
-		}
-	}
-
-	graph.VisitGraph(graph.Entry, func(cfg *cfg.CFG, block *cfg.Block, next func(blockID int)) {
-		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
-			return
-		}
-		visitedIDs[block.ID] = struct{}{}
-		succs := block.GetSuccs()
-		visitor(block)
-		for _, stmt := range succs {
-			if _, wasVisited := visitedIDs[graph.ResolveID(stmt)]; wasVisited {
-				continue
-			}
-			visitor(graph.GetBlock(stmt))
-			next(stmt)
-		}
-	})
-	graph.RemoveBlocks(idsToRemove)
-	return mergedAnything
-}
-
-func outputIR(root generic_ast.Expression, graph *cfg.CFG, c *context.ParsingContext) *IRFunction {
-	rootNode := root.(*ast.TopDef).Function
-	ret := &IRFunction{
-		FunctionBody: []*IRBlock{},
-		BaseASTNode:  rootNode.BaseASTNode,
-		ReturnType:   translateType(rootNode.ResolvedType),
-		Args:         []string{},
-		ArgsTypes:    []IRType{},
-		Name:         rootNode.Name,
-	}
-	visitedIDs := map[int]struct{}{}
-	graph.VisitGraph(graph.Entry, func(g *cfg.CFG, block *cfg.Block, next func(blockID int)) {
-		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
-			return
-		}
-		visitedIDs[block.ID] = struct{}{}
-		b := graph.GetBlockCode(block.ID).(*IRBlock)
-		if block.ID != graph.Entry && block.ID != graph.Exit {
-			ret.FunctionBody = append(ret.FunctionBody, b)
-		}
-		for _, stmt := range block.GetSuccs() {
-			if _, wasVisited := visitedIDs[graph.ResolveID(stmt)]; wasVisited {
-				continue
-			}
-			next(stmt)
-		}
-	})
-
-	return ret
-}
-
 func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.ParsingContext) *IRFunction {
 	ir := &IRGeneratorState{
 		tempCounter:      0,
@@ -540,6 +337,42 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 		}
 	}
 	convertToSSA(graph, ir)
+	phiElim(graph, c)
+	regSplit(graph, c)
 
-	return outputIR(root, graph, c)
+	outputCodeIR := outputIR(root, graph, c)
+
+	irAnalysis := cfg.CreateFlowAnalysis(outputCodeIR)
+
+	irCFG := irAnalysis.Graph()
+	irAnalysis.Optimize(c)
+
+	irLiveness := irAnalysis.Liveness()
+	reaching := irAnalysis.Reaching()
+	for _, blockID := range irCFG.ListBlockIDs() {
+		fmt.Printf("CFG TYPE %s\n", reflect.TypeOf(irCFG.GetBlockCode(blockID)))
+		parent := irCFG.GetBlockCode(blockID).Parent()
+		if parent != nil {
+			stmt := parent.(*IRStatement)
+			stmt.SetFlowAnalysisProps(
+				irLiveness.BlockIn(blockID),
+				irLiveness.BlockOut(blockID),
+				reaching.ReachedBlocks(blockID),
+			)
+		}
+	}
+
+	subst := cfg.VariableSubstitutionMap{}
+	cont := true
+	for cont {
+		subst, cont = copyCollaps(graph, c, subst)
+	}
+
+	fmt.Printf("Fold done (IR):\n")
+	fmt.Printf("\n\nENTIRE CODE IR:\n\n%s", outputCodeIR.Print(c))
+	fmt.Printf("\n\nENTIRE GRAPH IR:\n\n")
+	fmt.Print(irAnalysis.Print(c))
+	fmt.Printf("Yeah.\n")
+
+	return outputCodeIR
 }

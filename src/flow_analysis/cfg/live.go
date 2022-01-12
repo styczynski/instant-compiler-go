@@ -25,6 +25,7 @@ func LiveVars(cfg *CFG) LiveVariablesInfo {
 	return mapResultsSetsIntoVariables(cfg, vars, varsNames, ins, outs)
 }
 
+
 func generateLivenessVariablesBits(cfg *CFG, def, use map[int]*bitset.BitSet) (input, output map[int]*bitset.BitSet) {
 	blocks := cfg.Blocks()
 	input = make(map[int]*bitset.BitSet, len(blocks))
