@@ -1,8 +1,6 @@
 package cfg
 
 import (
-	"fmt"
-
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
@@ -28,7 +26,7 @@ func (flow *FlowAnalysisImpl) Optimize(c *context.ParsingContext) {
 						varsToRemove[asgtVarName] = struct{}{}
 					}
 				}
-				fmt.Printf("REMOVE %v from block %d (live vars %v)\n", varsToRemove, block.ID, liveVars)
+				//fmt.Printf("REMOVE %v from block %d (live vars %v)\n", varsToRemove, block.ID, liveVars)
 				cfg.ReplaceBlockCode(block.ID, rmb.RemoveVariableAssignment(varsToRemove))
 			}
 
