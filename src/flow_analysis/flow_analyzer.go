@@ -189,8 +189,8 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				flow.Rebuild()
 				ast = flow.Output()
 
-				//flow.Optimize(c)
-				//nodeForAnalysis.AfterFlowAnalysis(flow)
+				flow.Optimize(c)
+				nodeForAnalysis.AfterFlowAnalysis(flow)
 
 				irCode := ir.CreateIR(e, flow, c)
 				irProgram.Statements = append(irProgram.Statements, irCode)
