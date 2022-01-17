@@ -1,8 +1,6 @@
 package ir
 
 import (
-	"fmt"
-
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -48,7 +46,7 @@ func copyCollaps(graph *cfg.CFG, c *context.ParsingContext, subst cfg.VariableSu
 					if isOk {
 						if !newSubstFound {
 							// We can eliminate variable
-							fmt.Printf("Subst %s => %s because of %s and next %s\n", cpy.TargetName, cpy.Var, stmt.Print(c), next.Print(c))
+							//fmt.Printf("Subst %s => %s because of %s and next %s\n", cpy.TargetName, cpy.Var, stmt.Print(c), next.Print(c))
 							subst[cpy.TargetName] = cpy.Var
 							newSubstFound = true
 							substFrom = cpy.TargetName
@@ -94,6 +92,6 @@ func copyCollaps(graph *cfg.CFG, c *context.ParsingContext, subst cfg.VariableSu
 		}
 
 	})
-	fmt.Printf("EXIT subs\n")
+	//fmt.Printf("EXIT subs\n")
 	return subst, true
 }

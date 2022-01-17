@@ -135,7 +135,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 
 	defer func() {
 		if intro, ok := expr.(IntrospectionExpression); ok {
-			fmt.Printf("Add intro for %s\n", expr)
+			//fmt.Printf("Add intro for %s\n", expr)
 			bodyType := infer.t
 			intro.OnTypeReturned(bodyType)
 		}

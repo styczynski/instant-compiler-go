@@ -92,7 +92,6 @@ func (sl *SymbolLookup) GetLookupFunction() SymLookup {
 
 func (f *Instruction) GenerateSymbolLookup(c *GenerationContext, sl *SymbolLookup) {
 	if len(f.Label) > 0 {
-		fmt.Printf("create_label: PC[%d]=%s\n", c.pc, f.Label)
 		sl.table[f.Label] = c.pc
 		sl.reverse[c.pc] = f.Label
 	} else {

@@ -1,9 +1,6 @@
 package ir
 
 import (
-	"fmt"
-	"reflect"
-
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 )
 
@@ -25,7 +22,7 @@ func collapseToSimpleBlocks(graph *cfg.CFG) bool {
 			if len(siblingPreds) == 1 && len(siblingPreds) == len(siblingSuccs) && sibling.ID != graph.Entry && sibling.ID != graph.Exit {
 				if predBlock, ok := graph.GetBlockCode(sibling.ID).(*IRBlock); ok {
 					if curBlock, ok := graph.GetBlockCode(block.ID).(*IRBlock); ok {
-						fmt.Printf("?> Merge %d into %d\n", block.ID, sibling.ID)
+						//fmt.Printf("?> Merge %d into %d\n", block.ID, sibling.ID)
 						mergedAnything = true
 						predBlock.Join(curBlock)
 						// rewire
@@ -41,16 +38,16 @@ func collapseToSimpleBlocks(graph *cfg.CFG) bool {
 						idsToRemove[block.ID] = struct{}{}
 						return
 					} else {
-						fmt.Printf("!> (block type is %s) CANNOT Merge %d into %d\n", reflect.TypeOf(graph.GetBlockCode(block.ID)), block.ID, sibling.ID)
+						//fmt.Printf("!> (block type is %s) CANNOT Merge %d into %d\n", reflect.TypeOf(graph.GetBlockCode(block.ID)), block.ID, sibling.ID)
 					}
 				} else {
-					fmt.Printf("!> (sibling type is %s) CANNOT Merge %d into %d\n", reflect.TypeOf(graph.GetBlockCode(sibling.ID)), block.ID, sibling.ID)
+					//fmt.Printf("!> (sibling type is %s) CANNOT Merge %d into %d\n", reflect.TypeOf(graph.GetBlockCode(sibling.ID)), block.ID, sibling.ID)
 				}
 			} else {
-				fmt.Printf("!> (sibling pred/succ %d/%d) CANNOT Merge %d into %d\n", len(siblingPreds), len(siblingSuccs), block.ID, sibling.ID)
+				//fmt.Printf("!> (sibling pred/succ %d/%d) CANNOT Merge %d into %d\n", len(siblingPreds), len(siblingSuccs), block.ID, sibling.ID)
 			}
 		} else {
-			fmt.Printf("!> (block pred/succ %d/%d) CANNOT Merge %d into ANY\n", len(blockPreds), len(blockSuccs), block.ID)
+			//fmt.Printf("!> (block pred/succ %d/%d) CANNOT Merge %d into ANY\n", len(blockPreds), len(blockSuccs), block.ID)
 		}
 	}
 

@@ -1,8 +1,6 @@
 package flow_analysis
 
 import (
-	"fmt"
-
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -176,7 +174,7 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				ast := nodeForAnalysis.(generic_ast.NormalNode)
 				flow := cfg.CreateFlowAnalysis(ast)
 
-				fmt.Printf("START FLOW ANALYSIS\n")
+				//fmt.Printf("START FLOW ANALYSIS\n")
 
 				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
 				//fmt.Print(flow.Print(ctx))

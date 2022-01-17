@@ -49,6 +49,8 @@ func translateType(t hindley_milner.Type) IRType {
 			resolvedType = IR_INT32
 		} else if primitive.Name() == "boolean" {
 			resolvedType = IR_BIT
+		} else if primitive.Name() == "string" {
+			resolvedType = IR_STRING
 		}
 	}
 	return resolvedType
@@ -80,6 +82,14 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 				Type:        translateType(e.ResolvedType),
 				Value:       v,
 			}).SetComment("Const boolean %s", e.Print(c)))
+			return ret, translateType(e.ResolvedType), resultVar
+		} else if e.IsString() {
+			ret = append(ret, WrapIRConst(&IRConst{
+				BaseASTNode: e.BaseASTNode,
+				TargetName:  resultVar,
+				Type:        translateType(e.ResolvedType),
+				StringValue: e.String,
+			}).SetComment("Const string %s", *e.String))
 			return ret, translateType(e.ResolvedType), resultVar
 		}
 	} else if e, ok := node.(*ast.Index); ok {
@@ -249,7 +259,7 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 	//func(cfg *CFG, block *Block) []generic_ast.NormalNode
 	MapEntireGraph(graph, func(g *cfg.CFG, block *cfg.Block, node cfg.CFGCodeNode) []*IRStatement {
 		if node != nil {
-			fmt.Printf("=> NODE[%d]: %s{%s}\n", block.ID, reflect.TypeOf(node), node.Print(c))
+			//fmt.Printf("=> NODE[%d]: %s{%s}\n", block.ID, reflect.TypeOf(node), node.Print(c))
 		}
 		ret := []*IRStatement{}
 
@@ -341,7 +351,7 @@ func MapEntireGraph(graph *cfg.CFG, mapper ControlFlowGraphMapper) {
 			return
 		}
 
-		fmt.Printf("KURWA MAC PIERDOLONA W DUPE: %d\n", block.ID)
+		//fmt.Printf("KURWA MAC PIERDOLONA W DUPE: %d\n", block.ID)
 
 		visitedIDs[block.ID] = struct{}{}
 
@@ -392,7 +402,7 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 	irLiveness := irAnalysis.Liveness()
 	reaching := irAnalysis.Reaching()
 	for _, blockID := range irCFG.ListBlockIDs() {
-		fmt.Printf("CFG TYPE %s\n", reflect.TypeOf(irCFG.GetBlockCode(blockID)))
+		//fmt.Printf("CFG TYPE %s\n", reflect.TypeOf(irCFG.GetBlockCode(blockID)))
 		parent := irCFG.GetBlockCode(blockID).Parent()
 		if parent != nil {
 			stmt := parent.(*IRStatement)
@@ -410,11 +420,11 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 		subst, cont = copyCollaps(graph, c, subst)
 	}
 
-	fmt.Printf("Fold done (IR):\n")
-	fmt.Printf("\n\nENTIRE CODE IR:\n\n%s", outputCodeIR.Print(c))
-	fmt.Printf("\n\nENTIRE GRAPH IR:\n\n")
-	fmt.Print(irAnalysis.Print(c))
-	fmt.Printf("Yeah.\n")
+	// fmt.Printf("Fold done (IR):\n")
+	// fmt.Printf("\n\nENTIRE CODE IR:\n\n%s", outputCodeIR.Print(c))
+	// fmt.Printf("\n\nENTIRE GRAPH IR:\n\n")
+	// fmt.Print(irAnalysis.Print(c))
+	// fmt.Printf("Yeah.\n")
 
 	return outputCodeIR
 }

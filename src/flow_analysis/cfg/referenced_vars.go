@@ -43,12 +43,12 @@ func (vars ReferencedVars) Print() string {
 }
 
 func (c *CFG) ReferencedVars(node generic_ast.TraversableNode) ReferencedVars {
-	r := ReferencedVars{
+	return ReferencedVars{
 		asgt: GetAllAssignedVariables(node, false, map[generic_ast.TraversableNode]struct{}{}),
 		updt: GetAllAssignedVariables(node, true, map[generic_ast.TraversableNode]struct{}{}),
 		decl: GetAllDeclaredVariables(node, map[generic_ast.TraversableNode]struct{}{}),
 		use:  GetAllUsagesVariables(node, map[generic_ast.TraversableNode]struct{}{}),
 	}
-	fmt.Printf("REF %s\n", r.Print())
-	return r
+	//fmt.Printf("REF %s\n", r.Print())
+	//return r
 }

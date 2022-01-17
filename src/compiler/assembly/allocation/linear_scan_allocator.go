@@ -109,7 +109,6 @@ func (state *LinearScanAllocatorState) AllocateBlock(start int, size int) {
 }
 
 func (state *LinearScanAllocatorState) GetFunctionMeta(fn *ir.IRFunction) ir.FunctionMeta {
-	fmt.Printf("FUNCTION SIZE: %d\n", state.LastBlock)
 	return AssemblyFunctionMeta{
 		VarLen: state.LastBlock,
 	}
@@ -144,7 +143,6 @@ func (state *LinearScanAllocatorState) allocateAvailableRegistryUsing(name strin
 }
 
 func (state *LinearScanAllocatorState) allocateAvailableRegistry(name string, size int) (*LocationRegister, bool) {
-	fmt.Printf("Try to allocate register? name: %s, size: %d of [%v]\n", name, size, state.AvailableRegistries)
 	for reg, regState := range state.AvailableRegistries {
 		if !regState.Full && regState.Size >= size {
 			regState.Full = true

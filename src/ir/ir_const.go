@@ -12,10 +12,11 @@ import (
 
 type IRConst struct {
 	generic_ast.BaseASTNode
-	Type       IRType `@Ident`
-	TargetName string `@Ident "="`
-	Value      int64
-	ParentNode generic_ast.TraversableNode
+	Type        IRType `@Ident`
+	TargetName  string `@Ident "="`
+	Value       int64
+	StringValue *string
+	ParentNode  generic_ast.TraversableNode
 }
 
 func (ast *IRConst) Parent() generic_ast.TraversableNode {
@@ -24,6 +25,23 @@ func (ast *IRConst) Parent() generic_ast.TraversableNode {
 
 func (ast *IRConst) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
+}
+
+func (ast *IRConst) GetValue() interface{} {
+	if ast.IsString() {
+		return *ast.StringValue
+	} else if ast.IsNumber() {
+		return ast.Value
+	}
+	return nil
+}
+
+func (ast *IRConst) IsString() bool {
+	return ast.StringValue != nil
+}
+
+func (ast *IRConst) IsNumber() bool {
+	return ast.StringValue == nil
 }
 
 func (ast *IRConst) Begin() lexer.Position {
@@ -45,7 +63,7 @@ func (ast *IRConst) GetChildren() []generic_ast.TraversableNode {
 }
 
 func (ast *IRConst) Print(c *context.ParsingContext) string {
-	return utils.PrintASTNode(c, ast, "%s %s = Const(%v)", ast.Type, ast.TargetName, ast.Value)
+	return utils.PrintASTNode(c, ast, "%s %s = Const(%v)", ast.Type, ast.TargetName, ast.GetValue())
 }
 
 //
@@ -55,6 +73,7 @@ func (ast *IRConst) Map(parent generic_ast.Expression, mapper generic_ast.Expres
 		BaseASTNode: ast.BaseASTNode,
 		TargetName:  ast.TargetName,
 		Value:       ast.Value,
+		StringValue: ast.StringValue,
 		ParentNode:  parent.(generic_ast.TraversableNode),
 	}, context, true)
 }

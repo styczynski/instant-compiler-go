@@ -11,6 +11,12 @@ type RelLabel struct {
 	label string
 }
 
+func CreateRelLabel(name string) *RelLabel {
+	return &RelLabel{
+		label: name,
+	}
+}
+
 func (*RelLabel) isArg() {}
 
 func (l *RelLabel) String() string {
@@ -158,17 +164,89 @@ func DoSwap(val1 Arg, val2 Arg, size int) *Instruction {
 	}
 }
 
-func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int) *Instruction {
+func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int, argType ir.IRType) []*Instruction {
 	inst := Inst{}
 	inst.MemBytes = size
+
 	if operation == ir.IR_OP_SELF_ADD {
 		inst.Op = ADD
+
+		if argType == ir.IR_STRING {
+			// String addition
+			instFirst := Inst{}
+			instFirst.MemBytes = size
+			instFirst.Op = MOV
+			instFirst.Args = Args{
+				EDI,
+				self,
+			}
+
+			instSecond := Inst{}
+			instSecond.MemBytes = size
+			instSecond.Op = MOV
+			instSecond.Args = Args{
+				ESI,
+				val,
+			}
+
+			instCall := Inst{}
+			instCall.Op = CALL
+			instCall.Args = Args{
+				&RelLabel{
+					label: "AddStrings",
+				},
+			}
+
+			instResult := Inst{}
+			instResult.Op = MOV
+			instSecond.MemBytes = size
+			instResult.Args = Args{
+				EAX,
+				self,
+			}
+
+			return []*Instruction{
+				{
+					Inst: instFirst,
+				},
+				{
+					Inst: instSecond,
+				},
+				{
+					Inst: instCall,
+				},
+				{
+					Inst: instResult,
+				},
+			}
+		}
+
 	} else if operation == ir.IR_OP_SELF_DIV {
-		inst.Op = DIV
+		inst.Op = IDIV
+		inst.Args = Args{}
+
+		instClear := Inst{}
+		instClear.Op = XOR
+		instClear.Args = Args{
+			RDX, RDX,
+		}
+
+		return []*Instruction{
+			// DoPush(RDX, 8),
+			// DoPush(RAX, 8),
+			// {
+			// 	Inst: instClear,
+			// },
+			// {
+			// 	Inst: inst,
+			// },
+			// DoPop(RDX, 8),
+			// DoPop(RAX, 8),
+		}
 	} else if operation == ir.IR_OP_SELF_SUB {
 		inst.Op = SUB
 	} else if operation == ir.IR_OP_SELF_MUL {
-		inst.Op = MUL
+		inst.Op = IMUL
 	} else {
 		panic(fmt.Sprintf("Unsuported operation for DoArithmeticSelfOp: %v", operation))
 	}
@@ -176,8 +254,10 @@ func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int) *Instructio
 		self,
 		val,
 	}
-	return &Instruction{
-		Inst: inst,
+	return []*Instruction{
+		{
+			Inst: inst,
+		},
 	}
 }
 
@@ -225,6 +305,16 @@ func DoRegSetConditional(reg Reg, subreg Reg, size int, op ir.IROperator) []*Ins
 	instSet.MemBytes = size
 	if op == ir.IR_OP_EQ {
 		instSet.Op = SETE
+	} else if op == ir.IR_OP_LT {
+		instSet.Op = SETL
+	} else if op == ir.IR_OP_LTEQ {
+		instSet.Op = SETLE
+	} else if op == ir.IR_OP_GT {
+		instSet.Op = SETG
+	} else if op == ir.IR_OP_GTEQ {
+		instSet.Op = SETGE
+	} else if op == ir.IR_OP_NOT_EQ {
+		instSet.Op = SETNE
 	} else {
 		panic(fmt.Sprintf("Invalid operation specified for DoRegSetConditional: %v", op))
 	}

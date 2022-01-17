@@ -1,19 +1,27 @@
-[K[36mRead input[m  | Add intro for &{{custom.lat:2:8 custom.lat:2:12} %!s(*string=<nil>) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=0xc0002fd618) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 22 2 8} {custom.lat 26 2 12}} 0xc000395c20 <nil> 0xc000395cc0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:3:16 custom.lat:3:17} %!s(*string=<nil>) %!s(*int64=0xc0002fd5c8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 45 3 16} {custom.lat 46 3 17}} 0xc000395f40 <nil> 0xc0003e8000}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:3:16 custom.lat:3:17} %!s(*string=<nil>) %!s(*int64=0xc0002fd5c8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 45 3 16} {custom.lat 46 3 17}} 0xc000395f40 <nil> 0xc0003e8000}) %!s(*ast.PrimaryInvalid=<nil>) int}
-Add intro for &{{custom.lat:1:1 custom.lat:49:1} {{custom.lat:1:1 custom.lat:1:5} %!s(*string=0xc00030d290) %!s(*ast.Accessor=<nil>) <nil>} r [%!s(*ast.Arg=&{{{custom.lat 6 1 7} {custom.lat 11 1 12}} {{{custom.lat 6 1 7} {custom.lat 10 1 11}} 0xc00030d2f0 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 13 1 14} {custom.lat 901 49 1}} [0xc00026e840] 0xc0003c6120}) %!s(*ast.TopDef=&{{{custom.lat 0 1 1} {custom.lat 901 49 1}} <nil> 0xc0003c6120 0xc00038e280}) <nil>}
-Add intro for &{{custom.lat:1:1 custom.lat:49:1} {{custom.lat:1:1 custom.lat:1:5} %!s(*string=0xc00030d290) %!s(*ast.Accessor=<nil>) <nil>} r [%!s(*ast.Arg=&{{{custom.lat 6 1 7} {custom.lat 11 1 12}} {{{custom.lat 6 1 7} {custom.lat 10 1 11}} 0xc00030d2f0 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 13 1 14} {custom.lat 901 49 1}} [0xc00026e840] 0xc0003c6120}) %!s(*ast.TopDef=&{{{custom.lat 0 1 1} {custom.lat 901 49 1}} <nil> 0xc0003c6120 0xc00038e280}) int → int}
-Add intro for &{{custom.lat:50:17 custom.lat:50:21} %!s(*string=<nil>) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=0xc0002fd619) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 930 50 17} {custom.lat 934 50 21}} 0xc0003e8820 <nil> 0xc0003e88c0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:51:9 custom.lat:51:10} %!s(*string=0xc00030d750) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 944 51 9} {custom.lat 945 51 10}} 0xc0003e8be0 <nil> 0xc0003e8c80}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:52:16 custom.lat:52:17} %!s(*string=<nil>) %!s(*int64=0xc0002fd5d8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 964 52 16} {custom.lat 965 52 17}} 0xc0003e8f00 <nil> 0xc0003e8fa0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:54:16 custom.lat:54:17} %!s(*string=<nil>) %!s(*int64=0xc0002fd608) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 995 54 16} {custom.lat 996 54 17}} 0xc0003e9540 <nil> 0xc0003e95e0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:49:1 custom.lat:59:1} {{custom.lat:49:1 custom.lat:49:5} %!s(*string=0xc00030d560) %!s(*ast.Accessor=<nil>) <nil>} main [] %!s(*ast.Block=&{{{custom.lat 912 49 12} {custom.lat 1008 59 1}} [0xc00026ec60 0xc00026ed10] 0xc0003c6360}) %!s(*ast.TopDef=&{{{custom.lat 901 49 1} {custom.lat 1008 59 1}} <nil> 0xc0003c6360 0xc00038e280}) <nil>}
-Add intro for &{{custom.lat:49:1 custom.lat:59:1} {{custom.lat:49:1 custom.lat:49:5} %!s(*string=0xc00030d560) %!s(*ast.Accessor=<nil>) <nil>} main [] %!s(*ast.Block=&{{{custom.lat 912 49 12} {custom.lat 1008 59 1}} [0xc00026ec60 0xc00026ed10] 0xc0003c6360}) %!s(*ast.TopDef=&{{{custom.lat 901 49 1} {custom.lat 1008 59 1}} <nil> 0xc0003c6360 0xc00038e280}) void_arg → int}
+[K[36mRead input[m  | Add intro for &{{custom.lat:2:8 custom.lat:2:12} %!s(*string=<nil>) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=0xc0004920af) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 22 2 8} {custom.lat 26 2 12}} 0xc0004aa280 <nil> 0xc0004aa320}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:3:16 custom.lat:3:17} %!s(*string=<nil>) %!s(*int64=0xc000492060) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 45 3 16} {custom.lat 46 3 17}} 0xc0004aa5a0 <nil> 0xc0004aa640}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:3:16 custom.lat:3:17} %!s(*string=<nil>) %!s(*int64=0xc000492060) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 45 3 16} {custom.lat 46 3 17}} 0xc0004aa5a0 <nil> 0xc0004aa640}) %!s(*ast.PrimaryInvalid=<nil>) int}
+Add intro for &{{custom.lat:1:1 custom.lat:61:1} {{custom.lat:1:1 custom.lat:1:5} %!s(*string=0xc00048c020) %!s(*ast.Accessor=<nil>) <nil>} r [%!s(*ast.Arg=&{{{custom.lat 6 1 7} {custom.lat 11 1 12}} {{{custom.lat 6 1 7} {custom.lat 10 1 11}} 0xc00048c080 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 13 1 14} {custom.lat 1069 61 1}} [0xc0004c2000] 0xc0004ac120}) %!s(*ast.TopDef=&{{{custom.lat 0 1 1} {custom.lat 1069 61 1}} <nil> 0xc0004ac120 0xc000480000}) <nil>}
+Add intro for &{{custom.lat:1:1 custom.lat:61:1} {{custom.lat:1:1 custom.lat:1:5} %!s(*string=0xc00048c020) %!s(*ast.Accessor=<nil>) <nil>} r [%!s(*ast.Arg=&{{{custom.lat 6 1 7} {custom.lat 11 1 12}} {{{custom.lat 6 1 7} {custom.lat 10 1 11}} 0xc00048c080 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 13 1 14} {custom.lat 1069 61 1}} [0xc0004c2000] 0xc0004ac120}) %!s(*ast.TopDef=&{{{custom.lat 0 1 1} {custom.lat 1069 61 1}} <nil> 0xc0004ac120 0xc000480000}) int → int}
+Add intro for &{{custom.lat:62:12 custom.lat:62:13} %!s(*string=<nil>) %!s(*int64=0xc000492090) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 1100 62 12} {custom.lat 1101 62 13}} 0xc0004aae60 <nil> 0xc0004aaf00}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:61:1 custom.lat:65:1} {{custom.lat:61:1 custom.lat:61:5} %!s(*string=0xc00048c2f0) %!s(*ast.Accessor=<nil>) <nil>} qpa [%!s(*ast.Arg=&{{{custom.lat 1077 61 9} {custom.lat 1085 61 17}} {{{custom.lat 1077 61 9} {custom.lat 1084 61 16}} 0xc00048c350 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 1087 61 19} {custom.lat 1106 65 1}} [0xc0004c2420] 0xc0004ac360}) %!s(*ast.TopDef=&{{{custom.lat 1069 61 1} {custom.lat 1106 65 1}} <nil> 0xc0004ac360 0xc000480000}) <nil>}
+Add intro for &{{custom.lat:61:1 custom.lat:65:1} {{custom.lat:61:1 custom.lat:61:5} %!s(*string=0xc00048c2f0) %!s(*ast.Accessor=<nil>) <nil>} qpa [%!s(*ast.Arg=&{{{custom.lat 1077 61 9} {custom.lat 1085 61 17}} {{{custom.lat 1077 61 9} {custom.lat 1084 61 16}} 0xc00048c350 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 1087 61 19} {custom.lat 1106 65 1}} [0xc0004c2420] 0xc0004ac360}) %!s(*ast.TopDef=&{{{custom.lat 1069 61 1} {custom.lat 1106 65 1}} <nil> 0xc0004ac360 0xc000480000}) string → int}
+Add intro for &{{custom.lat:66:16 custom.lat:66:19} %!s(*string=<nil>) %!s(*int64=<nil>) %!s(*string=0xc00048c510) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 1134 66 16} {custom.lat 1137 66 19}} 0xc0004ab4a0 <nil> 0xc0004ab540}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:67:17 custom.lat:67:18} %!s(*string=0xc00048c640) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 1155 67 17} {custom.lat 1156 67 18}} 0xc0004abae0 <nil> 0xc0004abb80}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:67:5 custom.lat:67:16} %!s(*string=0xc00048c600) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 1143 67 5} {custom.lat 1154 67 16}} 0xc0004ab860 <nil> 0xc0004abc20}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:67:5 custom.lat:67:19} %!s(*ast.Index=&{{{custom.lat 1143 67 5} {custom.lat 1154 67 16}} 0xc0004ab860 <nil> 0xc0004abc20}) ( [%!s(*ast.Expression=&{{{{custom.lat 1155 67 17} {custom.lat 1156 67 18}} [{-2 t {custom.lat 1155 67 17}}]} <nil> <nil> 0xc0004e9440 0xc0004abc20 <nil>})] %!s(*ast.Unary=&{{{custom.lat 1143 67 5} {custom.lat 1157 67 19}}  <nil> 0xc0004abc20 0xc0004e9560 <nil>}) <nil>}
+Add intro for &{{custom.lat:68:16 custom.lat:68:17} %!s(*string=0xc00048c740) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 1174 68 16} {custom.lat 1175 68 17}} 0xc0004fa1e0 <nil> 0xc0004fa280}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:68:18 custom.lat:68:21} %!s(*string=<nil>) %!s(*int64=<nil>) %!s(*string=0xc00048c780) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 1176 68 18} {custom.lat 1179 68 21}} 0xc0004fa460 <nil> 0xc0004fa500}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:68:16 custom.lat:68:21} %!s(*ast.Multiplication=&{{{custom.lat 1174 68 16} {custom.lat 1175 68 17}} 0xc0004fc090  <nil> 0xc0004fc510 <nil>}) + %!s(*ast.Addition=&{{{custom.lat 1176 68 18} {custom.lat 1179 68 21}} 0xc0004fc360  <nil> 0xc0004fc510 <nil>}) %!s(*ast.Comparison=&{{{custom.lat 1174 68 16} {custom.lat 1179 68 21}} 0xc0004fc510  <nil> 0xc0004fc630 <nil>}) <nil>}
+Add intro for &{{custom.lat:68:12 custom.lat:68:15} %!s(*string=0xc00048c700) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 1170 68 12} {custom.lat 1173 68 15}} 0xc0004abf40 <nil> 0xc0004fa5a0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:68:12 custom.lat:68:22} %!s(*ast.Index=&{{{custom.lat 1170 68 12} {custom.lat 1173 68 15}} 0xc0004abf40 <nil> 0xc0004fa5a0}) ( [%!s(*ast.Expression=&{{{{custom.lat 1174 68 16} {custom.lat 1179 68 21}} [{-2 t {custom.lat 1174 68 16}} {43 + {custom.lat 1175 68 17}} {-6 "v" {custom.lat 1176 68 18}}]} <nil> <nil> 0xc0004fc6c0 0xc0004fa5a0 <nil>})] %!s(*ast.Unary=&{{{custom.lat 1170 68 12} {custom.lat 1180 68 22}}  <nil> 0xc0004fa5a0 0xc0004fc7e0 <nil>}) <nil>}
+Add intro for &{{custom.lat:65:1 custom.lat:72:1} {{custom.lat:65:1 custom.lat:65:5} %!s(*string=0xc00048c430) %!s(*ast.Accessor=<nil>) <nil>} main [] %!s(*ast.Block=&{{{custom.lat 1117 65 12} {custom.lat 1186 72 1}} [0xc0004c2580 0xc0004c2630 0xc0004c26e0] 0xc0004ac5a0}) %!s(*ast.TopDef=&{{{custom.lat 1106 65 1} {custom.lat 1186 72 1}} <nil> 0xc0004ac5a0 0xc000480000}) <nil>}
+Add intro for &{{custom.lat:65:1 custom.lat:72:1} {{custom.lat:65:1 custom.lat:65:5} %!s(*string=0xc00048c430) %!s(*ast.Accessor=<nil>) <nil>} main [] %!s(*ast.Block=&{{{custom.lat 1117 65 12} {custom.lat 1186 72 1}} [0xc0004c2580 0xc0004c2630 0xc0004c26e0] 0xc0004ac5a0}) %!s(*ast.TopDef=&{{{custom.lat 1106 65 1} {custom.lat 1186 72 1}} <nil> 0xc0004ac5a0 0xc000480000}) void_arg → int}
 START FLOW ANALYSIS
 REF as=[] up=[] de=[] us=[]
+GET USED VARIABLES PRIMARY: NONE
+GET USED VARIABLES PRIMARY: NONE
 REF as=[] up=[] de=[] us=[]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
 KURWA MAC PIERDOLONA W DUPE: 1
@@ -32,9 +40,9 @@ RENAME IN STATMENT :DD []
 RENAME IN STATMENT :C [] (with map[] and map[])
 CFG TYPE *generic_ast.VirtualNode
 CFG TYPE *ir.IRExit
-CFG TYPE *generic_ast.VirtualNode
-CFG TYPE *generic_ast.VirtualNode
 CFG TYPE *ir.IRConst
+CFG TYPE *generic_ast.VirtualNode
+CFG TYPE *generic_ast.VirtualNode
 Fold done (IR):
 
 
@@ -56,112 +64,49 @@ REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[temp_10]
 REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
-    Block:   3([<-2 <-4 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
-    Block:   4([->3 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
-    Block:   1([->5 as=[] up=[] de=[] us=[] [] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
-    Block:   2([<-5 ->3 as=[] up=[] de=[] us=[temp_10] [temp_10] {} Exit Int32 (temp_10)]) starts at (line 3, col 9)      and ends at (line 4, col 5)     
-    Block:   5([<-1 ->2 as=[temp_10] up=[temp_10] de=[temp_10] us=[] [] {2, 3} Int32 temp_10 = Const(1)]) starts at (line 3, col 16)     and ends at (line 3, col 17)    
+    Block:   4([<-2 <-5 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
+    Block:   5([->4 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
+    Block:   1([->3 as=[] up=[] de=[] us=[] [] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
+    Block:   2([<-3 ->4 as=[] up=[] de=[] us=[temp_10] [temp_10] {} Exit Int32 (temp_10)]) starts at (line 3, col 9)      and ends at (line 4, col 5)     
+    Block:   3([<-1 ->2 as=[temp_10] up=[temp_10] de=[temp_10] us=[] [] {2, 4} Int32 temp_10 = Const(1)]) starts at (line 3, col 16)     and ends at (line 3, col 17)    
     1 | 
     2 | Yeah.
 START FLOW ANALYSIS
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[x] up=[x] de=[] us=[]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
 REF as=[] up=[] de=[] us=[]
-GET USED VARIABLES PRIMARY: VAR[x]
-GET USED VARIABLES PRIMARY: VAR[x]
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[x]
-GET USED VARIABLES PRIMARY: VAR[x]
-REF as=[] up=[] de=[] us=[x]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
 KURWA MAC PIERDOLONA W DUPE: 1
 => NODE[1]: *generic_ast.VirtualNode{ENTRY}
+KURWA MAC PIERDOLONA W DUPE: 2
+=> NODE[2]: *ast.Return{return 8;}
 KURWA MAC PIERDOLONA W DUPE: 3
-=> NODE[3]: *ast.Declaration{boolean x = true}
-KURWA MAC PIERDOLONA W DUPE: 5
-=> NODE[5]: *ast.If{if (x) {
-  return 4;
-} else {
-  return 9;
-}}
-[?] If contents: *ast.Return{return 4;}
-KURWA MAC PIERDOLONA W DUPE: 4
-=> NODE[4]: *ast.Return{return 4;}
-KURWA MAC PIERDOLONA W DUPE: 7
-=> NODE[7]: *generic_ast.VirtualNode{EXIT}
-KURWA MAC PIERDOLONA W DUPE: 6
-=> NODE[6]: *ast.Return{return 9;}
-!> (sibling pred/succ 0/1) CANNOT Merge 3 into 1
-!> (block pred/succ 1/2) CANNOT Merge 5 into ANY
-!> (sibling pred/succ 1/2) CANNOT Merge 4 into 5
-!> (block pred/succ 3/0) CANNOT Merge 7 into ANY
-!> (sibling pred/succ 1/2) CANNOT Merge 6 into 5
+=> NODE[3]: *generic_ast.VirtualNode{EXIT}
+!> (sibling pred/succ 0/1) CANNOT Merge 2 into 1
+!> (block pred/succ 2/0) CANNOT Merge 3 into ANY
 REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
 RENAME IN STATMENT :DD []
 RENAME IN STATMENT :C [] (with map[] and map[])
-REF as=[x] up=[x] de=[x] us=[temp_10]
+REF as=[] up=[] de=[] us=[temp_10]
 RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[x:x_3_0] and map[])
-REF as=[] up=[] de=[] us=[x]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
-REF as=[temp_30] up=[temp_30] de=[temp_30] us=[]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
-REF as=[] up=[] de=[] us=[temp_30]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
-REF as=[temp_40] up=[temp_40] de=[temp_40] us=[]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
-REF as=[] up=[] de=[] us=[temp_40]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
-IRIF BUILD FLOW
+RENAME IN STATMENT :C [] (with map[] and map[])
 CFG TYPE *generic_ast.VirtualNode
 CFG TYPE *generic_ast.VirtualNode
-CFG TYPE *ir.IRCopy
-CFG TYPE *ir.IRConst
-CFG TYPE *ir.IRIf
 CFG TYPE *ir.IRExit
-CFG TYPE *ir.IRExit
+CFG TYPE *ir.IRConst
 CFG TYPE *generic_ast.VirtualNode
-CFG TYPE *ir.IRConst
-CFG TYPE *ir.IRConst
 Fold done (IR):
 
 
 ENTIRE CODE IR:
 
-Function Int32 main()
+Function Int32 qpa()
 {
-  block3: ; block
-    Bit temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const boolean true
-    Bit x_3_0 = Copy(temp_10) [temp_10] [x_3_0] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Assign variable x
-  
-  block5: ; block
-    If Bit x_3_0 jump to block4 else block6 [x_3_0] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; If condition
-  
-  block4: ; block
-    Int32 temp_30 = Const(4) [] [temp_30] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const int 4
-    Exit Int32 (temp_30) [temp_30] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
-  
-  block6: ; block
-    Int32 temp_40 = Const(9) [] [temp_40] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const int 9
-    Exit Int32 (temp_40) [temp_40] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
+  block2: ; block
+    Int32 temp_10 = Const(8) [] [temp_10] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const int 8
+    Exit Int32 (temp_10) [temp_10] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
   
 }
 
@@ -171,31 +116,161 @@ ENTIRE GRAPH IR:
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
-REF as=[x_3_0] up=[x_3_0] de=[x_3_0] us=[temp_10]
+REF as=[] up=[] de=[] us=[temp_10]
 REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
-REF as=[] up=[] de=[] us=[x_3_0]
-REF as=[] up=[] de=[] us=[temp_30]
-REF as=[temp_30] up=[temp_30] de=[temp_30] us=[]
-REF as=[] up=[] de=[] us=[temp_40]
-REF as=[temp_40] up=[temp_40] de=[temp_40] us=[]
-    Block:   8([<-6 <-7 <-1 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
-    Block:   1([->8 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
-    Block:   2([->4 as=[] up=[] de=[] us=[] [] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
-    Block:   3([<-4 ->5 as=[x_3_0] up=[x_3_0] de=[x_3_0] us=[temp_10] [temp_10] {5, 6, 7, 8, 9, 10} Bit x_3_0 = Copy(temp_10)]) starts at (line 50, col 13)    and ends at (line 50, col 21)   
-    Block:   4([<-2 ->3 as=[temp_10] up=[temp_10] de=[temp_10] us=[] [] {5, 6, 7, 8, 9, 10, 3} Bit temp_10 = Const(1)]) starts at (line 50, col 17)    and ends at (line 50, col 21)   
-    Block:   5([<-3 ->9 ->10 as=[] up=[] de=[] us=[x_3_0] [x_3_0] {} If Bit x_3_0 jump to block4 else block6]) starts at (line 51, col 5)     and ends at (line 56, col 1)    
-    Block:   6([<-9 ->8 as=[] up=[] de=[] us=[temp_30] [temp_30] {} Exit Int32 (temp_30)]) starts at (line 52, col 9)     and ends at (line 53, col 5)    
-    Block:   9([<-5 ->6 as=[temp_30] up=[temp_30] de=[temp_30] us=[] [] {6, 8} Int32 temp_30 = Const(4)]) starts at (line 52, col 16)    and ends at (line 52, col 17)   
-    Block:   7([<-10 ->8 as=[] up=[] de=[] us=[temp_40] [temp_40] {} Exit Int32 (temp_40)]) starts at (line 54, col 9)     and ends at (line 55, col 5)    
-    Block:  10([<-5 ->7 as=[temp_40] up=[temp_40] de=[temp_40] us=[] [] {7, 8} Int32 temp_40 = Const(9)]) starts at (line 54, col 16)    and ends at (line 54, col 17)   
+    Block:   5([<-3 <-2 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
+    Block:   2([->5 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
+    Block:   1([->4 as=[] up=[] de=[] us=[] [] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
+    Block:   3([<-4 ->5 as=[] up=[] de=[] us=[temp_10] [temp_10] {} Exit Int32 (temp_10)]) starts at (line 62, col 5)     and ends at (line 63, col 1)    
+    Block:   4([<-1 ->3 as=[temp_10] up=[temp_10] de=[temp_10] us=[] [] {5, 3} Int32 temp_10 = Const(8)]) starts at (line 62, col 12)    and ends at (line 62, col 13)   
     1 | 
     2 | Yeah.
-Try to allocate register? name: temp_10, size: 4 of [map[ECX:0xc0003e37d0 EDX:0xc0003e3800]]
+START FLOW ANALYSIS
+REF as=[] up=[] de=[] us=[]
+GET USED VARIABLES PRIMARY: VAR[printString]
+GET USED VARIABLES PRIMARY: VAR[t]
+GET USED VARIABLES PRIMARY: VAR[t]
+GET USED VARIABLES PRIMARY: VAR[printString]
+GET USED VARIABLES PRIMARY: VAR[t]
+GET USED VARIABLES PRIMARY: VAR[t]
+REF as=[] up=[] de=[] us=[t, printString]
+GET USED VARIABLES PRIMARY: VAR[qpa]
+GET USED VARIABLES PRIMARY: VAR[t]
+GET USED VARIABLES PRIMARY: VAR[t]
+GET USED VARIABLES PRIMARY: NONE
+GET USED VARIABLES PRIMARY: NONE
+GET USED VARIABLES PRIMARY: VAR[qpa]
+GET USED VARIABLES PRIMARY: VAR[t]
+GET USED VARIABLES PRIMARY: VAR[t]
+GET USED VARIABLES PRIMARY: NONE
+GET USED VARIABLES PRIMARY: NONE
+REF as=[] up=[] de=[] us=[t, qpa]
+REF as=[] up=[] de=[] us=[]
+REF as=[] up=[] de=[] us=[]
+GET USED VARIABLES PRIMARY: NONE
+GET USED VARIABLES PRIMARY: NONE
+GET USED VARIABLES PRIMARY: NONE
+GET USED VARIABLES PRIMARY: NONE
+REF as=[t] up=[t] de=[] us=[]
+KURWA MAC PIERDOLONA W DUPE: 1
+=> NODE[1]: *generic_ast.VirtualNode{ENTRY}
+KURWA MAC PIERDOLONA W DUPE: 2
+=> NODE[2]: *ast.Declaration{string t = ""a""}
+KURWA MAC PIERDOLONA W DUPE: 3
+=> NODE[3]: *ast.Expression{printString(t)}
+KURWA MAC PIERDOLONA W DUPE: 4
+=> NODE[4]: *ast.Return{return qpa(t + ""v"");}
+RESOLVE OP + TO Add   (+ NUMERIC 2)
+KURWA MAC PIERDOLONA W DUPE: 5
+=> NODE[5]: *generic_ast.VirtualNode{EXIT}
+!> (sibling pred/succ 0/1) CANNOT Merge 2 into 1
+?> Merge 3 into 2
+!> (sibling pred/succ 0/1) CANNOT Merge 2 into 1
+?> Merge 4 into 2
+!> (sibling pred/succ 0/1) CANNOT Merge 2 into 1
+!> (block pred/succ 2/0) CANNOT Merge 5 into ANY
+REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
+RENAME IN STATMENT :DD []
+RENAME IN STATMENT :C [] (with map[] and map[])
+REF as=[t] up=[t] de=[t] us=[temp_10]
+RENAME IN STATMENT :DD []
+RENAME IN STATMENT :C [] (with map[t:t_2_0] and map[])
+REF as=[temp_36] up=[temp_36] de=[temp_36] us=[]
+RENAME IN STATMENT :DD []
+RENAME IN STATMENT :C [] (with map[] and map[t:t_2_0])
+REF as=[temp_25] up=[temp_25] de=[temp_25] us=[t, temp_36]
+RENAME IN STATMENT :DD []
+RENAME IN STATMENT :C [] (with map[] and map[t:t_2_0])
+REF as=[temp_18] up=[temp_18] de=[temp_18] us=[qpa, temp_25]
+RENAME IN STATMENT :DD []
+RENAME IN STATMENT :C [] (with map[] and map[t:t_2_0])
+REF as=[] up=[] de=[] us=[temp_18]
+RENAME IN STATMENT :DD []
+RENAME IN STATMENT :C [] (with map[] and map[t:t_2_0])
+CFG TYPE *generic_ast.VirtualNode
+CFG TYPE *ir.IRCopy
+CFG TYPE *ir.IRConst
+CFG TYPE *generic_ast.VirtualNode
+CFG TYPE *generic_ast.VirtualNode
+CFG TYPE *ir.IRConst
+CFG TYPE *ir.IRCopy
+CFG TYPE *ir.IRExit
+CFG TYPE *ir.IRCall
+CFG TYPE *ir.IRExpression
+Subst t_2_0 => temp_10 because of String t_2_0 = Copy(temp_10) [temp_10, qpa] [t_2_0, qpa] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Assign variable t and next String temp_36 = Const("v") [t_2_0, qpa] [t_2_0, temp_36, qpa] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const string "v"
+RENAME IN STATMENT :DD [qpa, temp_10]
+RENAME IN STATMENT :C [temp_10, qpa] (with map[t_2_0:temp_10] and map[t_2_0:temp_10])
+RENAME IN STATMENT :DD [qpa, t_2_0, temp_36]
+RENAME IN STATMENT :C [qpa, temp_10, temp_36] (with map[t_2_0:temp_10] and map[t_2_0:temp_10])
+RENAME IN STATMENT :DD [temp_36, qpa]
+RENAME IN STATMENT :C [temp_36, qpa] (with map[t_2_0:temp_10] and map[t_2_0:temp_10])
+RENAME IN STATMENT :DD [temp_25, qpa]
+RENAME IN STATMENT :C [temp_25, qpa] (with map[t_2_0:temp_10] and map[t_2_0:temp_10])
+RENAME IN STATMENT :DD [temp_18]
+RENAME IN STATMENT :C [temp_18] (with map[t_2_0:temp_10] and map[t_2_0:temp_10])
+RENAME IN STATMENT :DD []
+RENAME IN STATMENT :C [] (with map[t_2_0:temp_10] and map[t_2_0:temp_10])
+EXIT subs
+Subst temp_25 => temp_10 because of String temp_25 = Copy(temp_10) [temp_36, qpa, temp_10] [temp_36, qpa] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) and next String temp_25 = (String) SelfAdd(temp_36); [qpa, temp_36] [temp_25, qpa] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
+RENAME IN STATMENT :DD [temp_10, qpa]
+RENAME IN STATMENT :C [temp_10, qpa] (with map[t_2_0:temp_10 temp_25:temp_10] and map[t_2_0:temp_10 temp_25:temp_10])
+RENAME IN STATMENT :DD [temp_10, temp_36, qpa]
+RENAME IN STATMENT :C [temp_10, temp_36, qpa] (with map[t_2_0:temp_10 temp_25:temp_10] and map[t_2_0:temp_10 temp_25:temp_10])
+RENAME IN STATMENT :DD [temp_25, qpa]
+RENAME IN STATMENT :C [temp_10, qpa] (with map[t_2_0:temp_10 temp_25:temp_10] and map[t_2_0:temp_10 temp_25:temp_10])
+RENAME IN STATMENT :DD [temp_18]
+RENAME IN STATMENT :C [temp_18] (with map[t_2_0:temp_10 temp_25:temp_10] and map[t_2_0:temp_10 temp_25:temp_10])
+RENAME IN STATMENT :DD []
+RENAME IN STATMENT :C [] (with map[t_2_0:temp_10 temp_25:temp_10] and map[t_2_0:temp_10 temp_25:temp_10])
+EXIT subs
+Fold done (IR):
+
+
+ENTIRE CODE IR:
+
+Function Int32 main()
+{
+  block2: ; block
+    String temp_10 = Const("a") [qpa] [temp_10, qpa] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const string "a"
+    String temp_36 = Const("v") [temp_10, qpa] [temp_36, qpa, temp_10] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const string "v"
+    String temp_10 = (String) SelfAdd(temp_36); [qpa, temp_36] [temp_10, qpa] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
+    Int32 temp_18 = Call(FunctionPtr qpa) (String temp_10) [temp_10, qpa] [temp_18] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
+    Exit Int32 (temp_18) [temp_18] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
+  
+}
+
+
+ENTIRE GRAPH IR:
+
+REF as=[] up=[] de=[] us=[]
+REF as=[] up=[] de=[] us=[]
+REF as=[] up=[] de=[] us=[]
+REF as=[t_2_0] up=[t_2_0] de=[t_2_0] us=[temp_10]
+REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
+REF as=[] up=[] de=[] us=[temp_18]
+REF as=[temp_18] up=[temp_18] de=[temp_18] us=[temp_10, qpa]
+REF as=[temp_25] up=[temp_25] de=[temp_25] us=[temp_10]
+REF as=[temp_10] up=[temp_10] de=[temp_10] us=[temp_36]
+REF as=[temp_36] up=[temp_36] de=[temp_36] us=[]
+    Block:   4([<-8 <-5 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
+    Block:   5([->4 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
+    Block:   1([->6 as=[] up=[] de=[] us=[] [qpa] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
+    Block:   7([<-6 ->3 as=[t_2_0] up=[t_2_0] de=[t_2_0] us=[temp_10] [temp_10, qpa] {10, 2, 3, 4, 8, 9} String t_2_0 = Copy(temp_10)]) starts at (line 66, col 12)    and ends at (line 66, col 19)   
+    Block:   6([<-1 ->7 as=[temp_10] up=[temp_10] de=[temp_10] us=[] [qpa] {7, 8, 9, 10, 2, 3, 4} String temp_10 = Const("a")]) starts at (line 66, col 16)    and ends at (line 66, col 19)   
+    Block:   8([<-9 ->4 as=[] up=[] de=[] us=[temp_18] [temp_18] {} Exit Int32 (temp_18)]) starts at (line 68, col 5)     and ends at (line 69, col 1)    
+    Block:   9([<-10 ->8 as=[temp_18] up=[temp_18] de=[temp_18] us=[temp_10, qpa] [temp_25, qpa] {4, 8} Int32 temp_18 = Call(FunctionPtr qpa) (String temp_10)]) starts at (line 68, col 12)    and ends at (line 68, col 22)   
+    Block:  10([<-3 ->10 as=[temp_25] up=[temp_25] de=[temp_25] us=[temp_10] [t_2_0, temp_36, qpa] {10, 4, 8, 9} String temp_25 = Copy(temp_10)]) starts at (line 68, col 16)    and ends at (line 68, col 21)   
+    Block:  10([<-2 ->9 as=[temp_10] up=[temp_10] de=[temp_10] us=[temp_36] [temp_36, qpa] {4, 8, 9} String temp_10 = (String) SelfAdd(temp_36)]) starts at (line 68, col 16)    and ends at (line 68, col 21)   
+    Block:   3([<-7 ->2 as=[temp_36] up=[temp_36] de=[temp_36] us=[] [t_2_0, qpa] {4, 8, 9, 10, 2} String temp_36 = Const("v")]) starts at (line 68, col 18)    and ends at (line 68, col 21)   
+    1 | 
+    2 | Yeah.
+Try to allocate register? name: temp_10, size: 4 of [map[ECX:0xc0002f44b0 EDX:0xc0002f44e0]]
 FUNCTION SIZE: 0
-Try to allocate register? name: temp_10, size: 4 of [map[ECX:0xc0003e3c80 EDX:0xc0003e3cb0]]
-Try to allocate register? name: x_3_0, size: 4 of [map[ECX:0xc0003e3c80 EDX:0xc0003e3cb0]]
-Try to allocate register? name: temp_30, size: 4 of [map[ECX:0xc0003e3c80 EDX:0xc0003e3cb0]]
-Try to allocate register? name: temp_40, size: 4 of [map[ECX:0xc0003e3c80 EDX:0xc0003e3cb0]]
+Try to allocate register? name: temp_10, size: 4 of [map[ECX:0xc0002f4990 EDX:0xc0002f4960]]
+FUNCTION SIZE: 0
+Try to allocate register? name: temp_10, size: 4 of [map[ECX:0xc0002f4e40 EDX:0xc0002f4e10]]
+Try to allocate register? name: temp_36, size: 4 of [map[ECX:0xc0002f4e40 EDX:0xc0002f4e10]]
+Try to allocate register? name: temp_18, size: 4 of [map[ECX:0xc0002f4e40 EDX:0xc0002f4e10]]
 FUNCTION SIZE: 0
 ?BASED?
 Function Int32 r()
@@ -206,27 +281,29 @@ Function Int32 r()
     
 }
 
+Function Int32 qpa()
+{
+    block2: ; block
+      Int32 temp_10 = Const(8) [] [temp_10] Meta{Target:Allocation(temp_10: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)])} (begin 0:0) ; Const int 8
+      Exit Int32 (temp_10) [temp_10] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[EDX(size=4)])} (begin 0:0)
+    
+}
+
 Function Int32 main()
 {
-    block3: ; block
-      Bit temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(temp_10: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const boolean true
-      Bit x_3_0 = Copy(temp_10) [temp_10] [x_3_0] Meta{Target:Allocation(x_3_0: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Assign variable x
-    
-    block5: ; block
-      If Bit x_3_0 jump to block4 else block6 [x_3_0] [] Meta{Target:Allocation(), Context:Allocation(temp_40: Register[ECX(size=4)], temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)])} (begin 0:0) ; If condition
-    
-    block4: ; block
-      Int32 temp_30 = Const(4) [] [temp_30] Meta{Target:Allocation(temp_30: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const int 4
-      Exit Int32 (temp_30) [temp_30] [] Meta{Target:Allocation(), Context:Allocation(temp_40: Register[ECX(size=4)], temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)])} (begin 0:0)
-    
-    block6: ; block
-      Int32 temp_40 = Const(9) [] [temp_40] Meta{Target:Allocation(temp_40: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const int 9
-      Exit Int32 (temp_40) [temp_40] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0)
+    block2: ; block
+      String temp_10 = Const("a") [qpa] [temp_10, qpa] Meta{Target:Allocation(temp_10: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], temp_18: Register[ECX(size=4)])} (begin 0:0) ; Const string "a"
+      String temp_36 = Const("v") [temp_10, qpa] [temp_36, qpa, temp_10] Meta{Target:Allocation(temp_36: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], temp_18: Register[ECX(size=4)])} (begin 0:0) ; Const string "v"
+      String temp_10 = (String) SelfAdd(temp_36); [qpa, temp_36] [temp_10, qpa] Meta{Target:Allocation(temp_10: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], temp_18: Register[ECX(size=4)])} (begin 0:0)
+      Int32 temp_18 = Call(FunctionPtr qpa) (String temp_10) [temp_10, qpa] [temp_18] Meta{Target:Allocation(temp_18: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], temp_18: Register[ECX(size=4)])} (begin 0:0)
+      Exit Int32 (temp_18) [temp_18] [] Meta{Target:Allocation(), Context:Allocation(temp_36: Register[ECX(size=4)], temp_18: Register[ECX(size=4)], temp_10: Register[EDX(size=4)])} (begin 0:0)
     
 }
 
 
 %!s(MISSING)FUNCTION SIZE: 0
+FUNCTION SIZE: 0
+Try to allocate register? name: temp_18, size: 4 of [map[EAX:0xc0003042d0 ECX:0xc000304330 EDX:0xc000304360 EBX:0xc000304300]]
 FUNCTION SIZE: 0
 
 AFTER PREPROCESSING STEP:
@@ -238,22 +315,25 @@ Function Int32 r()
     
 }
 
+Function Int32 qpa()
+{
+    block2: ; block
+      Int32 temp_10 = Const(8) [] [temp_10] Meta{Target:Allocation(temp_10: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)])} (begin 0:0) ; Const int 8
+      Exit Int32 (temp_10) [temp_10] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[EDX(size=4)])} (begin 0:0)
+    
+}
+
 Function Int32 main()
 {
-    block3: ; block
-      Bit temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(temp_10: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const boolean true
-      Bit x_3_0 = Copy(temp_10) [temp_10] [x_3_0] Meta{Target:Allocation(x_3_0: Register[EDX(size=4)]), Context:Allocation(temp_40: Register[ECX(size=4)], temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)])} (begin 0:0) ; Assign variable x
-    
-    block5: ; block
-      If Bit x_3_0 jump to block4 else block6 [x_3_0] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; If condition
-    
-    block4: ; block
-      Int32 temp_30 = Const(4) [] [temp_30] Meta{Target:Allocation(temp_30: Register[EDX(size=4)]), Context:Allocation(temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)], temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)])} (begin 0:0) ; Const int 4
-      Exit Int32 (temp_30) [temp_30] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0)
-    
-    block6: ; block
-      Int32 temp_40 = Const(9) [] [temp_40] Meta{Target:Allocation(temp_40: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const int 9
-      Exit Int32 (temp_40) [temp_40] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0)
+    block2: ; block
+      String temp_10 = Const("a") [qpa] [temp_10, qpa] Meta{Target:Allocation(temp_10: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], : Register[ECX(size=4)], temp_18: Register[EAX(size=4)])} (begin 0:0) ; Const string "a"
+      String temp_36 = Const("v") [temp_10, qpa] [qpa, temp_10, temp_36] Meta{Target:Allocation(temp_36: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], : Register[ECX(size=4)], temp_18: Register[EAX(size=4)])} (begin 0:0) ; Const string "v"
+      String temp_10 = (String) SelfAdd(temp_36); [qpa, temp_36] [temp_10, qpa] Meta{Target:Allocation(temp_10: Register[EDX(size=4)]), Context:Allocation(temp_18: Register[EAX(size=4)], temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], : Register[ECX(size=4)])} (begin 0:0)
+      CallMacro[PreserveFunctionRegs](Int32 ) [temp_10, qpa] [temp_18] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], : Register[ECX(size=4)], temp_18: Register[EAX(size=4)])} (begin 0:0) ; Preserve all registries for temp_18 call
+      CallMacro[LoadFunctionArgument](Int32 temp_10) [temp_10, qpa] [temp_18] Meta{Target:Allocation(), Context:Allocation(temp_18: Register[EAX(size=4)], temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], : Register[ECX(size=4)])} (begin 0:0) ; Load function argument temp_10
+      Int32  = Call(FunctionPtr qpa) () [temp_10, qpa] [temp_18] Meta{Target:Allocation(: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], : Register[ECX(size=4)], temp_18: Register[EAX(size=4)])} (begin 0:0)
+      Int32 temp_18 = CallMacro[StoreFunctionResult](Int32 ) [temp_10, qpa] [temp_18] Meta{Target:Allocation(temp_18: Register[EAX(size=4)]), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], : Register[ECX(size=4)], temp_18: Register[EAX(size=4)])} (begin 0:0) ; Store function result into temp_18
+      Exit Int32 (temp_18) [temp_18] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[EDX(size=4)], temp_36: Register[ECX(size=4)], : Register[ECX(size=4)], temp_18: Register[EAX(size=4)])} (begin 0:0)
     
 }
 
@@ -263,15 +343,17 @@ Function Int32 main()
 
 [K[36mGenerate compiled code using backend: X86 Jasmine backend[m  / [K Code Generation Error : Build command has failed
     | On command:  gcc $BUILD_DIR/code.o -o $BUILD_DIR/code_exe 
+    |     ROOT = /Users/pstyczynski/instant-compiler-go
     |     INPUT_FILE_NAME = custom.lat
     |     INPUT_FILE_LOC = .
     |     INPUT_FILE_BASE = custom
-    |     BUILD_DIR = /var/folders/xp/sc_32rwj2z53j0gkvdphvsjh0000gp/T/_compile_custom.lat2878112179
-    |     ROOT = /Users/pstyczynski/instant-compiler-go
+    |     BUILD_DIR = /var/folders/xp/sc_32rwj2z53j0gkvdphvsjh0000gp/T/_compile_custom.lat2616636234
     | Error: Output contains errors
     | Program output: 
     |> 
     |> Undefined symbols for architecture x86_64:
+    |>   "AddStrings", referenced from:
+    |>       main_block2 in code.o
     |>   "_main", referenced from:
     |>      implicit entry/start for main executable
     |> ld: symbol(s) not found for architecture x86_64

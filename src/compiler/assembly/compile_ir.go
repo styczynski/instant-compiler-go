@@ -20,7 +20,10 @@ func (CompilerX86Backend) fnHeader(fn *ir.IRFunction) []*x86.Instruction {
 }
 
 func (backend CompilerX86Backend) compileIR(c *context.ParsingContext, code *ir.IRProgram) (error, []x86.Entry) {
-	ret := []x86.Entry{}
+	data := EmptyAssemblyDataSection()
+	ret := []x86.Entry{
+		data,
+	}
 	for _, fn := range code.Statements {
 		fnName := fn.Name
 		//for _, fnBlock := range fn.FunctionBody {
@@ -29,7 +32,7 @@ func (backend CompilerX86Backend) compileIR(c *context.ParsingContext, code *ir.
 		bodyExprs := backend.fnHeader(fn)
 		// // Function body
 		for _, fnBlock := range fn.FunctionBody {
-			err, instrs := backend.compileIRBlock(c, fn, fnBlock)
+			err, instrs := backend.compileIRBlock(c, fn, fnBlock, data)
 			if err != nil {
 				return err, nil
 			}

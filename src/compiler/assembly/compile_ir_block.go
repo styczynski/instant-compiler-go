@@ -9,21 +9,114 @@ import (
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
-func (backend CompilerX86Backend) compileIRConst(ret []*x86.Instruction, instr *ir.IRConst, name string, alloc ir.IRAllocation) (error, []*x86.Instruction) {
+type AssemblyDataSection struct {
+	store   map[string]DataRecord
+	reverse map[interface{}]string
+	nameID  int
+}
+
+type DataRecordType string
+
+const (
+	DATA_RECORD_STRING DataRecordType = "string"
+)
+
+type DataRecord struct {
+	stringVal string
+	valType   DataRecordType
+}
+
+func (dr DataRecord) IsString() bool {
+	return dr.valType == DATA_RECORD_STRING
+}
+
+func (dr DataRecord) Value() interface{} {
+	if dr.IsString() {
+		return dr.stringVal
+	}
+	return nil
+}
+
+func EmptyAssemblyDataSection() *AssemblyDataSection {
+	return &AssemblyDataSection{
+		store:   map[string]DataRecord{},
+		reverse: map[interface{}]string{},
+		nameID:  0,
+	}
+}
+
+func (data *AssemblyDataSection) Generate(c *x86.GenerationContext, slFn x86.SymLookup) []string {
+	return data.GenerateSectionText()
+}
+
+func (data *AssemblyDataSection) GenerateSymbolLookup(c *x86.GenerationContext, sl *x86.SymbolLookup) {
+	// No-op
+}
+
+func (data *AssemblyDataSection) GenerateSectionText() []string {
+	ret := []string{}
+	for label, record := range data.store {
+		ret = append(ret, fmt.Sprintf(".%s:", label))
+		if record.IsString() {
+			ret = append(ret, fmt.Sprintf("  .string %s", record.stringVal))
+		}
+	}
+	return ret
+}
+
+func (data *AssemblyDataSection) StoreString(val string) string {
+	if label, ok := data.reverse[val]; ok {
+		return label
+	}
+	newLabel := fmt.Sprintf("LC%d", data.nameID)
+	data.nameID++
+	data.store[newLabel] = DataRecord{
+		stringVal: val,
+		valType:   DATA_RECORD_STRING,
+	}
+	data.reverse[val] = newLabel
+	return fmt.Sprintf("$.%s", newLabel)
+}
+
+func (backend CompilerX86Backend) compileIRConst(ret []*x86.Instruction, instr *ir.IRConst, name string, alloc ir.IRAllocation, data *AssemblyDataSection) (error, []*x86.Instruction) {
 	if mem, ok := allocation.IsAllocMem(alloc); ok {
-		ret = append(ret, x86.DoMemoryStoreConst(
-			mem.Index,
-			mem.Size,
-			instr.Value,
-		))
-		return nil, ret
+		if instr.IsNumber() {
+			ret = append(ret, x86.DoMemoryStoreConst(
+				mem.Index,
+				mem.Size,
+				instr.Value,
+			))
+			return nil, ret
+		} else if instr.IsString() {
+			label := data.StoreString(*instr.StringValue)
+			ret = append(ret, x86.DoMov(
+				x86.CreateRelLabel(label),
+				x86.GetMemoryVarLocation(mem.Index, mem.Size),
+				mem.Size,
+			))
+			return nil, ret
+		} else {
+			return fmt.Errorf("Unsupported const value was used: %v", instr), nil
+		}
 	} else if reg, ok := allocation.IsAllocReg(alloc); ok {
-		ret = append(ret, x86.DoRegStoreConst(
-			reg.Reg,
-			reg.Size,
-			instr.Value,
-		))
-		return nil, ret
+		if instr.IsNumber() {
+			ret = append(ret, x86.DoRegStoreConst(
+				reg.Reg,
+				reg.Size,
+				instr.Value,
+			))
+			return nil, ret
+		} else if instr.IsString() {
+			label := data.StoreString(*instr.StringValue)
+			ret = append(ret, x86.DoMov(
+				reg.Reg,
+				x86.CreateRelLabel(label),
+				reg.Size,
+			))
+			return nil, ret
+		} else {
+			return fmt.Errorf("Unsupported const value was used: %v", instr), nil
+		}
 	} else {
 		return fmt.Errorf("Unsupported transfer to memory from %s", alloc.String()), nil
 	}
@@ -93,7 +186,8 @@ func (backend CompilerX86Backend) compileIROpUnary(ret []*x86.Instruction, instr
 				x86.GetMemoryVarLocation(mem.Index, mem.Size),
 				op,
 				srcReg.Size,
-			))
+				instr.Type,
+			)...)
 			ret = append(ret, x86.DoSwap(
 				srcReg.Reg,
 				x86.GetMemoryVarLocation(mem.Index, mem.Size),
@@ -116,7 +210,8 @@ func (backend CompilerX86Backend) compileIROpUnary(ret []*x86.Instruction, instr
 				srcReg.Reg,
 				op,
 				reg.Size,
-			))
+				instr.Type,
+			)...)
 			return nil, ret
 		} else if srcMem, ok := allocation.IsAllocMem(srcAlloc); ok {
 			// REG = Op(MEM)
@@ -125,7 +220,8 @@ func (backend CompilerX86Backend) compileIROpUnary(ret []*x86.Instruction, instr
 				x86.GetMemoryVarLocation(srcMem.Index, srcMem.Size),
 				op,
 				reg.Size,
-			))
+				instr.Type,
+			)...)
 			return nil, ret
 		} else {
 			return fmt.Errorf("Unsupported operation %v transfer to %s", op, alloc.String()), nil
@@ -303,7 +399,7 @@ func (backend CompilerX86Backend) compileIRIf(ret []*x86.Instruction, fnName str
 	}
 }
 
-func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *ir.IRFunction, code *ir.IRBlock) (error, []*x86.Instruction) {
+func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *ir.IRFunction, code *ir.IRBlock, data *AssemblyDataSection) (error, []*x86.Instruction) {
 	fnName := fn.Name
 	ret := []*x86.Instruction{
 		x86.Label(fmt.Sprintf("%s_block%d", fnName, code.BlockID)),
@@ -312,7 +408,7 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 		lastIndex := len(ret) - 1
 		if instr.IsConst() {
 			name, alloc := instr.GetAllocationTarget()
-			err, newRet := backend.compileIRConst(ret, instr.Const, name, alloc)
+			err, newRet := backend.compileIRConst(ret, instr.Const, name, alloc, data)
 			if err != nil {
 				return err, nil
 			}

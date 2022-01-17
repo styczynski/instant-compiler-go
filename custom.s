@@ -1,5 +1,9 @@
 .text
 .global main
+.LC0:
+  .string "a"
+.LC1:
+  .string "v"
 # Function r
 # Source: custom.lat:1:1
 _r:
@@ -11,30 +15,42 @@ _r:
     pop %rbp
     ret
 # End of function r
-# Function main (Entrypoint)
-# Source: custom.lat:49:1
-main:
+# Function qpa
+# Source: custom.lat:61:1
+_qpa:
       push %rbp
       mov %rsp,%rbp
-    main_block3: # Const boolean true
-      mov $0x1,%ecx # Assign variable x
-      mov %ecx,%edx
-    main_block5: # If condition
-      cmp $0x0,%edx
-      jne main_block4
-      jmp main_block6
-    main_block4: # Const int 4
-      mov $0x4,%edx
-      mov %edx,%eax
-      mov $0x1,%ebx
-      xchg %eax,%ebx
-      int $0x80
-      ret
-    main_block6: # Const int 9
-      mov $0x9,%ecx
+    qpa_block2: # Const int 8
+      mov $0x8,%ecx
       mov %ecx,%eax
-      mov $0x1,%ebx
-      xchg %eax,%ebx
-      int $0x80
+      pop %rbp
       ret
+# End of function qpa
+# Function main (Entrypoint)
+# Source: custom.lat:65:1
+main:
+        push %rbp
+        mov %rsp,%rbp
+      main_block6: # Const string "a"
+        mov $.LC0,%edx # Const string "v"
+        mov $.LC1,%ecx
+        mov %edx,%edi
+        mov %ecx,%esi
+        call AddStrings
+        mov %edx,%eax # Preserve all registries for temp_18 call
+        push %rax
+        push %rbx
+        push %rcx
+        push %rdx # Load function argument temp_10
+        push %rdx
+        call _qpa # Store function result into temp_18
+        mov %eax,%eax
+        pop %rdx
+        pop %rcx
+        pop %rbx
+        pop %rax
+        mov $0x1,%ebx
+        xchg %eax,%ebx
+        int $0x80
+        ret
 # End of function main
