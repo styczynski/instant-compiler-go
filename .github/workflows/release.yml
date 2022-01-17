@@ -25,7 +25,8 @@ jobs:
       - name: Checkout the project
         uses: actions/checkout@v2
       - name: Docker tests
-        run: echo "OK"
+        run: |
+          bash ./pack.sh
       - uses: actions/upload-artifact@v2
         name: Upload artifact with the release
         with:
