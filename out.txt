@@ -1,49 +1,27 @@
-[K[36mRead input[m  | Add intro for &{{custom.lat:2:8 custom.lat:2:12} %!s(*string=<nil>) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=0xc00002421f) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 22 2 8} {custom.lat 26 2 12}} 0xc000134500 <nil> 0xc0001345a0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:3:16 custom.lat:3:17} %!s(*string=<nil>) %!s(*int64=0xc000024178) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 45 3 16} {custom.lat 46 3 17}} 0xc000134820 <nil> 0xc0001348c0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:3:16 custom.lat:3:17} %!s(*string=<nil>) %!s(*int64=0xc000024178) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 45 3 16} {custom.lat 46 3 17}} 0xc000134820 <nil> 0xc0001348c0}) %!s(*ast.PrimaryInvalid=<nil>) int}
-Add intro for &{{custom.lat:1:1 custom.lat:36:1} {{custom.lat:1:1 custom.lat:1:5} %!s(*string=0xc000074610) %!s(*ast.Accessor=<nil>) <nil>} r [%!s(*ast.Arg=&{{{custom.lat 6 1 7} {custom.lat 11 1 12}} {{{custom.lat 6 1 7} {custom.lat 10 1 11}} 0xc000074670 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 13 1 14} {custom.lat 741 36 1}} [0xc0001300b0] 0xc00013c5a0}) %!s(*ast.TopDef=&{{{custom.lat 0 1 1} {custom.lat 741 36 1}} <nil> 0xc00013c5a0 0xc000140100}) <nil>}
-Add intro for &{{custom.lat:1:1 custom.lat:36:1} {{custom.lat:1:1 custom.lat:1:5} %!s(*string=0xc000074610) %!s(*ast.Accessor=<nil>) <nil>} r [%!s(*ast.Arg=&{{{custom.lat 6 1 7} {custom.lat 11 1 12}} {{{custom.lat 6 1 7} {custom.lat 10 1 11}} 0xc000074670 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 13 1 14} {custom.lat 741 36 1}} [0xc0001300b0] 0xc00013c5a0}) %!s(*ast.TopDef=&{{{custom.lat 0 1 1} {custom.lat 741 36 1}} <nil> 0xc00013c5a0 0xc000140100}) int → int}
-Add intro for &{{custom.lat:38:5 custom.lat:39:5} d <nil> <nil>}
-Add intro for &{{custom.lat:38:9 custom.lat:38:10} %!s(*string=<nil>) %!s(*int64=0xc000024188) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 779 38 9} {custom.lat 780 38 10}} 0xc0001350e0 <nil> 0xc000135180}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:39:15 custom.lat:39:16} %!s(*string=<nil>) %!s(*int64=0xc0000241b8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 796 39 15} {custom.lat 797 39 16}} 0xc000135720 <nil> 0xc0001357c0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:39:13 custom.lat:39:14} %!s(*string=0xc000074b70) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 794 39 13} {custom.lat 795 39 14}} 0xc0001354a0 <nil> 0xc000135860}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:39:13 custom.lat:39:17} %!s(*ast.Index=&{{{custom.lat 794 39 13} {custom.lat 795 39 14}} 0xc0001354a0 <nil> 0xc000135860}) ( [%!s(*ast.Expression=&{{{{custom.lat 796 39 15} {custom.lat 797 39 16}} [{-3 3 {custom.lat 796 39 15}}]} <nil> <nil> 0xc000156990 0xc000135860 <nil>})] %!s(*ast.Unary=&{{{custom.lat 794 39 13} {custom.lat 798 39 17}}  <nil> 0xc000135860 0xc000156d80 <nil>}) <nil>}
-Add intro for &{{custom.lat:39:18 custom.lat:39:19} %!s(*string=<nil>) %!s(*int64=0xc0000241c8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 799 39 18} {custom.lat 800 39 19}} 0xc000135a40 <nil> 0xc000135ae0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:39:13 custom.lat:39:19} %!s(*ast.Multiplication=&{{{custom.lat 794 39 13} {custom.lat 798 39 17}} 0xc000156a20  <nil> 0xc000156ea0 <nil>}) + %!s(*ast.Addition=&{{{custom.lat 799 39 18} {custom.lat 800 39 19}} 0xc000156cf0  <nil> 0xc000156ea0 <nil>}) %!s(*ast.Comparison=&{{{custom.lat 794 39 13} {custom.lat 800 39 19}} 0xc000156ea0  <nil> 0xc000156fc0 <nil>}) <nil>}
-Add intro for &{{custom.lat:40:5 custom.lat:41:5} b <nil> <nil>}
-Add intro for &{{custom.lat:40:9 custom.lat:40:10} %!s(*string=<nil>) %!s(*int64=0xc0000241d8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 810 40 9} {custom.lat 811 40 10}} 0xc000135e00 <nil> 0xc000135ea0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:41:9 custom.lat:41:11} %!s(*string=0xc000074dc0) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 821 41 9} {custom.lat 823 41 11}} 0xc0004881e0 <nil> 0xc000488280}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:41:14 custom.lat:41:15} %!s(*string=0xc000074e10) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 826 41 14} {custom.lat 827 41 15}} 0xc000488460 <nil> 0xc000488500}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:41:9 custom.lat:41:15} %!s(*ast.Addition=&{{{custom.lat 821 41 9} {custom.lat 823 41 11}} 0xc000157cb0  <nil> 0xc00048e2d0 <nil>}) == %!s(*ast.Comparison=&{{{custom.lat 826 41 14} {custom.lat 827 41 15}} 0xc00048e120  <nil> 0xc00048e2d0 <nil>}) %!s(*ast.Equality=&{{{custom.lat 821 41 9} {custom.lat 827 41 15}} 0xc00048e2d0  <nil> 0xc00048e3f0 <nil>}) <nil>}
-Add intro for &{{custom.lat:42:9 custom.lat:43:5} b <nil> <nil>}
-Add intro for &{{custom.lat:42:13 custom.lat:42:14} %!s(*string=0xc000074ef0) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 843 42 13} {custom.lat 844 42 14}} 0xc000488780 <nil> 0xc000488820}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:42:15 custom.lat:42:16} %!s(*string=<nil>) %!s(*int64=0xc0000241f0) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 845 42 15} {custom.lat 846 42 16}} 0xc000488a00 <nil> 0xc000488aa0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:42:13 custom.lat:42:16} %!s(*ast.Multiplication=&{{{custom.lat 843 42 13} {custom.lat 844 42 14}} 0xc00048e870  <nil> 0xc00048ecf0 <nil>}) + %!s(*ast.Addition=&{{{custom.lat 845 42 15} {custom.lat 846 42 16}} 0xc00048eb40  <nil> 0xc00048ecf0 <nil>}) %!s(*ast.Comparison=&{{{custom.lat 843 42 13} {custom.lat 846 42 16}} 0xc00048ecf0  <nil> 0xc00048ee10 <nil>}) <nil>}
-Add intro for &{{custom.lat:42:9 custom.lat:43:5} b <nil> <nil>}
-Add intro for &{{custom.lat:42:13 custom.lat:42:14} %!s(*string=0xc000074ef0) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 843 42 13} {custom.lat 844 42 14}} 0xc000488780 <nil> 0xc000488820}) %!s(*ast.PrimaryInvalid=<nil>) int}
-Add intro for &{{custom.lat:42:15 custom.lat:42:16} %!s(*string=<nil>) %!s(*int64=0xc0000241f0) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 845 42 15} {custom.lat 846 42 16}} 0xc000488a00 <nil> 0xc000488aa0}) %!s(*ast.PrimaryInvalid=<nil>) int}
-Add intro for &{{custom.lat:42:13 custom.lat:42:16} %!s(*ast.Multiplication=&{{{custom.lat 843 42 13} {custom.lat 844 42 14}} 0xc00048e870  <nil> 0xc00048ecf0 <nil>}) + %!s(*ast.Addition=&{{{custom.lat 845 42 15} {custom.lat 846 42 16}} 0xc00048eb40  <nil> 0xc00048ecf0 <nil>}) %!s(*ast.Comparison=&{{{custom.lat 843 42 13} {custom.lat 846 42 16}} 0xc00048ecf0  <nil> 0xc00048ee10 <nil>}) int}
-Add intro for &{{custom.lat:44:5 custom.lat:45:5} c <nil> <nil>}
-Add intro for &{{custom.lat:44:9 custom.lat:44:10} %!s(*string=0xc000075010) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 862 44 9} {custom.lat 863 44 10}} 0xc000489040 <nil> 0xc0004890e0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:45:13 custom.lat:45:14} %!s(*string=<nil>) %!s(*int64=0xc000024200) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 877 45 13} {custom.lat 878 45 14}} 0xc000489400 <nil> 0xc0004894a0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:46:12 custom.lat:46:13} %!s(*string=0xc000075110) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 891 46 12} {custom.lat 892 46 13}} 0xc0004897c0 <nil> 0xc000489860}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
-Add intro for &{{custom.lat:36:1 custom.lat:50:1} {{custom.lat:36:1 custom.lat:36:5} %!s(*string=0xc0000748e0) %!s(*ast.Accessor=<nil>) <nil>} main [] %!s(*ast.Block=&{{{custom.lat 752 36 12} {custom.lat 898 50 1}} [0xc0001304d0 0xc000130580 0xc000130630 0xc0001306e0 0xc000130790 0xc000130b00 0xc000130bb0 0xc000130c60] 0xc00013c900}) %!s(*ast.TopDef=&{{{custom.lat 741 36 1} {custom.lat 898 50 1}} <nil> 0xc00013c900 0xc000140100}) <nil>}
-Add intro for &{{custom.lat:36:1 custom.lat:50:1} {{custom.lat:36:1 custom.lat:36:5} %!s(*string=0xc0000748e0) %!s(*ast.Accessor=<nil>) <nil>} main [] %!s(*ast.Block=&{{{custom.lat 752 36 12} {custom.lat 898 50 1}} [0xc0001304d0 0xc000130580 0xc000130630 0xc0001306e0 0xc000130790 0xc000130b00 0xc000130bb0 0xc000130c60] 0xc00013c900}) %!s(*ast.TopDef=&{{{custom.lat 741 36 1} {custom.lat 898 50 1}} <nil> 0xc00013c900 0xc000140100}) void_arg → int}
+[K[36mRead input[m  | Add intro for &{{custom.lat:2:8 custom.lat:2:12} %!s(*string=<nil>) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=0xc0002fd618) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 22 2 8} {custom.lat 26 2 12}} 0xc000395c20 <nil> 0xc000395cc0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:3:16 custom.lat:3:17} %!s(*string=<nil>) %!s(*int64=0xc0002fd5c8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 45 3 16} {custom.lat 46 3 17}} 0xc000395f40 <nil> 0xc0003e8000}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:3:16 custom.lat:3:17} %!s(*string=<nil>) %!s(*int64=0xc0002fd5c8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 45 3 16} {custom.lat 46 3 17}} 0xc000395f40 <nil> 0xc0003e8000}) %!s(*ast.PrimaryInvalid=<nil>) int}
+Add intro for &{{custom.lat:1:1 custom.lat:49:1} {{custom.lat:1:1 custom.lat:1:5} %!s(*string=0xc00030d290) %!s(*ast.Accessor=<nil>) <nil>} r [%!s(*ast.Arg=&{{{custom.lat 6 1 7} {custom.lat 11 1 12}} {{{custom.lat 6 1 7} {custom.lat 10 1 11}} 0xc00030d2f0 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 13 1 14} {custom.lat 901 49 1}} [0xc00026e840] 0xc0003c6120}) %!s(*ast.TopDef=&{{{custom.lat 0 1 1} {custom.lat 901 49 1}} <nil> 0xc0003c6120 0xc00038e280}) <nil>}
+Add intro for &{{custom.lat:1:1 custom.lat:49:1} {{custom.lat:1:1 custom.lat:1:5} %!s(*string=0xc00030d290) %!s(*ast.Accessor=<nil>) <nil>} r [%!s(*ast.Arg=&{{{custom.lat 6 1 7} {custom.lat 11 1 12}} {{{custom.lat 6 1 7} {custom.lat 10 1 11}} 0xc00030d2f0 <nil> <nil>} x <nil>})] %!s(*ast.Block=&{{{custom.lat 13 1 14} {custom.lat 901 49 1}} [0xc00026e840] 0xc0003c6120}) %!s(*ast.TopDef=&{{{custom.lat 0 1 1} {custom.lat 901 49 1}} <nil> 0xc0003c6120 0xc00038e280}) int → int}
+Add intro for &{{custom.lat:50:17 custom.lat:50:21} %!s(*string=<nil>) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=0xc0002fd619) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 930 50 17} {custom.lat 934 50 21}} 0xc0003e8820 <nil> 0xc0003e88c0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:51:9 custom.lat:51:10} %!s(*string=0xc00030d750) %!s(*int64=<nil>) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 944 51 9} {custom.lat 945 51 10}} 0xc0003e8be0 <nil> 0xc0003e8c80}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:52:16 custom.lat:52:17} %!s(*string=<nil>) %!s(*int64=0xc0002fd5d8) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 964 52 16} {custom.lat 965 52 17}} 0xc0003e8f00 <nil> 0xc0003e8fa0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:54:16 custom.lat:54:17} %!s(*string=<nil>) %!s(*int64=0xc0002fd608) %!s(*string=<nil>) %!s(*bool=<nil>) %!s(*ast.Expression=<nil>) %!s(*ast.Index=&{{{custom.lat 995 54 16} {custom.lat 996 54 17}} 0xc0003e9540 <nil> 0xc0003e95e0}) %!s(*ast.PrimaryInvalid=<nil>) <nil>}
+Add intro for &{{custom.lat:49:1 custom.lat:59:1} {{custom.lat:49:1 custom.lat:49:5} %!s(*string=0xc00030d560) %!s(*ast.Accessor=<nil>) <nil>} main [] %!s(*ast.Block=&{{{custom.lat 912 49 12} {custom.lat 1008 59 1}} [0xc00026ec60 0xc00026ed10] 0xc0003c6360}) %!s(*ast.TopDef=&{{{custom.lat 901 49 1} {custom.lat 1008 59 1}} <nil> 0xc0003c6360 0xc00038e280}) <nil>}
+Add intro for &{{custom.lat:49:1 custom.lat:59:1} {{custom.lat:49:1 custom.lat:49:5} %!s(*string=0xc00030d560) %!s(*ast.Accessor=<nil>) <nil>} main [] %!s(*ast.Block=&{{{custom.lat 912 49 12} {custom.lat 1008 59 1}} [0xc00026ec60 0xc00026ed10] 0xc0003c6360}) %!s(*ast.TopDef=&{{{custom.lat 901 49 1} {custom.lat 1008 59 1}} <nil> 0xc0003c6360 0xc00038e280}) void_arg → int}
 START FLOW ANALYSIS
 REF as=[] up=[] de=[] us=[]
+REF as=[] up=[] de=[] us=[]
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
-REF as=[] up=[] de=[] us=[]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
 KURWA MAC PIERDOLONA W DUPE: 1
-=> NODE[1]: *generic_ast.VirtualNode
+=> NODE[1]: *generic_ast.VirtualNode{ENTRY}
 KURWA MAC PIERDOLONA W DUPE: 2
-=> NODE[2]: *ast.Return
+=> NODE[2]: *ast.Return{return 1;}
 KURWA MAC PIERDOLONA W DUPE: 3
-=> NODE[3]: *generic_ast.VirtualNode
+=> NODE[3]: *generic_ast.VirtualNode{EXIT}
 !> (sibling pred/succ 0/1) CANNOT Merge 2 into 1
 !> (block pred/succ 2/0) CANNOT Merge 3 into ANY
 REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
@@ -53,10 +31,10 @@ REF as=[] up=[] de=[] us=[temp_10]
 RENAME IN STATMENT :DD []
 RENAME IN STATMENT :C [] (with map[] and map[])
 CFG TYPE *generic_ast.VirtualNode
-CFG TYPE *generic_ast.VirtualNode
 CFG TYPE *ir.IRExit
-CFG TYPE *ir.IRConst
 CFG TYPE *generic_ast.VirtualNode
+CFG TYPE *generic_ast.VirtualNode
+CFG TYPE *ir.IRConst
 Fold done (IR):
 
 
@@ -64,9 +42,9 @@ ENTIRE CODE IR:
 
 Function Int32 r()
 {
-  block_2: ; block
-    Int32 temp_10 = Const(1) [] [temp_10] Meta{Allocation()}
-    Exit Int32 (temp_10) [temp_10] [] Meta{Allocation()}
+  block2: ; block
+    Int32 temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const int 1
+    Exit Int32 (temp_10) [temp_10] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
   
 }
 
@@ -78,398 +56,91 @@ REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[temp_10]
 REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
-    Block:   5([<-3 <-2 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
-    Block:   2([->5 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
-    Block:   1([->4 as=[] up=[] de=[] us=[] [] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
-    Block:   3([<-4 ->5 as=[] up=[] de=[] us=[temp_10] [temp_10] {} Exit Int32 (temp_10)]) starts at (line 3, col 9)      and ends at (line 4, col 5)     
-    Block:   4([<-1 ->3 as=[temp_10] up=[temp_10] de=[temp_10] us=[] [] {3, 5} Int32 temp_10 = Const(1)]) starts at (line 3, col 16)     and ends at (line 3, col 17)    
+    Block:   3([<-2 <-4 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
+    Block:   4([->3 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
+    Block:   1([->5 as=[] up=[] de=[] us=[] [] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
+    Block:   2([<-5 ->3 as=[] up=[] de=[] us=[temp_10] [temp_10] {} Exit Int32 (temp_10)]) starts at (line 3, col 9)      and ends at (line 4, col 5)     
+    Block:   5([<-1 ->2 as=[temp_10] up=[temp_10] de=[temp_10] us=[] [] {2, 3} Int32 temp_10 = Const(1)]) starts at (line 3, col 16)     and ends at (line 3, col 17)    
     1 | 
     2 | Yeah.
 START FLOW ANALYSIS
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
-REF as=[] up=[] de=[b, c, d] us=[]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[d] up=[d] de=[] us=[]
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
+REF as=[x] up=[x] de=[] us=[]
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[a] up=[a] de=[] us=[r]
-REF as=[] up=[] de=[b, c, d] us=[]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[b]
-REF as=[] up=[] de=[] us=[b, a]
-REF as=[] up=[] de=[d, b, c] us=[]
-REF as=[] up=[] de=[d, b, c] us=[]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[b]
-REF as=[c] up=[c] de=[] us=[b]
-REF as=[] up=[] de=[b, c, d] us=[]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[q] up=[q] de=[] us=[]
-GET USED VARIABLES PRIMARY: VAR[c]
-GET USED VARIABLES PRIMARY: VAR[c]
-REF as=[] up=[] de=[] us=[c]
-REF as=[] up=[] de=[b, c, d] us=[]
 REF as=[] up=[] de=[] us=[]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[b] up=[b] de=[] us=[]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[b] up=[b] de=[] us=[a]
-REF as=[] up=[] de=[c, d, b] us=[]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
+GET USED VARIABLES PRIMARY: VAR[x]
+GET USED VARIABLES PRIMARY: VAR[x]
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
+GET USED VARIABLES PRIMARY: VAR[x]
+GET USED VARIABLES PRIMARY: VAR[x]
+REF as=[] up=[] de=[] us=[x]
 GET USED VARIABLES PRIMARY: NONE
 GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[c]
-GET USED VARIABLES PRIMARY: VAR[c]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[b] up=[b] de=[] us=[]
-REMOVE map[] from block 2 (live vars [a, b, c])
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[q] up=[q] de=[] us=[]
-REMOVE map[q:{}] from block 4 (live vars [c])
-GET USED VARIABLES PRIMARY: VAR[b]
-GET USED VARIABLES PRIMARY: VAR[b]
-REF as=[c] up=[c] de=[] us=[b]
-REMOVE map[] from block 11 (live vars [b, c])
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[d] up=[d] de=[] us=[]
-REMOVE map[d:{}] from block 8 (live vars [a, b, c, r])
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: VAR[r]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[a] up=[a] de=[] us=[r]
-REMOVE map[] from block 9 (live vars [a, b, c, r])
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: VAR[a]
-GET USED VARIABLES PRIMARY: NONE
-GET USED VARIABLES PRIMARY: NONE
-REF as=[b] up=[b] de=[] us=[a]
-REMOVE map[] from block 3 (live vars [a, b, c])
-REF as=[] up=[] de=[b, c, d] us=[]
-REMOVE map[b:{} c:{} d:{}] from block 7 (live vars [a, r])
+REF as=[] up=[] de=[] us=[]
+REF as=[] up=[] de=[] us=[]
 KURWA MAC PIERDOLONA W DUPE: 1
-=> NODE[1]: *generic_ast.VirtualNode
-KURWA MAC PIERDOLONA W DUPE: 7
-=> NODE[7]: %!s(<nil>)
-KURWA MAC PIERDOLONA W DUPE: 8
-=> NODE[8]: %!s(<nil>)
-KURWA MAC PIERDOLONA W DUPE: 9
-=> NODE[9]: *ast.Declaration
-KURWA MAC PIERDOLONA W DUPE: 2
-=> NODE[2]: *ast.Assignment
-KURWA MAC PIERDOLONA W DUPE: 10
-=> NODE[10]: *ast.If
+=> NODE[1]: *generic_ast.VirtualNode{ENTRY}
 KURWA MAC PIERDOLONA W DUPE: 3
-=> NODE[3]: *ast.Assignment
-KURWA MAC PIERDOLONA W DUPE: 11
-=> NODE[11]: *ast.Assignment
-KURWA MAC PIERDOLONA W DUPE: 4
-=> NODE[4]: %!s(<nil>)
-KURWA MAC PIERDOLONA W DUPE: 12
-=> NODE[12]: *ast.Return
+=> NODE[3]: *ast.Declaration{boolean x = true}
 KURWA MAC PIERDOLONA W DUPE: 5
-=> NODE[5]: *generic_ast.VirtualNode
-!> (sibling pred/succ 0/1) CANNOT Merge 7 into 1
-?> Merge 8 into 7
-!> (sibling pred/succ 0/1) CANNOT Merge 7 into 1
-?> Merge 9 into 7
-!> (sibling pred/succ 0/1) CANNOT Merge 7 into 1
-?> Merge 2 into 7
-!> (sibling pred/succ 0/1) CANNOT Merge 7 into 1
-!> (block pred/succ 1/2) CANNOT Merge 10 into ANY
-!> (sibling pred/succ 1/2) CANNOT Merge 3 into 10
-!> (block pred/succ 2/1) CANNOT Merge 11 into ANY
-!> (sibling pred/succ 2/1) CANNOT Merge 4 into 11
-?> Merge 12 into 4
-!> (sibling pred/succ 0/1) CANNOT Merge 7 into 1
-!> (block pred/succ 1/2) CANNOT Merge 10 into ANY
-!> (sibling pred/succ 1/2) CANNOT Merge 3 into 10
-!> (block pred/succ 2/1) CANNOT Merge 11 into ANY
-!> (sibling pred/succ 2/1) CANNOT Merge 4 into 11
-!> (block pred/succ 2/0) CANNOT Merge 5 into ANY
-REF as=[temp_20] up=[temp_20] de=[temp_20] us=[]
+=> NODE[5]: *ast.If{if (x) {
+  return 4;
+} else {
+  return 9;
+}}
+[?] If contents: *ast.Return{return 4;}
+KURWA MAC PIERDOLONA W DUPE: 4
+=> NODE[4]: *ast.Return{return 4;}
+KURWA MAC PIERDOLONA W DUPE: 7
+=> NODE[7]: *generic_ast.VirtualNode{EXIT}
+KURWA MAC PIERDOLONA W DUPE: 6
+=> NODE[6]: *ast.Return{return 9;}
+!> (sibling pred/succ 0/1) CANNOT Merge 3 into 1
+!> (block pred/succ 1/2) CANNOT Merge 5 into ANY
+!> (sibling pred/succ 1/2) CANNOT Merge 4 into 5
+!> (block pred/succ 3/0) CANNOT Merge 7 into ANY
+!> (sibling pred/succ 1/2) CANNOT Merge 6 into 5
+REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
 RENAME IN STATMENT :DD []
 RENAME IN STATMENT :C [] (with map[] and map[])
-REF as=[temp_8] up=[temp_8] de=[temp_8] us=[temp_20, r]
+REF as=[x] up=[x] de=[x] us=[temp_10]
 RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[])
-REF as=[temp_26] up=[temp_26] de=[temp_26] us=[]
+RENAME IN STATMENT :C [] (with map[x:x_3_0] and map[])
+REF as=[] up=[] de=[] us=[x]
 RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[])
-REF as=[temp_5] up=[temp_5] de=[temp_5] us=[temp_26, temp_8]
+RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
+REF as=[temp_30] up=[temp_30] de=[temp_30] us=[]
 RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[])
-REF as=[a] up=[a] de=[a] us=[temp_5]
+RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
+REF as=[] up=[] de=[] us=[temp_30]
 RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a:a_7_0] and map[])
-REF as=[temp_36] up=[temp_36] de=[temp_36] us=[]
+RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
+REF as=[temp_40] up=[temp_40] de=[temp_40] us=[]
 RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[a:a_7_0])
-REF as=[b] up=[b] de=[b] us=[temp_36]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[b:b_7_1] and map[a:a_7_0])
-REF as=[temp_40] up=[temp_40] de=[temp_40] us=[a, b]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[a:a_7_0 b:b_7_1])
+RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
 REF as=[] up=[] de=[] us=[temp_40]
 RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[a:a_7_0 b:b_7_1])
-REF as=[temp_69] up=[temp_69] de=[temp_69] us=[]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[a:a_7_0 b:b_7_1])
-REF as=[temp_58] up=[temp_58] de=[temp_58] us=[a, temp_69]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[a:a_7_0 b:b_7_1])
-REF as=[b] up=[b] de=[b] us=[temp_58]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[b:b_3_0] and map[a:a_7_0 b:b_7_1])
-REF as=[c] up=[c] de=[c] us=[b]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[c:c_11_0] and map[a:a_7_0 b:b_3_0])
-REF as=[] up=[] de=[] us=[c]
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[a:a_7_0 b:b_3_0 c:c_11_0])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[b_3_0:b_phi_11])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[] and map[b_3_0:b_phi_11])
+RENAME IN STATMENT :C [] (with map[] and map[x:x_3_0])
 IRIF BUILD FLOW
 CFG TYPE *generic_ast.VirtualNode
 CFG TYPE *generic_ast.VirtualNode
 CFG TYPE *ir.IRCopy
-CFG TYPE *ir.IRCopy
-CFG TYPE *ir.IRExpression
-CFG TYPE *ir.IRCopy
-CFG TYPE *ir.IRCall
 CFG TYPE *ir.IRConst
-CFG TYPE *ir.IRConst
-CFG TYPE *ir.IRCopy
-CFG TYPE *ir.IRCopy
-CFG TYPE *ir.IRConst
-CFG TYPE *ir.IRExpression
-CFG TYPE *ir.IRCopy
-CFG TYPE *ir.IRConst
-CFG TYPE *ir.IRExpression
 CFG TYPE *ir.IRIf
-CFG TYPE *generic_ast.VirtualNode
-CFG TYPE *ir.IRCopy
-CFG TYPE *ir.IRCopy
 CFG TYPE *ir.IRExit
-Subst temp_5 => temp_8 because of Int32 temp_5 = Copy(temp_8) [b_phi_11, temp_26, temp_8] [b_phi_11, temp_26] Meta{Allocation()} and next Int32 temp_5 = (Int32) SelfMul(temp_26); [b_phi_11, temp_26] [b_phi_11, temp_5] Meta{Allocation()}
-RENAME IN STATMENT :DD [b_phi_11, temp_20, r]
-RENAME IN STATMENT :C [b_phi_11, temp_20, r] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, temp_8]
-RENAME IN STATMENT :C [b_phi_11, temp_8] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, temp_26, temp_8]
-RENAME IN STATMENT :C [temp_8, b_phi_11, temp_26] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, temp_5]
-RENAME IN STATMENT :C [temp_8, b_phi_11] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, a_7_0]
-RENAME IN STATMENT :C [a_7_0, b_phi_11] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, a_7_0, temp_36]
-RENAME IN STATMENT :C [a_7_0, temp_36, b_phi_11] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, b_7_1, a_7_0]
-RENAME IN STATMENT :C [a_7_0, b_phi_11, b_7_1] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, temp_40, b_phi_11]
-RENAME IN STATMENT :C [temp_40, b_phi_11, b_7_1, a_7_0] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [a_7_0, b_phi_11, b_7_1]
-RENAME IN STATMENT :C [b_phi_11, b_7_1, a_7_0] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0]
-RENAME IN STATMENT :C [b_7_1, a_7_0] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, temp_69]
-RENAME IN STATMENT :C [b_7_1, a_7_0, temp_69] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, temp_69]
-RENAME IN STATMENT :C [b_7_1, a_7_0, temp_69] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, temp_58]
-RENAME IN STATMENT :C [b_7_1, a_7_0, temp_58] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, b_3_0, a_7_0]
-RENAME IN STATMENT :C [b_7_1, b_3_0, a_7_0] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, b_phi_11]
-RENAME IN STATMENT :C [b_7_1, a_7_0, b_phi_11] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [c_11_0, b_7_1, a_7_0]
-RENAME IN STATMENT :C [b_7_1, a_7_0, c_11_0] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, c_11_0]
-RENAME IN STATMENT :C [c_11_0, b_7_1, a_7_0] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[temp_5:temp_8] and map[temp_5:temp_8])
-EXIT subs
-Subst a_7_0 => temp_8 because of Int32 a_7_0 = Copy(temp_8) [b_phi_11, temp_8] [b_phi_11, a_7_0] Meta{Allocation()} and next Int32 temp_36 = Const(3) [b_phi_11, a_7_0] [b_phi_11, a_7_0, temp_36] Meta{Allocation()}
-RENAME IN STATMENT :DD [b_phi_11, temp_20, r]
-RENAME IN STATMENT :C [temp_20, r, b_phi_11] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, temp_8]
-RENAME IN STATMENT :C [b_phi_11, temp_8] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_8, b_phi_11, temp_26]
-RENAME IN STATMENT :C [temp_8, b_phi_11, temp_26] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_8, b_phi_11]
-RENAME IN STATMENT :C [temp_8, b_phi_11] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [a_7_0, temp_36, b_phi_11]
-RENAME IN STATMENT :C [b_phi_11, temp_8, temp_36] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, b_7_1, a_7_0]
-RENAME IN STATMENT :C [temp_8, b_phi_11, b_7_1] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, b_7_1, a_7_0, temp_40]
-RENAME IN STATMENT :C [temp_40, b_phi_11, b_7_1, temp_8] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, b_7_1, a_7_0]
-RENAME IN STATMENT :C [b_7_1, temp_8, b_phi_11] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0]
-RENAME IN STATMENT :C [b_7_1, temp_8] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, temp_69]
-RENAME IN STATMENT :C [temp_69, b_7_1, temp_8] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_69, b_7_1, a_7_0]
-RENAME IN STATMENT :C [b_7_1, temp_8, temp_69] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, temp_58]
-RENAME IN STATMENT :C [temp_8, temp_58, b_7_1] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, b_3_0, a_7_0]
-RENAME IN STATMENT :C [b_7_1, b_3_0, temp_8] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, a_7_0, b_phi_11]
-RENAME IN STATMENT :C [b_7_1, temp_8, b_phi_11] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [a_7_0, c_11_0, b_7_1]
-RENAME IN STATMENT :C [temp_8, c_11_0, b_7_1] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_8, c_11_0, b_7_1]
-RENAME IN STATMENT :C [temp_8, c_11_0, b_7_1] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a_7_0:temp_8 temp_5:temp_8] and map[a_7_0:temp_8 temp_5:temp_8])
-EXIT subs
-Subst b_3_0 => temp_58 because of Int32 b_3_0 = Copy(temp_58) [b_7_1, temp_8, temp_58] [b_3_0, temp_8, b_7_1] Meta{Allocation()} and next Int32 b_phi_11 = Copy(b_3_0) [temp_8, b_7_1, b_3_0] [b_7_1, temp_8, b_phi_11] Meta{Allocation()}
-RENAME IN STATMENT :DD [temp_20, r, b_phi_11]
-RENAME IN STATMENT :C [b_phi_11, temp_20, r] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, temp_8]
-RENAME IN STATMENT :C [b_phi_11, temp_8] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_8, b_phi_11, temp_26]
-RENAME IN STATMENT :C [temp_8, b_phi_11, temp_26] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_8, b_phi_11]
-RENAME IN STATMENT :C [temp_8, b_phi_11] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, temp_8, temp_36]
-RENAME IN STATMENT :C [b_phi_11, temp_8, temp_36] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, b_7_1, temp_8]
-RENAME IN STATMENT :C [b_phi_11, b_7_1, temp_8] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_40, b_phi_11, b_7_1, temp_8]
-RENAME IN STATMENT :C [temp_40, b_phi_11, b_7_1, temp_8] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_phi_11, b_7_1, temp_8]
-RENAME IN STATMENT :C [b_phi_11, b_7_1, temp_8] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, temp_8]
-RENAME IN STATMENT :C [b_7_1, temp_8] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_69, b_7_1, temp_8]
-RENAME IN STATMENT :C [b_7_1, temp_8, temp_69] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, temp_8, temp_69]
-RENAME IN STATMENT :C [temp_69, b_7_1, temp_8] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_8, temp_58, b_7_1]
-RENAME IN STATMENT :C [temp_8, temp_58, b_7_1] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_8, b_phi_11, b_7_1]
-RENAME IN STATMENT :C [temp_8, b_phi_11, b_7_1] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [temp_8, c_11_0, b_7_1]
-RENAME IN STATMENT :C [b_7_1, temp_8, c_11_0] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD [b_7_1, temp_8, c_11_0]
-RENAME IN STATMENT :C [temp_8, c_11_0, b_7_1] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-RENAME IN STATMENT :DD []
-RENAME IN STATMENT :C [] (with map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8] and map[a_7_0:temp_8 b_3_0:temp_58 temp_5:temp_8])
-EXIT subs
+CFG TYPE *ir.IRExit
+CFG TYPE *generic_ast.VirtualNode
+CFG TYPE *ir.IRConst
+CFG TYPE *ir.IRConst
 Fold done (IR):
 
 
@@ -477,31 +148,20 @@ ENTIRE CODE IR:
 
 Function Int32 main()
 {
-  block_7: ; block
-    Int32 temp_20 = Const(3) [b_phi_11, r] [b_phi_11, temp_20, r] Meta{Allocation()}
-    Int32 temp_8 = Call(FunctionPtr r) (Int32 temp_20) [r, b_phi_11, temp_20] [b_phi_11, temp_8] Meta{Allocation()}
-    Int32 temp_26 = Const(2) [b_phi_11, temp_8] [temp_8, b_phi_11, temp_26] Meta{Allocation()}
-    Int32 temp_8 = (Int32) SelfMul(temp_26); [b_phi_11, temp_26] [temp_8, b_phi_11] Meta{Allocation()}
-    Int32 temp_36 = Const(3) [temp_8, b_phi_11] [b_phi_11, temp_8, temp_36] Meta{Allocation()}
-    Int32 b_7_1 = Copy(temp_36) [b_phi_11, temp_8, temp_36] [b_phi_11, b_7_1, temp_8] Meta{Allocation()}
+  block3: ; block
+    Bit temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const boolean true
+    Bit x_3_0 = Copy(temp_10) [temp_10] [x_3_0] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Assign variable x
   
-  block_10: ; block
-    Bit temp_40 = (Int32,Int32) GtEq(temp_8,b_7_1); [temp_8, b_phi_11, b_7_1] [b_phi_11, b_7_1, temp_8, temp_40] Meta{Allocation()}
-    If Bit temp_40 jump to block_3 else block_11 [b_phi_11, b_7_1, temp_8, temp_40] [b_7_1, temp_8, b_phi_11] Meta{Allocation()}
-    Int32 b_phi_11 = Copy(b_7_1) [b_7_1, temp_8] [b_7_1, temp_8] Meta{Allocation()}
+  block5: ; block
+    If Bit x_3_0 jump to block4 else block6 [x_3_0] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; If condition
   
-  block_3: ; block
-    Int32 temp_69 = Const(2) [b_7_1, temp_8] [b_7_1, temp_8, temp_69] Meta{Allocation()}
-    Int32 temp_58 = Copy(temp_8) [b_7_1, temp_8, temp_69] [b_7_1, temp_8, temp_69] Meta{Allocation()}
-    Int32 temp_58 = (Int32) SelfDiv(temp_69); [temp_8, temp_69, b_7_1] [b_7_1, temp_8, temp_58] Meta{Allocation()}
-    Int32 b_phi_11 = Copy(temp_58) [temp_58, temp_8, b_7_1] [temp_8, b_phi_11, b_7_1] Meta{Allocation()}
+  block4: ; block
+    Int32 temp_30 = Const(4) [] [temp_30] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const int 4
+    Exit Int32 (temp_30) [temp_30] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
   
-  block_11: ; block
-    ; [] [] Meta{Allocation()}
-    Int32 c_11_0 = Copy(b_phi_11) [b_7_1, temp_8, b_phi_11] [b_7_1, temp_8, c_11_0] Meta{Allocation()}
-  
-  block_4: ; block
-    Exit Int32 (c_11_0) [c_11_0] [] Meta{Allocation()}
+  block6: ; block
+    Int32 temp_40 = Const(9) [] [temp_40] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0) ; Const int 9
+    Exit Int32 (temp_40) [temp_40] [] Meta{Target:Allocation(), Context:Allocation()} (begin 0:0)
   
 }
 
@@ -511,95 +171,110 @@ ENTIRE GRAPH IR:
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
 REF as=[] up=[] de=[] us=[]
-REF as=[b_phi_11] up=[b_phi_11] de=[b_phi_11] us=[temp_58]
-REF as=[b_phi_11] up=[b_phi_11] de=[b_phi_11] us=[b_7_1]
-REF as=[a_7_0] up=[a_7_0] de=[a_7_0] us=[temp_8]
-REF as=[temp_8] up=[temp_8] de=[temp_8] us=[temp_26]
-REF as=[temp_8] up=[temp_8] de=[temp_8] us=[temp_20, r]
-REF as=[temp_5] up=[temp_5] de=[temp_5] us=[temp_8]
-REF as=[temp_20] up=[temp_20] de=[temp_20] us=[]
-REF as=[temp_26] up=[temp_26] de=[temp_26] us=[]
-REF as=[b_7_1] up=[b_7_1] de=[b_7_1] us=[temp_36]
-REF as=[temp_36] up=[temp_36] de=[temp_36] us=[]
+REF as=[x_3_0] up=[x_3_0] de=[x_3_0] us=[temp_10]
+REF as=[temp_10] up=[temp_10] de=[temp_10] us=[]
+REF as=[] up=[] de=[] us=[x_3_0]
+REF as=[] up=[] de=[] us=[temp_30]
+REF as=[temp_30] up=[temp_30] de=[temp_30] us=[]
 REF as=[] up=[] de=[] us=[temp_40]
-REF as=[temp_40] up=[temp_40] de=[temp_40] us=[temp_8, b_7_1]
-REF as=[b_3_0] up=[b_3_0] de=[b_3_0] us=[temp_58]
-REF as=[temp_58] up=[temp_58] de=[temp_58] us=[temp_69]
-REF as=[temp_58] up=[temp_58] de=[temp_58] us=[temp_8]
-REF as=[temp_69] up=[temp_69] de=[temp_69] us=[]
-REF as=[c_11_0] up=[c_11_0] de=[c_11_0] us=[b_phi_11]
-REF as=[] up=[] de=[] us=[c_11_0]
-    Block:  18([<-21 <-2 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
-    Block:   2([->18 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
-    Block:   1([->8 as=[] up=[] de=[] us=[] [b_phi_11, r] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
-    Block:   3([<-19 ->3 ->20 as=[b_phi_11] up=[b_phi_11] de=[b_phi_11] us=[temp_58] [b_7_1, b_3_0, a_7_0] {19, 14, 4, 15, 16, 18, 20, 21, 3} Int32 b_phi_11 = Copy(temp_58)]) starts at (line 0, col 0)      and ends at (line 0, col 0)     
-    Block:   3([<-4 <-20 ->15 as=[b_phi_11] up=[b_phi_11] de=[b_phi_11] us=[b_7_1] [b_7_1, a_7_0] {20, 16, 4, 14, 15, 18, 19, 21, 3} Int32 b_phi_11 = Copy(b_7_1)]) starts at (line 0, col 0)      and ends at (line 0, col 0)     
-    Block:   6([<-5 ->12 as=[a_7_0] up=[a_7_0] de=[a_7_0] us=[temp_8] [b_phi_11, temp_5] {12, 15, 16, 17, 18, 3, 4, 11, 21, 20, 13, 14, 19} Int32 a_7_0 = Copy(temp_8)]) starts at (line 39, col 9)     and ends at (line 39, col 19)   
-    Block:  10([<-10 ->6 as=[temp_8] up=[temp_8] de=[temp_8] us=[temp_26] [b_phi_11, temp_26] {4, 12, 16, 14, 18, 21, 11, 13, 15, 17, 20, 3, 6, 19} Int32 temp_8 = (Int32) SelfMul(temp_26)]) starts at (line 39, col 13)    and ends at (line 39, col 19)   
-    Block:   7([<-8 ->9 as=[temp_8] up=[temp_8] de=[temp_8] us=[temp_20, r] [b_phi_11, temp_20, r] {18, 21, 5, 15, 6, 14, 19, 3, 4, 16, 17, 11, 13, 12, 20, 9, 10} Int32 temp_8 = Call(FunctionPtr r) (Int32 temp_20)]) starts at (line 39, col 13)    and ends at (line 39, col 17)   
-    Block:  10([<-9 ->5 as=[temp_5] up=[temp_5] de=[temp_5] us=[temp_8] [b_phi_11, temp_26, temp_8] {12, 17, 18, 19, 3, 11, 20, 6, 13, 14, 15, 21, 4, 5, 16} Int32 temp_5 = Copy(temp_8)]) starts at (line 39, col 13)    and ends at (line 39, col 19)   
-    Block:   8([<-1 ->7 as=[temp_20] up=[temp_20] de=[temp_20] us=[] [r, b_phi_11] {5, 6, 10, 15, 4, 12, 17, 18, 9, 13, 19, 20, 21, 3, 7, 11, 14, 16} Int32 temp_20 = Const(3)]) starts at (line 39, col 15)    and ends at (line 39, col 16)   
-    Block:   9([<-7 ->10 as=[temp_26] up=[temp_26] de=[temp_26] us=[] [temp_8, b_phi_11] {13, 15, 21, 11, 14, 18, 19, 5, 12, 17, 10, 16, 20, 3, 4, 6} Int32 temp_26 = Const(2)]) starts at (line 39, col 18)    and ends at (line 39, col 19)   
-    Block:  11([<-12 ->13 as=[b_7_1] up=[b_7_1] de=[b_7_1] us=[temp_36] [a_7_0, temp_36, b_phi_11] {18, 19, 20, 13, 14, 15, 16, 17, 21, 3, 4} Int32 b_7_1 = Copy(temp_36)]) starts at (line 40, col 5)     and ends at (line 41, col 5)    
-    Block:  12([<-6 ->11 as=[temp_36] up=[temp_36] de=[temp_36] us=[] [b_phi_11, a_7_0] {14, 16, 17, 18, 21, 3, 11, 13, 20, 4, 15, 19} Int32 temp_36 = Const(3)]) starts at (line 40, col 9)     and ends at (line 40, col 10)   
-    Block:  17([<-13 ->15 ->20 as=[] up=[] de=[] us=[temp_40] [temp_40, b_phi_11, b_7_1, a_7_0] {} If Bit temp_40 jump to block_3 else block_11]) starts at (line 41, col 5)     and ends at (line 44, col 5)    
-    Block:  13([<-11 ->17 as=[temp_40] up=[temp_40] de=[temp_40] us=[temp_8, b_7_1] [b_phi_11, b_7_1, a_7_0] {14, 15, 16, 17, 18, 19, 20, 3, 4, 21} Bit temp_40 = (Int32,Int32) GtEq(temp_8,b_7_1)]) starts at (line 41, col 9)     and ends at (line 41, col 15)   
-    Block:  19([<-16 ->4 as=[b_3_0] up=[b_3_0] de=[b_3_0] us=[temp_58] [b_7_1, a_7_0, temp_58] {21, 14, 16, 19, 20, 3, 4, 15, 18} Int32 b_3_0 = Copy(temp_58)]) starts at (line 42, col 9)     and ends at (line 43, col 5)    
-    Block:  14([<-14 ->19 as=[temp_58] up=[temp_58] de=[temp_58] us=[temp_69] [b_7_1, a_7_0, temp_69] {4, 14, 15, 16, 18, 21, 3, 19, 20} Int32 temp_58 = (Int32) SelfDiv(temp_69)]) starts at (line 42, col 13)    and ends at (line 42, col 16)   
-    Block:  14([<-15 ->16 as=[temp_58] up=[temp_58] de=[temp_58] us=[temp_8] [b_7_1, a_7_0, temp_69] {19, 20, 21, 4, 15, 16, 18, 3, 14} Int32 temp_58 = Copy(temp_8)]) starts at (line 42, col 13)    and ends at (line 42, col 16)   
-    Block:  15([<-17 <-3 ->14 as=[temp_69] up=[temp_69] de=[temp_69] us=[] [b_7_1, a_7_0] {15, 16, 19, 20, 21, 4, 14, 18, 3} Int32 temp_69 = Const(2)]) starts at (line 42, col 15)    and ends at (line 42, col 16)   
-    Block:  20([<-17 <-4 ->3 ->21 as=[c_11_0] up=[c_11_0] de=[c_11_0] us=[b_phi_11] [b_phi_11, b_7_1, a_7_0] {14, 16, 18, 20, 4, 15, 19, 21, 3} Int32 c_11_0 = Copy(b_phi_11)]) starts at (line 44, col 5)     and ends at (line 45, col 5)    
-    Block:  21([<-20 ->18 as=[] up=[] de=[] us=[c_11_0] [c_11_0] {} Exit Int32 (c_11_0)]) starts at (line 46, col 5)     and ends at (line 47, col 1)    
+REF as=[temp_40] up=[temp_40] de=[temp_40] us=[]
+    Block:   8([<-6 <-7 <-1 as=[] up=[] de=[] us=[] [] {} EXIT]) starts at (line -3, col -3)    and ends at (line -3, col -3)   
+    Block:   1([->8 as=[] up=[] de=[] us=[] [] {} END]) starts at (line -2, col -2)    and ends at (line -2, col -2)   
+    Block:   2([->4 as=[] up=[] de=[] us=[] [] {} ENTRY]) starts at (line -1, col -1)    and ends at (line -1, col -1)   
+    Block:   3([<-4 ->5 as=[x_3_0] up=[x_3_0] de=[x_3_0] us=[temp_10] [temp_10] {5, 6, 7, 8, 9, 10} Bit x_3_0 = Copy(temp_10)]) starts at (line 50, col 13)    and ends at (line 50, col 21)   
+    Block:   4([<-2 ->3 as=[temp_10] up=[temp_10] de=[temp_10] us=[] [] {5, 6, 7, 8, 9, 10, 3} Bit temp_10 = Const(1)]) starts at (line 50, col 17)    and ends at (line 50, col 21)   
+    Block:   5([<-3 ->9 ->10 as=[] up=[] de=[] us=[x_3_0] [x_3_0] {} If Bit x_3_0 jump to block4 else block6]) starts at (line 51, col 5)     and ends at (line 56, col 1)    
+    Block:   6([<-9 ->8 as=[] up=[] de=[] us=[temp_30] [temp_30] {} Exit Int32 (temp_30)]) starts at (line 52, col 9)     and ends at (line 53, col 5)    
+    Block:   9([<-5 ->6 as=[temp_30] up=[temp_30] de=[temp_30] us=[] [] {6, 8} Int32 temp_30 = Const(4)]) starts at (line 52, col 16)    and ends at (line 52, col 17)   
+    Block:   7([<-10 ->8 as=[] up=[] de=[] us=[temp_40] [temp_40] {} Exit Int32 (temp_40)]) starts at (line 54, col 9)     and ends at (line 55, col 5)    
+    Block:  10([<-5 ->7 as=[temp_40] up=[temp_40] de=[temp_40] us=[] [] {7, 8} Int32 temp_40 = Const(9)]) starts at (line 54, col 16)    and ends at (line 54, col 17)   
     1 | 
     2 | Yeah.
+Try to allocate register? name: temp_10, size: 4 of [map[ECX:0xc0003e37d0 EDX:0xc0003e3800]]
+FUNCTION SIZE: 0
+Try to allocate register? name: temp_10, size: 4 of [map[ECX:0xc0003e3c80 EDX:0xc0003e3cb0]]
+Try to allocate register? name: x_3_0, size: 4 of [map[ECX:0xc0003e3c80 EDX:0xc0003e3cb0]]
+Try to allocate register? name: temp_30, size: 4 of [map[ECX:0xc0003e3c80 EDX:0xc0003e3cb0]]
+Try to allocate register? name: temp_40, size: 4 of [map[ECX:0xc0003e3c80 EDX:0xc0003e3cb0]]
+FUNCTION SIZE: 0
+?BASED?
 Function Int32 r()
 {
-    block_2: ; block
-      Int32 temp_10 = Const(1) [] [temp_10] Meta{Allocation(temp_10: Memory[0])}
-      Exit Int32 (temp_10) [temp_10] [] Meta{Allocation()}
+    block2: ; block
+      Int32 temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(temp_10: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)])} (begin 0:0) ; Const int 1
+      Exit Int32 (temp_10) [temp_10] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)])} (begin 0:0)
     
 }
 
 Function Int32 main()
 {
-    block_7: ; block
-      Int32 temp_20 = Const(3) [b_phi_11, r] [b_phi_11, temp_20, r] Meta{Allocation(temp_20: Memory[0])}
-      Int32 temp_8 = Call(FunctionPtr r) (Int32 temp_20) [b_phi_11, temp_20, r] [b_phi_11, temp_8] Meta{Allocation(temp_8: Memory[1])}
-      Int32 temp_26 = Const(2) [b_phi_11, temp_8] [temp_8, b_phi_11, temp_26] Meta{Allocation(temp_26: Memory[0])}
-      Int32 temp_8 = (Int32) SelfMul(temp_26); [temp_26, b_phi_11] [temp_8, b_phi_11] Meta{Allocation(temp_8: Memory[2])}
-      Int32 temp_36 = Const(3) [temp_8, b_phi_11] [b_phi_11, temp_8, temp_36] Meta{Allocation(temp_36: Memory[0])}
-      Int32 b_7_1 = Copy(temp_36) [b_phi_11, temp_8, temp_36] [b_7_1, temp_8, b_phi_11] Meta{Allocation(b_7_1: Memory[1])}
+    block3: ; block
+      Bit temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(temp_10: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const boolean true
+      Bit x_3_0 = Copy(temp_10) [temp_10] [x_3_0] Meta{Target:Allocation(x_3_0: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Assign variable x
     
-    block_10: ; block
-      Bit temp_40 = (Int32,Int32) GtEq(temp_8,b_7_1); [temp_8, b_phi_11, b_7_1] [temp_40, b_phi_11, b_7_1, temp_8] Meta{Allocation(temp_40: Memory[0])}
-      If Bit temp_40 jump to block_3 else block_11 [b_phi_11, b_7_1, temp_8, temp_40] [b_phi_11, b_7_1, temp_8] Meta{Allocation()}
-      Int32 b_phi_11 = Copy(b_7_1) [b_7_1, temp_8] [b_7_1, temp_8] Meta{Allocation(b_phi_11: Memory[0])}
+    block5: ; block
+      If Bit x_3_0 jump to block4 else block6 [x_3_0] [] Meta{Target:Allocation(), Context:Allocation(temp_40: Register[ECX(size=4)], temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)])} (begin 0:0) ; If condition
     
-    block_3: ; block
-      Int32 temp_69 = Const(2) [b_7_1, temp_8] [temp_8, temp_69, b_7_1] Meta{Allocation(temp_69: Memory[0])}
-      Int32 temp_58 = Copy(temp_8) [temp_8, temp_69, b_7_1] [b_7_1, temp_8, temp_69] Meta{Allocation(temp_58: Memory[3])}
-      Int32 temp_58 = (Int32) SelfDiv(temp_69); [temp_8, temp_69, b_7_1] [temp_8, temp_58, b_7_1] Meta{Allocation(temp_58: Memory[3])}
-      Int32 b_phi_11 = Copy(temp_58) [temp_58, temp_8, b_7_1] [temp_8, b_phi_11, b_7_1] Meta{Allocation(b_phi_11: Memory[0])}
+    block4: ; block
+      Int32 temp_30 = Const(4) [] [temp_30] Meta{Target:Allocation(temp_30: Register[EDX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const int 4
+      Exit Int32 (temp_30) [temp_30] [] Meta{Target:Allocation(), Context:Allocation(temp_40: Register[ECX(size=4)], temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)])} (begin 0:0)
     
-    block_11: ; block
-      ; [] [] Meta{Allocation()}
-      Int32 c_11_0 = Copy(b_phi_11) [b_7_1, temp_8, b_phi_11] [temp_8, c_11_0, b_7_1] Meta{Allocation(c_11_0: Memory[0])}
-    
-    block_4: ; block
-      Exit Int32 (c_11_0) [c_11_0] [] Meta{Allocation()}
+    block6: ; block
+      Int32 temp_40 = Const(9) [] [temp_40] Meta{Target:Allocation(temp_40: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const int 9
+      Exit Int32 (temp_40) [temp_40] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0)
     
 }
 
 
-%!s(MISSING)[KDone: Processed everything in 4.105527ms (1 inputs):
-  ├─ Read input - Took 2.468µs
-  ├─ Parse input - Took 990.922µs
-  ├─ Typechecking - Took 4.105527ms
-  │ ├─ Generating constraints - Took 3.953073ms
-  │ ├─ Solving constraints - Took 5.681µs
-  │ └─ Postprocessing - Took 33.765µs
-  ├─ Generate compiled code using backend: X86 Jasmine backend - Took 318.771µs
-  └─ Running compiled program: false - Took 13.56µs
+%!s(MISSING)FUNCTION SIZE: 0
+FUNCTION SIZE: 0
 
-   → Created 1 file in /Users/pstyczynski/instant-compiler-go:
-     ⚐ custom.asm (X86 assembly source)
+AFTER PREPROCESSING STEP:
+Function Int32 r()
+{
+    block2: ; block
+      Int32 temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(temp_10: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)])} (begin 0:0) ; Const int 1
+      Exit Int32 (temp_10) [temp_10] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)])} (begin 0:0)
+    
+}
+
+Function Int32 main()
+{
+    block3: ; block
+      Bit temp_10 = Const(1) [] [temp_10] Meta{Target:Allocation(temp_10: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const boolean true
+      Bit x_3_0 = Copy(temp_10) [temp_10] [x_3_0] Meta{Target:Allocation(x_3_0: Register[EDX(size=4)]), Context:Allocation(temp_40: Register[ECX(size=4)], temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)])} (begin 0:0) ; Assign variable x
+    
+    block5: ; block
+      If Bit x_3_0 jump to block4 else block6 [x_3_0] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; If condition
+    
+    block4: ; block
+      Int32 temp_30 = Const(4) [] [temp_30] Meta{Target:Allocation(temp_30: Register[EDX(size=4)]), Context:Allocation(temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)], temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)])} (begin 0:0) ; Const int 4
+      Exit Int32 (temp_30) [temp_30] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0)
+    
+    block6: ; block
+      Int32 temp_40 = Const(9) [] [temp_40] Meta{Target:Allocation(temp_40: Register[ECX(size=4)]), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0) ; Const int 9
+      Exit Int32 (temp_40) [temp_40] [] Meta{Target:Allocation(), Context:Allocation(temp_10: Register[ECX(size=4)], x_3_0: Register[EDX(size=4)], temp_30: Register[EDX(size=4)], temp_40: Register[ECX(size=4)])} (begin 0:0)
+    
+}
+
+
+%!s(MISSING)
+==========END=========
+
+[K[36mGenerate compiled code using backend: X86 Jasmine backend[m  / [K Code Generation Error : Build command has failed
+    | On command:  gcc $BUILD_DIR/code.o -o $BUILD_DIR/code_exe 
+    |     INPUT_FILE_NAME = custom.lat
+    |     INPUT_FILE_LOC = .
+    |     INPUT_FILE_BASE = custom
+    |     BUILD_DIR = /var/folders/xp/sc_32rwj2z53j0gkvdphvsjh0000gp/T/_compile_custom.lat2878112179
+    |     ROOT = /Users/pstyczynski/instant-compiler-go
+    | Error: Output contains errors
+    | Program output: 
+    |> 
+    |> Undefined symbols for architecture x86_64:
+    |>   "_main", referenced from:
+    |>      implicit entry/start for main executable
+    |> ld: symbol(s) not found for architecture x86_64
+    |> clang: error: linker command failed with exit code 1 (use -v to see invocation)
+    |> 
+

@@ -23,30 +23,101 @@ type IRStatement struct {
 	Copy       *IRCopy       `| @@`
 	Const      *IRConst      `| @@`
 	Call       *IRCall       `| @@`
+	MacroCall  *IRMacroCall  `| @@`
 	ParentNode generic_ast.TraversableNode
 
 	VarIn   cfg.VariableSet
 	VarOut  cfg.VariableSet
 	Reached cfg.ReachedBlocks
 	meta    IRMeta
+
+	Comment string
 }
 
-func (ast *IRStatement) SetAllocationInfo(allocInfo IRAllocationMap) {
-	ast.meta.Allocation = allocInfo
+func (ast *IRStatement) SetTargetAllocationConstraints(targetName string, cons IRAllocationConstraints) *IRStatement {
+	targetCons := IRAllocationContraintsMap{}
+	targetCons[targetName] = cons
+	return ast.SetTargetAllocationConstraintsMap(targetCons)
 }
 
-func (ast *IRStatement) GetAllocationInfo() IRAllocationMap {
-	return ast.meta.Allocation
+func (ast *IRStatement) SetTargetAllocationConstraintsMap(targetCons IRAllocationContraintsMap) *IRStatement {
+	if len(targetCons) > 1 {
+		panic(fmt.Sprintf("Invalid allocation constraints: %s", targetCons.String()))
+	}
+	ast.meta.AllocationContraints = targetCons
+	return ast
+}
+
+func (ast *IRStatement) GetAllocationTargetContraints() (string, IRAllocationConstraints) {
+	for k, v := range ast.meta.AllocationContraints {
+		return k, v
+	}
+	return "", IRAllocationConstraints{}
+}
+
+func (ast *IRStatement) SetComment(format string, values ...interface{}) *IRStatement {
+	ast.Comment = fmt.Sprintf(format, values...)
+	return ast
+}
+
+func (ast *IRStatement) CopyDataForAllocationShadow(stmt *IRStatement) *IRStatement {
+	ast.VarIn = stmt.VarIn
+	ast.VarOut = stmt.VarOut
+	ast.BaseASTNode = ast.BaseASTNode
+	ast.ParentNode = ast.ParentNode
+	ast.Reached = ast.Reached
+	return ast
+}
+
+func (ast *IRStatement) CopyDataForAllocation(stmt *IRStatement) *IRStatement {
+	ast.meta.TargetAllocation = stmt.meta.TargetAllocation
+	ast.meta.AllocationContraints = stmt.meta.AllocationContraints
+	ast.meta.ContextAllocation = nil //stmt.meta.ContextAllocation
+	ast.VarIn = stmt.VarIn
+	ast.VarOut = stmt.VarOut
+	ast.BaseASTNode = ast.BaseASTNode
+	ast.ParentNode = ast.ParentNode
+	ast.Reached = ast.Reached
+	return ast
+}
+
+func (ast *IRStatement) SetAllocationInfo(targetAlloc IRAllocationMap, contextAlloc IRAllocationMap) *IRStatement {
+	if len(targetAlloc) > 1 {
+		panic(fmt.Sprintf("Invalid allocation info: %s", targetAlloc.String()))
+	}
+	ast.meta.TargetAllocation = targetAlloc
+	ast.meta.ContextAllocation = contextAlloc
+	return ast
+}
+
+func (ast *IRStatement) TryToGetAllocationTarget() (string, IRAllocation, bool) {
+	for k, v := range ast.meta.TargetAllocation {
+		return k, v, true
+	}
+	return "", nil, false
+}
+
+func (ast *IRStatement) GetAllocationTarget() (string, IRAllocation) {
+	name, alloc, ok := ast.TryToGetAllocationTarget()
+	if !ok {
+		panic("Missing allocation info")
+	}
+	return name, alloc
+}
+
+func (ast *IRStatement) GetAllocationContext() IRAllocationMap {
+	return ast.meta.ContextAllocation
 }
 
 func (ast *IRStatement) SetFlowAnalysisProps(
 	VarIn cfg.VariableSet,
 	VarOut cfg.VariableSet,
 	Reached cfg.ReachedBlocks,
-) {
+) *IRStatement {
 	ast.VarIn = VarIn
 	ast.VarOut = VarOut
 	ast.Reached = Reached
+	return ast
 }
 
 func WrapIREmpty() *IRStatement {
@@ -95,6 +166,14 @@ func WrapIRConst(ast *IRConst) *IRStatement {
 	return ret
 }
 
+func WrapIRMacroCall(ast *IRMacroCall) *IRStatement {
+	ret := &IRStatement{
+		MacroCall: ast,
+	}
+	ast.OverrideParent(ret)
+	return ret
+}
+
 func WrapIRCopy(ast *IRCopy) *IRStatement {
 	ret := &IRStatement{
 		Copy: ast,
@@ -136,6 +215,7 @@ func (ast *IRStatement) IsEmpty() bool {
 		!ast.IsIf() &&
 		!ast.IsPhi() &&
 		!ast.IsCopy() &&
+		!ast.IsMacroCall() &&
 		!ast.IsConst() &&
 		!ast.IsCall() &&
 		!ast.IsExpression()))
@@ -165,6 +245,10 @@ func (ast *IRStatement) IsCall() bool {
 	return ast.Call != nil
 }
 
+func (ast *IRStatement) IsMacroCall() bool {
+	return ast.MacroCall != nil
+}
+
 func (ast *IRStatement) IsExpression() bool {
 	return ast.Expression != nil
 }
@@ -181,6 +265,8 @@ func (ast *IRStatement) GetChildren() []generic_ast.TraversableNode {
 		return []generic_ast.TraversableNode{ast.Phi}
 	} else if ast.IsCopy() {
 		return []generic_ast.TraversableNode{ast.Copy}
+	} else if ast.IsMacroCall() {
+		return []generic_ast.TraversableNode{ast.MacroCall}
 	} else if ast.IsConst() {
 		return []generic_ast.TraversableNode{ast.Const}
 	} else if ast.IsCall() {
@@ -196,7 +282,8 @@ func (ast *IRStatement) formatIRStatementInstruction(irstatement string, c *cont
 		c.PrinterConfiguration.SkipStatementIdent = false
 		return irstatement
 	}
-	return utils.PrintASTNode(c, ast, "%s%s %s %s %s", strings.Repeat("  ", c.BlockDepth), irstatement, ast.VarIn.String(), ast.VarOut.String(), ast.meta.String())
+	return utils.PrintASTNode(c, ast, "%s%s %s %s %s (begin %s)", strings.Repeat("  ", c.BlockDepth), irstatement, ast.VarIn.String(), ast.VarOut.String(), ast.meta.String(), ast.BaseASTNode.Begin())
+	//return utils.PrintASTNode(c, ast, "%s%s %s", strings.Repeat("  ", c.BlockDepth), irstatement, ast.meta.AllocationContraints)
 }
 
 func (ast *IRStatement) RenameVariables(substUsed, substDecl cfg.VariableSubstitution) {
@@ -235,6 +322,8 @@ func (ast *IRStatement) Print(c *context.ParsingContext) string {
 		ret = ast.Copy.Print(c)
 	} else if ast.IsConst() {
 		ret = ast.Const.Print(c)
+	} else if ast.IsMacroCall() {
+		ret = ast.MacroCall.Print(c)
 	} else if ast.IsCall() {
 		ret = ast.Call.Print(c)
 	} else if ast.IsExpression() {
@@ -246,6 +335,11 @@ func (ast *IRStatement) Print(c *context.ParsingContext) string {
 	} else {
 		ret = ast.formatIRStatementInstruction(ret, c)
 	}
+
+	if len(ast.Comment) > 0 {
+		ret = fmt.Sprintf("%s ; %s", ret, ast.Comment)
+	}
+
 	return ret
 }
 
@@ -259,6 +353,8 @@ func (ast *IRStatement) Body() generic_ast.Expression {
 		return ast.Exit
 	} else if ast.IsExpression() {
 		return ast.Expression
+	} else if ast.IsMacroCall() {
+		return ast.MacroCall
 	} else if ast.IsCopy() {
 		return ast.Copy
 	} else if ast.IsConst() {
@@ -287,6 +383,11 @@ func feedExpressionIntoIRStatement(node interface{}, base generic_ast.BaseASTNod
 		return &IRStatement{
 			BaseASTNode: base,
 			Expression:  expr,
+		}
+	} else if expr, ok := node.(*IRMacroCall); ok {
+		return &IRStatement{
+			BaseASTNode: base,
+			MacroCall:   expr,
 		}
 	} else if expr, ok := node.(*IRCopy); ok {
 		return &IRStatement{
@@ -334,6 +435,8 @@ func (ast *IRStatement) BuildFlowGraph(builder cfg.CFGBuilder) {
 		builder.BuildNode(ast.Expression)
 	} else if ast.IsCopy() {
 		builder.BuildNode(ast.Copy)
+	} else if ast.IsMacroCall() {
+		builder.BuildNode(ast.MacroCall)
 	} else if ast.IsConst() {
 		builder.BuildNode(ast.Const)
 	} else if ast.IsCall() {
@@ -355,6 +458,10 @@ func (ast *IRStatement) ResolveTypeOfVar(name string) IRType {
 	} else if ast.IsExpression() {
 		if ast.Expression.TargetName == name {
 			return ast.Expression.Type
+		}
+	} else if ast.IsMacroCall() {
+		if ast.MacroCall.Var == name {
+			return ast.MacroCall.Type
 		}
 	} else if ast.IsCopy() {
 		if ast.Copy.TargetName == name {

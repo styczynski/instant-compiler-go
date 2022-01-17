@@ -46,8 +46,15 @@ func (ast *IRIf) GetChildren() []generic_ast.TraversableNode {
 	}
 }
 
+func (ast *IRIf) HasElseBlock() bool {
+	return ast.BlockElse > -1
+}
+
 func (ast *IRIf) Print(c *context.ParsingContext) string {
-	return utils.PrintASTNode(c, ast, "If %s %s jump to block_%d else block_%d", ast.ConditionType, ast.Condition, ast.BlockThen, ast.BlockElse)
+	if !ast.HasElseBlock() {
+		return utils.PrintASTNode(c, ast, "If %s %s jump to block%d else continue", ast.ConditionType, ast.Condition, ast.BlockThen)
+	}
+	return utils.PrintASTNode(c, ast, "If %s %s jump to block%d else block%d", ast.ConditionType, ast.Condition, ast.BlockThen, ast.BlockElse)
 }
 
 func (ast *IRIf) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {

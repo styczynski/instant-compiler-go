@@ -53,121 +53,121 @@ type IROperatorSpecs struct {
 }
 
 var OPERATORS_SPECS = map[IROperator]IROperatorSpecs{
-	IR_OP_ADD: IROperatorSpecs{
+	IR_OP_ADD: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          2,
 		MappedName:         "+",
 		TranslationEnabled: true,
 	},
-	IR_OP_SUB: IROperatorSpecs{
+	IR_OP_SUB: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          2,
 		MappedName:         "-",
 		TranslationEnabled: true,
 	},
-	IR_OP_MUL: IROperatorSpecs{
+	IR_OP_MUL: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          2,
 		MappedName:         "*",
 		TranslationEnabled: true,
 	},
-	IR_OP_DIV: IROperatorSpecs{
+	IR_OP_DIV: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          2,
 		MappedName:         "/",
 		TranslationEnabled: true,
 	},
-	IR_OP_SELF_ADD: IROperatorSpecs{
+	IR_OP_SELF_ADD: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          1,
 		MappedName:         "+=",
 		TranslationEnabled: false,
 	},
-	IR_OP_SELF_SUB: IROperatorSpecs{
+	IR_OP_SELF_SUB: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          1,
 		MappedName:         "-=",
 		TranslationEnabled: false,
 	},
-	IR_OP_SELF_MUL: IROperatorSpecs{
+	IR_OP_SELF_MUL: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          1,
 		MappedName:         "*=",
 		TranslationEnabled: false,
 	},
-	IR_OP_SELF_DIV: IROperatorSpecs{
+	IR_OP_SELF_DIV: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          1,
 		MappedName:         "/=",
 		TranslationEnabled: false,
 	},
-	IR_OP_EQ: IROperatorSpecs{
+	IR_OP_EQ: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          2,
 		MappedName:         "==",
 		TranslationEnabled: true,
 	},
-	IR_OP_NOT_EQ: IROperatorSpecs{
+	IR_OP_NOT_EQ: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          2,
 		MappedName:         "!=",
 		TranslationEnabled: true,
 	},
-	IR_OP_LT: IROperatorSpecs{
+	IR_OP_LT: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          2,
 		MappedName:         "<",
 		TranslationEnabled: true,
 	},
-	IR_OP_GT: IROperatorSpecs{
+	IR_OP_GT: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          2,
 		MappedName:         ">",
 		TranslationEnabled: true,
 	},
-	IR_OP_LTEQ: IROperatorSpecs{
+	IR_OP_LTEQ: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          2,
 		MappedName:         "<=",
 		TranslationEnabled: true,
 	},
-	IR_OP_GTEQ: IROperatorSpecs{
+	IR_OP_GTEQ: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          2,
 		MappedName:         ">=",
 		TranslationEnabled: true,
 	},
-	IR_OP_AND: IROperatorSpecs{
+	IR_OP_AND: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          2,
 		MappedName:         "&&",
 		TranslationEnabled: true,
 	},
-	IR_OP_OR: IROperatorSpecs{
+	IR_OP_OR: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          2,
 		MappedName:         "||",
 		TranslationEnabled: true,
 	},
-	IR_OP_SELF_AND: IROperatorSpecs{
+	IR_OP_SELF_AND: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          1,
 		MappedName:         "&=",
 		TranslationEnabled: false,
 	},
-	IR_OP_SELF_OR: IROperatorSpecs{
+	IR_OP_SELF_OR: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          1,
 		MappedName:         "|=",
 		TranslationEnabled: false,
 	},
-	IR_OP_UNARY_NEG: IROperatorSpecs{
+	IR_OP_UNARY_NEG: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          1,
 		MappedName:         "-",
 		TranslationEnabled: true,
 	},
-	IR_OP_UNARY_LOG_NEG: IROperatorSpecs{
+	IR_OP_UNARY_LOG_NEG: {
 		Kind:               IR_OP_KIND_LOGIC,
 		ArgsCount:          1,
 		MappedName:         "!",
@@ -177,7 +177,8 @@ var OPERATORS_SPECS = map[IROperator]IROperatorSpecs{
 
 func CreateIROperator(name string, argsCount int, kind IROperatorKind) IROperator {
 	for v, spec := range OPERATORS_SPECS {
-		if spec.ArgsCount == argsCount && spec.TranslationEnabled && (kind == IR_OP_KIND_ANY || kind == spec.Kind) {
+		if spec.MappedName == name && spec.ArgsCount == argsCount && spec.TranslationEnabled && (kind == IR_OP_KIND_ANY || kind == spec.Kind) {
+			fmt.Printf("RESOLVE OP %s TO %v   (%s %v %d)\n", name, v, name, kind, argsCount)
 			return v
 		}
 	}
@@ -192,6 +193,10 @@ type IRExpression struct {
 	ArgumentsTypes []IRType
 	Arguments      []string
 	ParentNode     generic_ast.TraversableNode
+}
+
+func (ast *IRExpression) OperatorSpecs() IROperatorSpecs {
+	return OPERATORS_SPECS[ast.Operation]
 }
 
 func (ast *IRExpression) Parent() generic_ast.TraversableNode {

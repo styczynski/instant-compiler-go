@@ -91,8 +91,12 @@ func (c *BuildContext) WriteBuildFile(name string, content []byte) {
 }
 
 func (c *BuildContext) WriteOutput(description string, extension string, content []byte) {
-	afero.WriteFile(c.Out, fmt.Sprintf("%s.%s", c.variables["INPUT_FILE_BASE"], extension), content, 0644)
-	c.outputFiles[fmt.Sprintf("%s.%s", c.variables["INPUT_FILE_BASE"], extension)] = description
+	fileName := fmt.Sprintf("%s.%s", c.variables["INPUT_FILE_BASE"], extension)
+	if len(extension) == 0 {
+		fileName = c.variables["INPUT_FILE_BASE"]
+	}
+	afero.WriteFile(c.Out, fileName, content, 0644)
+	c.outputFiles[fileName] = description
 }
 
 func (c *BuildContext) GetOutputFilesByExt() map[string]string {

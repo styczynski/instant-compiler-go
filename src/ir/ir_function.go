@@ -13,6 +13,8 @@ import (
 	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
+type FunctionMeta interface {}
+
 type IRFunction struct {
 	generic_ast.BaseASTNode
 	ReturnType   IRType `"Function" @Ident`
@@ -21,6 +23,15 @@ type IRFunction struct {
 	ArgsTypes    []IRType
 	FunctionBody []*IRBlock
 	ParentNode   generic_ast.TraversableNode
+	meta FunctionMeta
+}
+
+func (ast *IRFunction) SetMeta(meta FunctionMeta) {
+	ast.meta = meta
+}
+
+func (ast *IRFunction) GetMeta() FunctionMeta {
+	return ast.meta
 }
 
 func (ast *IRFunction) Parent() generic_ast.TraversableNode {

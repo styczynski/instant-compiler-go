@@ -57,7 +57,7 @@ func (ast *IRBlock) Print(c *context.ParsingContext) string {
 	c.BlockPop()
 	labelStr := ""
 	if len(ast.Label) > 0 {
-		labelStr = fmt.Sprintf("block_%d: ; %s", ast.BlockID, ast.Label)
+		labelStr = fmt.Sprintf("block%d: ; %s", ast.BlockID, ast.Label)
 	}
 	return utils.PrintASTNode(c, ast, "%s%s\n%s\n%s", strings.Repeat("  ", c.BlockDepth), labelStr, strings.Join(statementsList, "\n"), strings.Repeat("  ", c.BlockDepth))
 }

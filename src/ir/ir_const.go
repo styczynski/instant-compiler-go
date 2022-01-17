@@ -14,7 +14,7 @@ type IRConst struct {
 	generic_ast.BaseASTNode
 	Type       IRType `@Ident`
 	TargetName string `@Ident "="`
-	Value      string
+	Value      int64
 	ParentNode generic_ast.TraversableNode
 }
 
@@ -45,7 +45,7 @@ func (ast *IRConst) GetChildren() []generic_ast.TraversableNode {
 }
 
 func (ast *IRConst) Print(c *context.ParsingContext) string {
-	return utils.PrintASTNode(c, ast, "%s %s = Const(%s)", ast.Type, ast.TargetName, ast.Value)
+	return utils.PrintASTNode(c, ast, "%s %s = Const(%v)", ast.Type, ast.TargetName, ast.Value)
 }
 
 //

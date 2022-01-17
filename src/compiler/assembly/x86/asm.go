@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
-	"golang.org/x/arch/x86/x86asm"
+	"github.com/styczynski/latte-compiler/src/ir"
 )
 
 type GenerationContext struct {
@@ -26,7 +26,8 @@ func (c *GenerationContext) IndentBack() {
 }
 
 type Entry interface {
-	Generate(c *GenerationContext) []string
+	Generate(c *GenerationContext, slFn SymLookup) []string
+	GenerateSymbolLookup(c *GenerationContext, sl *SymbolLookup)
 }
 
 type Function struct {
@@ -35,20 +36,33 @@ type Function struct {
 	Body   []*Instruction
 }
 
-func (f *Function) Generate(c *GenerationContext) []string {
+func (f *Function) GenerateSymbolLookup(c *GenerationContext, sl *SymbolLookup) {
+	for _, instr := range f.Body {
+		instr.GenerateSymbolLookup(c, sl)
+	}
+}
+
+func (f *Function) Generate(c *GenerationContext, slFn SymLookup) []string {
 	retInstrs := []string{}
+	additionalDescription := ""
+	fnLabel := fmt.Sprintf("_%s:", f.Name)
+	if f.Name == "main" {
+		fnLabel = "main:"
+		additionalDescription = " (Entrypoint)"
+	}
 	headers := []string{
-		fmt.Sprintf("; Function %s", f.Name),
-		fmt.Sprintf("; Source: %s", f.Source.Pos.String()),
-		fmt.Sprintf("_%s:", f.Name),
+		fmt.Sprintf("# Function %s%s", f.Name, additionalDescription),
+		fmt.Sprintf("# Source: %s", f.Source.Pos.String()),
+		fnLabel,
 	}
 	footers := []string{
-		fmt.Sprintf("; End of function %s", f.Name),
+		fmt.Sprintf("# End of function %s", f.Name),
 	}
+	c.Indent()
 	c.Indent()
 	retInstrs = append(retInstrs, headers...)
 	for _, instr := range f.Body {
-		gen := instr.Generate(c)
+		gen := instr.Generate(c, slFn)
 		retInstrs = append(retInstrs, gen...)
 	}
 	c.IndentBack()
@@ -57,13 +71,64 @@ func (f *Function) Generate(c *GenerationContext) []string {
 }
 
 type Instruction struct {
-	x86asm.Inst
+	Inst
+	Label   string
+	Comment string
 }
 
-func (f *Instruction) Generate(c *GenerationContext) []string {
+type SymbolLookup struct {
+	table   map[string]uint64
+	reverse map[uint64]string
+}
+
+func (sl *SymbolLookup) GetLookupFunction() SymLookup {
+	return func(addr uint64) (string, uint64) {
+		if name, ok := sl.reverse[addr]; ok {
+			return name, sl.table[name]
+		}
+		return "", 0
+	}
+}
+
+func (f *Instruction) GenerateSymbolLookup(c *GenerationContext, sl *SymbolLookup) {
+	if len(f.Label) > 0 {
+		fmt.Printf("create_label: PC[%d]=%s\n", c.pc, f.Label)
+		sl.table[f.Label] = c.pc
+		sl.reverse[c.pc] = f.Label
+	} else {
+		c.ShiftPC(1)
+	}
+}
+
+func (f *Instruction) FromIR(originalIR *ir.IRStatement) *Instruction {
+	if originalIR != nil {
+		f.Comment = originalIR.Comment
+	}
+
+	if len(originalIR.BaseASTNode.Begin().Filename) > 0 {
+		f.Comment = fmt.Sprintf("%s (%s)", f.Comment, originalIR.BaseASTNode.Begin())
+	}
+
+	return f
+}
+
+func (f *Instruction) Generate(c *GenerationContext, slFn SymLookup) []string {
+	commentStr := ""
+	if len(f.Comment) > 0 {
+		commentStr = fmt.Sprintf(" # %s", f.Comment)
+	}
+	if len(f.Label) > 0 {
+		c.IndentBack()
+		ret := []string{
+			fmt.Sprintf("%s%s:%s", strings.Repeat("  ", c.indent), f.Label, commentStr),
+		}
+		c.Indent()
+		return ret
+	}
 	prefix := strings.Repeat("  ", c.indent)
+	//f.Inst.MemBytes = 0
 	ret := []string{
-		prefix + x86asm.IntelSyntax(f.Inst, c.pc, nil),
+		prefix + GNUSyntax(f.Inst, c.pc, slFn) + commentStr,
 	}
 	c.ShiftPC(1)
 	return ret
@@ -78,9 +143,25 @@ func (p *Program) ProgramToText() string {
 		pc:     uint64(0),
 		indent: 0,
 	}
-	code := []string{}
+	sl := &SymbolLookup{
+		table:   map[string]uint64{},
+		reverse: map[uint64]string{},
+	}
+	// for _, entry := range p.Entries {
+	// 	entry.GenerateSymbolLookup(c, sl)
+	// }
+
+	c = &GenerationContext{
+		pc:     uint64(0),
+		indent: 0,
+	}
+
+	code := []string{
+		".text",
+		".global main",
+	}
 	for _, entry := range p.Entries {
-		codeChunk := entry.Generate(c)
+		codeChunk := entry.Generate(c, sl.GetLookupFunction())
 		code = append(code, codeChunk...)
 	}
 	return strings.Join(code, "\n")

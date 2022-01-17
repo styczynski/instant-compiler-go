@@ -120,6 +120,16 @@ func (cfg *CFG) GetBlock(blockID int) *Block {
 	return cfg.blocks[blockID]
 }
 
+func (cfg *CFG) FindBlock(code CFGCodeNode) *Block {
+	for _, blockID := range cfg.blocksOrder {
+		blockCode := cfg.codeMapping[blockID]
+		if blockCode == code {
+			return cfg.blocks[blockID]
+		}
+	}
+	return nil
+}
+
 func (cfg *CFG) ReplaceBlockCode(blockID int, newCode CFGCodeNode) {
 
 	cfg.codeMapping[blockID] = newCode

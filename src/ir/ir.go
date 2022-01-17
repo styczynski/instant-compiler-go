@@ -66,8 +66,20 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 				BaseASTNode: e.BaseASTNode,
 				TargetName:  resultVar,
 				Type:        translateType(e.ResolvedType),
-				Value:       e.Print(c),
-			}))
+				Value:       *e.Int,
+			}).SetComment("Const int %s", e.Print(c)))
+			return ret, translateType(e.ResolvedType), resultVar
+		} else if e.IsBool() {
+			v := int64(0)
+			if *e.Bool {
+				v = 1
+			}
+			ret = append(ret, WrapIRConst(&IRConst{
+				BaseASTNode: e.BaseASTNode,
+				TargetName:  resultVar,
+				Type:        translateType(e.ResolvedType),
+				Value:       v,
+			}).SetComment("Const boolean %s", e.Print(c)))
 			return ret, translateType(e.ResolvedType), resultVar
 		}
 	} else if e, ok := node.(*ast.Index); ok {
@@ -213,23 +225,53 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 	return ret, IR_UNKNOWN, resultVar
 }
 
+func extractIfBlockJumpID(ifBlock *ast.Statement, graph *cfg.CFG) int {
+	ifBlockChildren := ifBlock.GetChildren()
+	if len(ifBlockChildren) > 0 {
+		if block, ok := ifBlockChildren[0].(*ast.Block); ok {
+			if len(block.Statements) > 0 {
+				blockTopChildren := block.Statements[0].GetChildren()
+				if len(blockTopChildren) > 0 {
+					if node, ok := blockTopChildren[0].(cfg.CFGCodeNode); ok {
+						jumpBlock := graph.FindBlock(node)
+						if jumpBlock != nil {
+							return jumpBlock.ID
+						}
+					}
+				}
+			}
+		}
+	}
+	return -1
+}
+
 func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) {
 	//func(cfg *CFG, block *Block) []generic_ast.NormalNode
 	MapEntireGraph(graph, func(g *cfg.CFG, block *cfg.Block, node cfg.CFGCodeNode) []*IRStatement {
-		fmt.Printf("=> NODE[%d]: %s\n", block.ID, reflect.TypeOf(node))
+		if node != nil {
+			fmt.Printf("=> NODE[%d]: %s{%s}\n", block.ID, reflect.TypeOf(node), node.Print(c))
+		}
 		ret := []*IRStatement{}
 
 		if e, ok := node.(*ast.If); ok {
 			s, t, v := generateIRExpr(c, ir, e.Condition)
+			thenNode := e.Then.GetChildren()[0].(*ast.Block).Statements[0].GetChildren()[0].(cfg.CFGCodeNode)
+			fmt.Printf("[?] If contents: %s{%s}\n", reflect.TypeOf(thenNode), thenNode.Print(c))
+
+			thenBlockID := extractIfBlockJumpID(e.Then, graph)
+			elseBlockID := -1
+			if e.HasElseBlock() {
+				elseBlockID = extractIfBlockJumpID(e.Else, graph)
+			}
 
 			ret = append(ret, s...)
 			ret = append(ret, WrapIRIf(&IRIf{
 				BaseASTNode:   e.BaseASTNode,
 				Condition:     v,
 				ConditionType: t,
-				BlockThen:     block.GetSuccs()[0],
-				BlockElse:     block.GetSuccs()[1],
-			}))
+				BlockThen:     thenBlockID,
+				BlockElse:     elseBlockID,
+			}).SetComment("If condition"))
 			return ret
 		} else if expr, ok := node.(generic_ast.Expression); ok {
 			if _, ok := (expr.(*ast.Empty)); ok {
@@ -244,7 +286,7 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 					TargetName:  assStmt.TargetName,
 					Type:        varType,
 					Var:         varName,
-				}))
+				}).SetComment("Assign variable %s", assStmt.TargetName))
 			} else if declStmt, ok := (expr.(*ast.Declaration)); ok {
 				for _, item := range declStmt.Items {
 					if item.HasInitializer() {
@@ -255,7 +297,7 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 							TargetName:  item.Name,
 							Type:        varType,
 							Var:         varName,
-						}))
+						}).SetComment("Assign variable %s", item.Name))
 					}
 				}
 				return ret
