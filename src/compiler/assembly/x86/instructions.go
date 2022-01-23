@@ -6,6 +6,207 @@ import (
 	"github.com/styczynski/latte-compiler/src/ir"
 )
 
+type RegistrySpecs struct {
+	Size                int
+	TopReg              Reg
+	Reg                 Reg
+	SubRegSize1         Reg
+	SubRegSize2         Reg
+	FnArgIndex          int
+	CanStoreFnArg       bool
+	FnReturnIndex       int
+	CanReturnFn         bool
+	IsPreserved         bool
+	ForbidForAllocation bool
+}
+
+var ALL_REGS map[Reg]*RegistrySpecs = map[Reg]*RegistrySpecs{
+	ESP: {
+		Size:                4,
+		TopReg:              RSP,
+		Reg:                 ESP,
+		SubRegSize1:         SP,
+		SubRegSize2:         ESP,
+		ForbidForAllocation: true,
+	},
+	EBP: {
+		Size:                4,
+		TopReg:              RBP,
+		Reg:                 EBP,
+		SubRegSize1:         BP,
+		SubRegSize2:         EBP,
+		ForbidForAllocation: true,
+	},
+	EAX: {
+		Size:          4,
+		TopReg:        RAX,
+		Reg:           EAX,
+		SubRegSize1:   AL,
+		SubRegSize2:   EAX,
+		FnReturnIndex: 0,
+		CanReturnFn:   true,
+	},
+	EBX: {
+		Size:        4,
+		TopReg:      RBX,
+		Reg:         EBX,
+		SubRegSize1: BL,
+		SubRegSize2: EBX,
+		IsPreserved: true,
+	},
+	ECX: {
+		Size:          4,
+		TopReg:        RCX,
+		Reg:           ECX,
+		SubRegSize1:   CL,
+		SubRegSize2:   ECX,
+		CanStoreFnArg: true,
+		FnArgIndex:    3,
+	},
+	EDX: {
+		Size:          4,
+		TopReg:        RDX,
+		Reg:           EDX,
+		SubRegSize1:   DL,
+		SubRegSize2:   EDX,
+		CanStoreFnArg: true,
+		FnArgIndex:    2,
+		FnReturnIndex: 1,
+		CanReturnFn:   true,
+	},
+	EDI: {
+		Size:          4,
+		TopReg:        RDI,
+		Reg:           EDI,
+		SubRegSize1:   DI,
+		SubRegSize2:   EDI,
+		CanStoreFnArg: true,
+		FnArgIndex:    0,
+	},
+	ESI: {
+		Size:          4,
+		TopReg:        RSI,
+		Reg:           ESI,
+		SubRegSize1:   SI,
+		SubRegSize2:   ESI,
+		CanStoreFnArg: true,
+		FnArgIndex:    1,
+	},
+	R8L: {
+		Size:          4,
+		TopReg:        R8,
+		Reg:           R8L,
+		SubRegSize1:   R8W,
+		SubRegSize2:   R8L,
+		CanStoreFnArg: true,
+		FnArgIndex:    4,
+	},
+	R9L: {
+		Size:          4,
+		TopReg:        R9,
+		Reg:           R9L,
+		SubRegSize1:   R9W,
+		SubRegSize2:   R9L,
+		CanStoreFnArg: true,
+		FnArgIndex:    6,
+	},
+	R10L: {
+		Size:        4,
+		TopReg:      R10,
+		Reg:         R10L,
+		SubRegSize1: R10W,
+		SubRegSize2: R10L,
+	},
+	R11L: {
+		Size:        4,
+		TopReg:      R11,
+		Reg:         R11L,
+		SubRegSize1: R11W,
+		SubRegSize2: R11L,
+	},
+	R12L: {
+		Size:        4,
+		TopReg:      R12,
+		Reg:         R12L,
+		SubRegSize1: R12W,
+		SubRegSize2: R12L,
+		IsPreserved: true,
+	},
+	R13L: {
+		Size:        4,
+		TopReg:      R13,
+		Reg:         R13L,
+		SubRegSize1: R13W,
+		SubRegSize2: R13L,
+		IsPreserved: true,
+	},
+	R14L: {
+		Size:        4,
+		TopReg:      R14,
+		Reg:         R14L,
+		SubRegSize1: R14W,
+		SubRegSize2: R14L,
+		IsPreserved: true,
+	},
+	R15L: {
+		Size:        4,
+		TopReg:      R15,
+		Reg:         R15L,
+		SubRegSize1: R15W,
+		SubRegSize2: R15L,
+		IsPreserved: true,
+	},
+}
+
+func ResizeReg(a Reg, size int) (effectiveSize int, effectiveReg Reg) {
+	defer func() {
+		fmt.Printf("[?] Resize %v (size %d) into %v (size %d)\n", a, size, effectiveReg, effectiveSize)
+	}()
+	for reg, regSpecs := range ALL_REGS {
+		if AreRegsColliding(&a, &reg) {
+			// Matching reg
+			if size == 2 && regSpecs.SubRegSize1 != reg && regSpecs.SubRegSize1 != 0 {
+				effectiveSize, effectiveReg = 2, regSpecs.SubRegSize1
+				return
+			} else if size == 4 && regSpecs.SubRegSize2 != reg && regSpecs.SubRegSize2 != 0 {
+				effectiveSize, effectiveReg = 4, regSpecs.SubRegSize2
+				return
+			} else if size == 8 && regSpecs.TopReg != reg && regSpecs.TopReg != 0 {
+				effectiveSize, effectiveReg = 8, regSpecs.TopReg
+				return
+			} else {
+				effectiveSize, effectiveReg = regSpecs.Size, reg
+				return
+			}
+		}
+	}
+	panic("Invalid registry")
+}
+
+func AreRegsCollidingConst(a *Reg, b Reg) bool {
+	bp := b
+	return AreRegsColliding(a, &bp)
+}
+
+func AreRegsColliding(a *Reg, b *Reg) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	var usedSpecs *RegistrySpecs = nil
+	var compReg *Reg = nil
+	if specs, ok := ALL_REGS[*a]; ok && usedSpecs == nil {
+		usedSpecs = specs
+		compReg = b
+	} else if specs, ok := ALL_REGS[*b]; ok && usedSpecs == nil {
+		usedSpecs = specs
+		compReg = a
+	}
+	if usedSpecs == nil {
+		return false
+	}
+	return *a == *b || *compReg == usedSpecs.Reg || *compReg == usedSpecs.SubRegSize1 || *compReg == usedSpecs.SubRegSize2 || *compReg == usedSpecs.TopReg
+}
+
 // A Label is a label reference
 type RelLabel struct {
 	label string
@@ -29,11 +230,11 @@ func DoRet() []*Instruction {
 	instRet.Op = RET
 
 	instPreserveStack := Inst{}
-	instPreserveStack.Op = POP
-	instPreserveStack.MemBytes = 16
-	instPreserveStack.Args = Args{
-		RBP,
-	}
+	instPreserveStack.Op = LEAVE
+	//instPreserveStack.MemBytes = 16
+	//instPreserveStack.Args = Args{
+	//	RBP,
+	//}
 
 	return []*Instruction{
 		{
@@ -45,27 +246,47 @@ func DoRet() []*Instruction {
 	}
 }
 
+func doRawMov(to Arg, from Arg, size int) *Instruction {
+	if to == from {
+		return DoNop()
+	}
+	instMove := Inst{}
+	instMove.Op = MOV
+	instMove.MemBytes = size
+	instMove.Args = Args{
+		to,
+		from,
+	}
+	return &Instruction{
+		Inst: instMove,
+	}
+}
+
+func doRawSwap(a Arg, b Arg, size int) *Instruction {
+	if a == b {
+		return DoNop()
+	}
+	instSwap := Inst{}
+	instSwap.Op = XCHG
+	instSwap.MemBytes = size
+	instSwap.Args = Args{
+		a,
+		b,
+	}
+	return &Instruction{
+		Inst: instSwap,
+	}
+}
+
 func DoRetMain() []*Instruction {
 	// inst := Inst{}
 	// inst.Op = RET
 	// return &Instruction{
 	// 	Inst: inst,
 	// }
-	instSyscallNo := Inst{}
-	instSyscallNo.MemBytes = 4
-	instSyscallNo.Op = MOV
-	instSyscallNo.Args = Args{
-		EBX,
-		Imm(1),
-	}
+	instSyscallNo := doRawMov(EBX, Imm(1), 4)
 
-	instSwap := Inst{}
-	instSwap.Op = XCHG
-	instSwap.MemBytes = 4
-	instSwap.Args = Args{
-		EBX,
-		EAX,
-	}
+	instSwap := doRawSwap(EBX, EAX, 4)
 
 	instInterrupt := Inst{}
 	instInterrupt.Op = INT
@@ -77,12 +298,8 @@ func DoRetMain() []*Instruction {
 	instRet.Op = RET
 
 	return []*Instruction{
-		{
-			Inst: instSyscallNo,
-		},
-		{
-			Inst: instSwap,
-		},
+		instSyscallNo,
+		instSwap,
 		{
 			Inst: instInterrupt,
 		},
@@ -115,13 +332,13 @@ func DoPush(reg Reg, size int) *Instruction {
 	}
 }
 
-func DoCall(label string) *Instruction {
+func DoEmptyPop() *Instruction {
 	inst := Inst{}
-	inst.Op = CALL
+	inst.Op = ADD
+	inst.MemBytes = 32
 	inst.Args = Args{
-		&RelLabel{
-			label: label,
-		},
+		RSP,
+		Imm(8),
 	}
 	return &Instruction{
 		Inst: inst,
@@ -151,17 +368,22 @@ func DoPop(reg Reg, size int) *Instruction {
 	}
 }
 
-func DoSwap(val1 Arg, val2 Arg, size int) *Instruction {
-	inst := Inst{}
-	inst.Op = XCHG
-	inst.MemBytes = size
-	inst.Args = Args{
-		val1,
-		val2,
+func DoSwapRegistryWithMemory(index, size int, from Reg) *Instruction {
+	fromSize, fromResized := ResizeReg(from, size)
+	return doRawSwap(fromResized, GetMemoryVarLocation(index, size), fromSize)
+}
+
+func DoSwap(to Reg, from Reg, size int) *Instruction {
+	fromSize, fromResized := ResizeReg(from, size)
+	toSize, toResized := ResizeReg(to, size)
+	// if fromSize != toSize {
+	// 	fromSize, fromResized = ResizeReg(to, toSize)
+	// }
+	if fromSize != toSize {
+		panic(fmt.Sprintf("Couldn't match sized of two registries: %v and %v", to, from))
 	}
-	return &Instruction{
-		Inst: inst,
-	}
+
+	return doRawSwap(toResized, fromResized, fromSize)
 }
 
 func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int, argType ir.IRType) []*Instruction {
@@ -173,21 +395,8 @@ func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int, argType ir.
 
 		if argType == ir.IR_STRING {
 			// String addition
-			instFirst := Inst{}
-			instFirst.MemBytes = size
-			instFirst.Op = MOV
-			instFirst.Args = Args{
-				EDI,
-				self,
-			}
-
-			instSecond := Inst{}
-			instSecond.MemBytes = size
-			instSecond.Op = MOV
-			instSecond.Args = Args{
-				ESI,
-				val,
-			}
+			instFirst := doRawMov(EDI, self, size)
+			instSecond := doRawMov(ESI, val, size)
 
 			instCall := Inst{}
 			instCall.Op = CALL
@@ -197,27 +406,15 @@ func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int, argType ir.
 				},
 			}
 
-			instResult := Inst{}
-			instResult.Op = MOV
-			instSecond.MemBytes = size
-			instResult.Args = Args{
-				EAX,
-				self,
-			}
+			instResult := doRawMov(self, EAX, size)
 
 			return []*Instruction{
-				{
-					Inst: instFirst,
-				},
-				{
-					Inst: instSecond,
-				},
+				instFirst,
+				instSecond,
 				{
 					Inst: instCall,
 				},
-				{
-					Inst: instResult,
-				},
+				instResult,
 			}
 		}
 
@@ -274,30 +471,34 @@ func DoSub(target Arg, val Arg, size int) *Instruction {
 	}
 }
 
-func DoMov(from Arg, to Arg, size int) *Instruction {
+func DoNop() *Instruction {
 	inst := Inst{}
-	inst.Op = MOV
-	inst.MemBytes = size
-	inst.Args = Args{
-		from,
-		to,
-	}
+	inst.Op = NOP
 	return &Instruction{
 		Inst: inst,
 	}
 }
 
-func DoMemoryLoad(index, size int, to Arg) *Instruction {
-	inst := Inst{}
-	inst.Op = MOV
-	inst.MemBytes = size
-	inst.Args = Args{
-		to,
-		GetMemoryVarLocation(index, size),
+func DoRegistryCopy(to Reg, from Reg, size int) *Instruction {
+	fromSize, fromResized := ResizeReg(from, size)
+	toSize, toResized := ResizeReg(to, size)
+	// if fromSize != toSize {
+	// 	fromSize, fromResized = ResizeReg(from, toSize)
+	// }
+	if fromSize != toSize {
+		panic(fmt.Sprintf("Couldn't match sized of two registries: %v and %v", to, from))
 	}
-	return &Instruction{
-		Inst: inst,
-	}
+	return doRawMov(toResized, fromResized, fromSize)
+}
+
+func DoZeroRegistry(to Reg, size int) *Instruction {
+	toSize, toResized := ResizeReg(to, size)
+	return doRawMov(toResized, Imm(0), toSize)
+}
+
+func DoMemoryLoad(index, size int, to Reg) *Instruction {
+	toSize, toResized := ResizeReg(to, size)
+	return doRawMov(toResized, GetMemoryVarLocation(index, size), toSize)
 }
 
 func DoRegSetConditional(reg Reg, subreg Reg, size int, op ir.IROperator) []*Instruction {
@@ -366,47 +567,26 @@ func DoCompare(a Arg, b Arg) *Instruction {
 	}
 }
 
-func DoMemoryStore(index, size int, src Reg) *Instruction {
-	inst := Inst{}
-	inst.Op = MOV
-	inst.MemBytes = size
-	inst.Args = Args{
-		GetMemoryVarLocation(index, size),
-		src,
-	}
-	return &Instruction{
-		Inst: inst,
-	}
+func DoLoadDataIntoRegister(to Reg, size int, label string) *Instruction {
+	toSize, toResized := ResizeReg(to, size)
+	return doRawMov(toResized, CreateRelLabel(label), toSize)
+}
+
+func DoLoadDataIntoMemory(index, size int, label string) *Instruction {
+	return doRawMov(GetMemoryVarLocation(index, size), CreateRelLabel(label), size)
+}
+
+func DoMemoryStore(index, size int, from Reg) *Instruction {
+	fromSize, fromResized := ResizeReg(from, size)
+	return doRawMov(GetMemoryVarLocation(index, size), fromResized, fromSize)
 }
 
 func DoRegStoreConst(reg Reg, size int, value int64) *Instruction {
-	inst := Inst{}
-	inst.Op = MOV
-	inst.MemBytes = size
-	inst.Args = Args{
-		reg,
-		Imm(value),
-	}
-	//inst.DataSize = size * 8
-	inst.MemBytes = size
-	return &Instruction{
-		Inst: inst,
-	}
+	return doRawMov(reg, Imm(value), size)
 }
 
 func DoMemoryStoreConst(index, size int, value int64) *Instruction {
-	inst := Inst{}
-	inst.Op = MOV
-	inst.MemBytes = size
-	inst.Args = Args{
-		GetMemoryVarLocation(index, size),
-		Imm(value),
-	}
-	//inst.DataSize = size * 8
-	inst.MemBytes = size
-	return &Instruction{
-		Inst: inst,
-	}
+	return doRawMov(GetMemoryVarLocation(index, size), Imm(value), size)
 }
 
 func GetMemoryVarLocation(index int, size int) Mem {
@@ -417,47 +597,27 @@ func GetMemoryVarLocation(index int, size int) Mem {
 }
 
 func DoRegToMemoryTransfer(index int, size int, target Reg, memoryToReg bool) *Instruction {
-	inst := Inst{}
-	inst.Op = MOV
-	inst.MemBytes = size
 	if memoryToReg {
-		inst.Args = Args{
+		return doRawMov(
 			target,
 			GetMemoryVarLocation(index, size),
-		}
+			size,
+		)
 	} else {
-		inst.Args = Args{
+		return doRawMov(
 			GetMemoryVarLocation(index, size),
 			target,
-		}
-	}
-	return &Instruction{
-		Inst: inst,
+			size,
+		)
 	}
 }
 
 func DoMemoryToMemoryTransfer(src, srcSize, target, targetSize int, temp Reg) []*Instruction {
-	instGet := Inst{}
-	instGet.Op = MOV
-	instGet.MemBytes = srcSize
-	instGet.Args = Args{
-		temp,
-		GetMemoryVarLocation(src, srcSize),
-	}
-	instPut := Inst{}
-	instPut.Op = MOV
-	instPut.MemBytes = targetSize
-	instPut.Args = Args{
-		GetMemoryVarLocation(target, targetSize),
-		temp,
-	}
+	instGet := doRawMov(temp, GetMemoryVarLocation(src, srcSize), srcSize)
+	instPut := doRawMov(GetMemoryVarLocation(target, targetSize), temp, targetSize)
 	return []*Instruction{
-		{
-			Inst: instGet,
-		},
-		{
-			Inst: instPut,
-		},
+		instGet,
+		instPut,
 	}
 }
 
@@ -502,4 +662,22 @@ func Label(name string) *Instruction {
 	return &Instruction{
 		Label: name,
 	}
+}
+
+func GetRegisterForFunctionArg(index int) *RegistrySpecs {
+	for _, reg := range ALL_REGS {
+		if reg.CanStoreFnArg && reg.FnArgIndex == index {
+			return reg
+		}
+	}
+	return nil
+}
+
+func GetRegisterForFunctionReturn(index int) *RegistrySpecs {
+	for _, reg := range ALL_REGS {
+		if reg.CanReturnFn && reg.FnReturnIndex == index {
+			return reg
+		}
+	}
+	return nil
 }

@@ -267,79 +267,81 @@ func (backend CompilerX86Backend) preprocessIRCall(stmt *ir.IRStatement, fn *ir.
 
 	ret := []*ir.IRStatement{}
 
-	ret = append(ret,
-		ir.WrapIRMacroCall(&ir.IRMacroCall{
-			BaseASTNode: instr.BaseASTNode,
-			Type:        instr.Type,
-			MacroName:   "PreserveFunctionRegs",
-			Var:         "",
-			ParentNode:  instr.ParentNode,
-		}).
-			CopyDataForAllocationShadow(stmt).
-			SetComment("Preserve all registries for %s call", instr.TargetName),
-	)
+	// ret = append(ret,
+	// 	ir.WrapIRMacroCall(&ir.IRMacroCall{
+	// 		BaseASTNode: instr.BaseASTNode,
+	// 		Type:        instr.Type,
+	// 		MacroName:   "PreserveFunctionRegs",
+	// 		Var:         "",
+	// 		ParentNode:  instr.ParentNode,
+	// 	}).
+	// 		CopyDataForAllocationShadow(stmt).
+	// 		SetComment("Preserve all registries for %s call", instr.TargetName),
+	// )
 
-	for argNo, argName := range argsOrder {
-		argAlloc := argsAllocs[argName]
-		if argMem, ok := allocation.IsAllocMem(argAlloc); ok {
-			newVarName := fmt.Sprintf("%s_call_arg_temp", argName)
-			return nil, []*ir.IRStatement{
-				ir.WrapIRCopy(&ir.IRCopy{
-					BaseASTNode: instr.BaseASTNode,
-					TargetName:  newVarName,
-					Type:        instr.Type,
-					Var:         argName,
-					ParentNode:  instr.ParentNode,
-				}).
-					CopyDataForAllocationShadow(stmt).
-					SetComment("Transfer call arg %s to registry", argName).
-					SetTargetAllocationConstraints(newVarName, ir.IRAllocationConstraints{
-						&allocation.AllocConsRequireRegisters{},
-					}),
-				ir.WrapIRMacroCall(&ir.IRMacroCall{
-					BaseASTNode: instr.BaseASTNode,
-					Type:        instr.Type,
-					MacroName:   "LoadFunctionArgument",
-					Data: map[string]interface{}{
-						"Input": argName,
-						"Size":  argMem.Size,
-						"ArgNo": argNo,
-					},
-					Var:        argName,
-					ParentNode: instr.ParentNode,
-				}).
-					CopyDataForAllocationShadow(stmt).
-					SetComment("Load function argument %s", argName),
-			}
-		} else if argReg, ok := allocation.IsAllocReg(argAlloc); ok {
-			ret = append(ret,
-				ir.WrapIRMacroCall(&ir.IRMacroCall{
-					BaseASTNode: instr.BaseASTNode,
-					Type:        instr.Type,
-					MacroName:   "LoadFunctionArgument",
-					Data: map[string]interface{}{
-						"Input": argName,
-						"Size":  argReg.Size,
-						"ArgNo": argNo,
-					},
-					Var:        argName,
-					ParentNode: instr.ParentNode,
-				}).
-					CopyDataForAllocationShadow(stmt).
-					SetComment("Load function argument %s", argName),
-			)
-		}
-	}
+	// for argNo, argName := range argsOrder {
+	// 	argAlloc := argsAllocs[argName]
+	// 	if argMem, ok := allocation.IsAllocMem(argAlloc); ok {
+	// 		newVarName := fmt.Sprintf("%s_call_arg_temp", argName)
+	// 		return nil, []*ir.IRStatement{
+	// 			ir.WrapIRCopy(&ir.IRCopy{
+	// 				BaseASTNode: instr.BaseASTNode,
+	// 				TargetName:  newVarName,
+	// 				Type:        instr.Type,
+	// 				Var:         argName,
+	// 				ParentNode:  instr.ParentNode,
+	// 			}).
+	// 				CopyDataForAllocationShadow(stmt).
+	// 				SetComment("Transfer call arg %s to registry", argName).
+	// 				SetTargetAllocationConstraints(newVarName, ir.IRAllocationConstraints{
+	// 					&allocation.AllocConsRequireRegisters{},
+	// 				}),
+	// 			ir.WrapIRMacroCall(&ir.IRMacroCall{
+	// 				BaseASTNode: instr.BaseASTNode,
+	// 				Type:        instr.Type,
+	// 				MacroName:   "LoadFunctionArgument",
+	// 				Data: map[string]interface{}{
+	// 					"Input": argName,
+	// 					"Size":  argMem.Size,
+	// 					"ArgNo": argNo,
+	// 				},
+	// 				Var:        argName,
+	// 				ParentNode: instr.ParentNode,
+	// 			}).
+	// 				CopyDataForAllocationShadow(stmt).
+	// 				SetComment("Load function argument %s", argName),
+	// 		}
+	// 	} else if argReg, ok := allocation.IsAllocReg(argAlloc); ok {
+	// 		ret = append(ret,
+	// 			ir.WrapIRMacroCall(&ir.IRMacroCall{
+	// 				BaseASTNode: instr.BaseASTNode,
+	// 				Type:        instr.Type,
+	// 				MacroName:   "LoadFunctionArgument",
+	// 				Data: map[string]interface{}{
+	// 					"Input": argName,
+	// 					"Size":  argReg.Size,
+	// 					"ArgNo": argNo,
+	// 				},
+	// 				Var:        argName,
+	// 				ParentNode: instr.ParentNode,
+	// 			}).
+	// 				CopyDataForAllocationShadow(stmt).
+	// 				SetComment("Load function argument %s", argName),
+	// 		)
+	// 	}
+	// }
+
 	// Original function call
 	ret = append(ret, ir.WrapIRCall(&ir.IRCall{
 		BaseASTNode:    instr.BaseASTNode,
-		TargetName:     "",
+		TargetName:     instr.TargetName,
 		Type:           instr.Type,
 		CallTarget:     instr.CallTarget,
 		CallTargetType: instr.CallTargetType,
 		ArgumentsTypes: instr.ArgumentsTypes,
-		Arguments:      []string{},
+		Arguments:      instr.Arguments,
 		ParentNode:     instr.ParentNode,
+		IsBuiltin:      instr.IsBuiltin,
 	}).CopyDataForAllocation(stmt))
 
 	//fnResultVarName := fmt.Sprintf("call_result_tmp_%s", instr.TargetName)
@@ -358,21 +360,21 @@ func (backend CompilerX86Backend) preprocessIRCall(stmt *ir.IRStatement, fn *ir.
 	// 			&allocation.AllocConsRequireRegisters{},
 	// 		}),
 	// )
-	ret = append(ret,
-		ir.WrapIRMacroCall(&ir.IRMacroCall{
-			BaseASTNode: instr.BaseASTNode,
-			Type:        instr.Type,
-			MacroName:   "StoreFunctionResult",
-			Data: map[string]interface{}{
-				"Alloc": alloc,
-			},
-			Var:        "",
-			TargetName: &instr.TargetName,
-			ParentNode: instr.ParentNode,
-		}).
-			CopyDataForAllocationShadow(stmt).
-			SetComment("Store function result into %s", instr.TargetName),
-	)
+	// ret = append(ret,
+	// 	ir.WrapIRMacroCall(&ir.IRMacroCall{
+	// 		BaseASTNode: instr.BaseASTNode,
+	// 		Type:        instr.Type,
+	// 		MacroName:   "StoreFunctionResult",
+	// 		Data: map[string]interface{}{
+	// 			"Alloc": alloc,
+	// 		},
+	// 		Var:        "",
+	// 		TargetName: &instr.TargetName,
+	// 		ParentNode: instr.ParentNode,
+	// 	}).
+	// 		CopyDataForAllocationShadow(stmt).
+	// 		SetComment("Store function result into %s", instr.TargetName),
+	// )
 	// ret = append(ret,
 	// 	ir.WrapIRMacroCall(&ir.IRMacroCall{
 	// 		BaseASTNode: instr.BaseASTNode,
@@ -475,6 +477,8 @@ func (backend CompilerX86Backend) preprocessIRBlock(c *context.ParsingContext, f
 				return err
 			}
 			ret = append(ret, mappedInstrs...)
+		} else if instr.IsMacroCall() {
+			ret = append(ret, instr)
 		} else if instr.IsEmpty() {
 			// Do nothing
 		} else {

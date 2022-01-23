@@ -33,6 +33,15 @@ func (tc *LatteTypeChecker) GetEnv() *hindley_milner.SimpleEnv {
 				ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING),
 			),
 		})),
+		"syscall_ssss": hindley_milner.SingleDef(
+			hindley_milner.TypeVarSet{},
+			hindley_milner.NewFnType(
+				ast.CreatePrimitive(ast.T_STRING),
+				ast.CreatePrimitive(ast.T_STRING),
+				ast.CreatePrimitive(ast.T_STRING),
+				ast.CreatePrimitive(ast.T_STRING),
+				ast.CreatePrimitive(ast.T_VOID),
+			)),
 		"error": hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
 			ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_VOID),
 		)),

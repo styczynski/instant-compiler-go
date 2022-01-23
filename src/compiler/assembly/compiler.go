@@ -1,11 +1,14 @@
 package assembly
 
 import (
+	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/compiler/assembly/allocation"
 	"github.com/styczynski/latte-compiler/src/compiler/assembly/x86"
 	"github.com/styczynski/latte-compiler/src/config"
 	"github.com/styczynski/latte-compiler/src/flow_analysis"
+	"github.com/styczynski/latte-compiler/src/ir"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
@@ -47,12 +50,33 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 		// 	Instructions: outputCode,
 		// }
 
+		// Initial processing
+		for _, fn := range program.IR.Statements {
+			for _, fnBlock := range fn.FunctionBody {
+				for _, stmt := range fnBlock.Statements {
+					if stmt.IsMacroCall() {
+						macroCall := stmt.MacroCall
+						argNo := macroCall.Data["ArgNo"].(int)
+						if macroCall.MacroName == "LoadInputFunctionArgument" {
+							stmt.SetTargetAllocationConstraints(*macroCall.TargetName, ir.IRAllocationConstraints{
+								&allocation.AllocConsRequireSpecificRegisters{
+									AllowedRegisters: []x86.Reg{
+										x86.GetRegisterForFunctionArg(argNo).Reg,
+									},
+								},
+							})
+						}
+					}
+				}
+			}
+		}
+
 		var alloc allocation.Allocator = (&allocation.LinearScanAllocator{}).Lock([]x86.Reg{
 			x86.EAX,
 			x86.EBX,
 		})
 		allocation.RunAllocator(program.IR, alloc)
-		// fmt.Printf("?BASED?\n%s", program.IR.Print(c))
+		fmt.Printf("?BASED?\n%s", program.IR.Print(c))
 
 		err := backend.preprocessIR(c, program.IR)
 		if err != nil {
@@ -66,7 +90,7 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 		alloc.ResetSettings()
 		allocation.RunAllocator(program.IR, alloc)
 
-		// fmt.Printf("\nAFTER PREPROCESSING STEP:\n%s\n==========END=========\n\n", program.IR.Print(c))
+		fmt.Printf("\nAFTER PREPROCESSING STEP:\n%s\n==========END=========\n\n", program.IR.Print(c))
 
 		err, entries := backend.compileIR(c, program.IR)
 		if err != nil {

@@ -21,6 +21,7 @@ type IRCall struct {
 	CallTargetType IRType
 	ArgumentsTypes []IRType
 	Arguments      []string
+	IsBuiltin      bool
 	ParentNode     generic_ast.TraversableNode
 }
 

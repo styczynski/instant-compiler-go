@@ -2,6 +2,7 @@ package allocation
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/styczynski/latte-compiler/src/compiler/assembly/x86"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
@@ -25,6 +26,20 @@ func (cons *AllocConsRequireRegisters) String() string {
 }
 
 func (cons *AllocConsRequireRegisters) IsAllocationConstraint() {}
+
+type AllocConsRequireSpecificRegisters struct {
+	AllowedRegisters []x86.Reg
+}
+
+func (cons *AllocConsRequireSpecificRegisters) String() string {
+	regNames := []string{}
+	for _, reg := range cons.AllowedRegisters {
+		regNames = append(regNames, fmt.Sprintf("%v", reg))
+	}
+	return fmt.Sprintf("MUST_BE_REGISTER_IN[%s]", strings.Join(regNames, ","))
+}
+
+func (cons *AllocConsRequireSpecificRegisters) IsAllocationConstraint() {}
 
 type LocationMemory struct {
 	Index int
@@ -64,18 +79,16 @@ func IsAllocReg(alloc ir.IRAllocation) (*LocationRegister, bool) {
 }
 
 type RegistryState struct {
-	Size        int
-	Full        bool
-	Var         string
-	SubRegSize1 x86.Reg
+	Full  bool
+	Var   string
+	Specs *x86.RegistrySpecs
 }
 
 func (regState *RegistryState) Copy() *RegistryState {
 	return &RegistryState{
-		Size:        regState.Size,
-		Full:        regState.Full,
-		Var:         regState.Var,
-		SubRegSize1: regState.SubRegSize1,
+		Full:  regState.Full,
+		Var:   regState.Var,
+		Specs: regState.Specs,
 	}
 }
 
@@ -127,7 +140,7 @@ func (state *LinearScanAllocatorState) IsBlockAvailable(start int, size int) boo
 
 func (state *LinearScanAllocatorState) allocateAvailableRegistryUsing(name string, size int, reg x86.Reg) (*LocationRegister, bool) {
 	if regState, ok := state.AvailableRegistries[reg]; ok {
-		if !regState.Full && regState.Size >= size {
+		if !regState.Full && regState.Specs.Size >= size {
 			regState.Full = true
 			regState.Var = name
 			return &LocationRegister{
@@ -144,7 +157,7 @@ func (state *LinearScanAllocatorState) allocateAvailableRegistryUsing(name strin
 
 func (state *LinearScanAllocatorState) allocateAvailableRegistry(name string, size int) (*LocationRegister, bool) {
 	for reg, regState := range state.AvailableRegistries {
-		if !regState.Full && regState.Size >= size {
+		if !regState.Full && regState.Specs.Size >= size {
 			regState.Full = true
 			regState.Var = name
 			return &LocationRegister{
@@ -183,6 +196,20 @@ func (alloc *LinearScanAllocator) AreContraintsMet(currentAlloc ir.IRAllocation,
 	for _, con := range cons {
 		if _, ok := con.(*AllocConsAllowAll); ok {
 			return true
+		} else if consReg, ok := con.(*AllocConsRequireSpecificRegisters); ok {
+			if alloc, ok := IsAllocReg(currentAlloc); ok {
+				a := alloc.Reg
+				isOk := false
+				for _, allowedReg := range consReg.AllowedRegisters {
+					if x86.AreRegsColliding(&a, &allowedReg) {
+						isOk = true
+						break
+					}
+				}
+				if !isOk {
+					return false
+				}
+			}
 		} else if _, ok := con.(*AllocConsRequireRegisters); ok {
 			if _, ok := IsAllocReg(currentAlloc); !ok {
 				return false
@@ -194,9 +221,55 @@ func (alloc *LinearScanAllocator) AreContraintsMet(currentAlloc ir.IRAllocation,
 	return false
 }
 
+func (alloc *LinearScanAllocator) getStrongRegRequirements(cons ir.IRAllocationConstraints) []x86.Reg {
+	reqs := map[x86.Reg]struct{}{}
+	for _, con := range cons {
+		if conReg, ok := con.(*AllocConsRequireSpecificRegisters); ok {
+			for _, reg := range conReg.AllowedRegisters {
+				reqs[reg] = struct{}{}
+			}
+		}
+	}
+	reqsRegs := []x86.Reg{}
+	for reg, _ := range reqs {
+		reqsRegs = append(reqsRegs, reg)
+	}
+	return reqsRegs
+}
+
 func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, hasExistingAlloc bool, existingAllocName string, existingAlloc ir.IRAllocation, cons ir.IRAllocationConstraints) ir.IRAllocation {
 	// Check if the node has allocation data
 	blockSize := ir.GetIRTypeSize(varType) / 8
+
+	strongRegReqs := alloc.getStrongRegRequirements(cons)
+	if len(strongRegReqs) > 0 {
+		// Check registers with strong constraints
+		var newReg *x86.Reg = nil
+		for _, reg := range strongRegReqs {
+			if regState, ok := alloc.state.AvailableRegistries[reg]; ok {
+				if !regState.Full {
+					newReg = &reg
+					break
+				}
+			}
+		}
+		if newReg != nil {
+			regState := alloc.state.AvailableRegistries[*newReg]
+			regState.Full = true
+			regState.Var = name
+			return &LocationRegister{
+				Reg:   *newReg,
+				Size:  regState.Specs.Size,
+				State: regState.Copy(),
+			}
+		} else {
+			// No registry is free
+			// We choose the first one
+			// TODO: Implement?
+			panic("Critical problem cannot allocate register for strong register requirements")
+		}
+	}
+
 	if hasExistingAlloc {
 		if alloc.AreContraintsMet(existingAlloc, cons) {
 			// Try to alloc
@@ -255,27 +328,11 @@ func (alloc *LinearScanAllocator) ResetSettings() {
 
 func (alloc *LinearScanAllocator) PerformAllocationForBlocks(blocks []*ir.IRBlock) AllocatorState {
 
-	allRegs := map[x86.Reg]*RegistryState{
-		x86.EAX: {
-			Size:        4,
-			SubRegSize1: x86.AL,
-		},
-		x86.EBX: {
-			Size:        4,
-			SubRegSize1: x86.BL,
-		},
-		x86.ECX: {
-			Size:        4,
-			SubRegSize1: x86.CL,
-		},
-		x86.EDX: {
-			Size:        4,
-			SubRegSize1: x86.DL,
-		},
-	}
-
 	regs := map[x86.Reg]*RegistryState{}
-	for reg, regSpecs := range allRegs {
+	for reg, regSpecs := range x86.ALL_REGS {
+		if regSpecs.ForbidForAllocation {
+			continue
+		}
 		isLocked := false
 		for _, lockedReg := range alloc.lockedRegs {
 			if lockedReg == reg {
@@ -285,10 +342,9 @@ func (alloc *LinearScanAllocator) PerformAllocationForBlocks(blocks []*ir.IRBloc
 		}
 		if !isLocked {
 			regs[reg] = &RegistryState{
-				Size:        regSpecs.Size,
-				Full:        false,
-				Var:         "",
-				SubRegSize1: regSpecs.SubRegSize1,
+				Full:  false,
+				Var:   "",
+				Specs: regSpecs,
 			}
 		}
 	}

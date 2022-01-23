@@ -10,6 +10,14 @@ import (
 
 type VariableSet map[string]Variable
 
+func (vars VariableSet) Names() []string {
+	ret := []string{}
+	for varName, _ := range vars {
+		ret = append(ret, varName)
+	}
+	return ret
+}
+
 func (vars VariableSet) Copy() VariableSet {
 	out := VariableSet{}
 	for k, v := range vars {

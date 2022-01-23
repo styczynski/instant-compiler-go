@@ -11,6 +11,7 @@ const (
 	IR_BIT     IRType = "Bit"
 	IR_STRING  IRType = "String"
 	IR_FN      IRType = "FunctionPtr"
+	IR_VOID    IRType = "Void"
 	IR_UNKNOWN IRType = "Unknown"
 )
 
@@ -27,6 +28,8 @@ func GetIRTypeSize(varType IRType) int {
 		return 32
 	} else if varType == IR_STRING {
 		return 32
+	} else if varType == IR_VOID {
+		return 0
 	}
 	panic(fmt.Sprintf("Invalid type was given (cannot calculate size): %s", varType))
 }

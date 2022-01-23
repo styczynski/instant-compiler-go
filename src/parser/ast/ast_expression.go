@@ -10,7 +10,8 @@ import (
 
 type Expression struct {
 	generic_ast.ComplexASTNode
-	NewType          *New              `@@`
+	Syscall          *Syscall          `@@`
+	NewType          *New              `| @@`
 	Typename         *Typename         `| @@`
 	LogicalOperation *LogicalOperation `| @@`
 	ParentNode       generic_ast.TraversableNode
@@ -60,6 +61,10 @@ func (ast *Expression) IsTypename() bool {
 	return ast.Typename != nil
 }
 
+func (ast *Expression) IsSyscall() bool {
+	return ast.Syscall != nil
+}
+
 func (ast *Expression) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsLogicalOperation() {
 		return []generic_ast.TraversableNode{ast.LogicalOperation}
@@ -67,6 +72,8 @@ func (ast *Expression) GetChildren() []generic_ast.TraversableNode {
 		return []generic_ast.TraversableNode{ast.NewType.GetTraversableNode()}
 	} else if ast.IsTypename() {
 		return []generic_ast.TraversableNode{ast.Typename.GetTraversableNode()}
+	} else if ast.IsSyscall() {
+		return []generic_ast.TraversableNode{ast.Syscall}
 	}
 	panic("Invalid Expression type")
 }
@@ -86,6 +93,8 @@ func (ast *Expression) Print(c *context.ParsingContext) string {
 		return ast.NewType.Print(c)
 	} else if ast.IsTypename() {
 		return ast.Typename.Print(c)
+	} else if ast.IsSyscall() {
+		return ast.Syscall.Print(c)
 	}
 	panic("Invalid Expression type")
 }
@@ -99,6 +108,8 @@ func (ast *Expression) Body() generic_ast.Expression {
 		return ast.NewType
 	} else if ast.IsTypename() {
 		return ast.Typename
+	} else if ast.IsSyscall() {
+		return ast.Syscall
 	}
 	panic("Invalid Expression type")
 }
@@ -122,6 +133,12 @@ func (ast *Expression) Map(parent generic_ast.Expression, mapper generic_ast.Exp
 			Typename:       ast.Typename,
 			ParentNode:     parent.(generic_ast.TraversableNode),
 		}, context, true)
+	} else if ast.IsSyscall() {
+		return mapper(parent, &Expression{
+			ComplexASTNode: ast.ComplexASTNode,
+			Syscall:        mapper(ast, ast.Syscall, context, false).(*Syscall),
+			ParentNode:     parent.(generic_ast.TraversableNode),
+		}, context, true)
 	}
 	panic("Invalid Expression type")
 }
@@ -133,6 +150,8 @@ func (ast *Expression) Visit(parent generic_ast.Expression, mapper generic_ast.E
 		mapper(ast, ast.NewType, context)
 	} else if ast.IsTypename() {
 		mapper(ast, ast.Typename, context)
+	} else if ast.IsSyscall() {
+		mapper(ast, ast.Syscall, context)
 	}
 	mapper(parent, ast, context)
 }

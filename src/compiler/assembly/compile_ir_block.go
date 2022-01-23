@@ -89,10 +89,10 @@ func (backend CompilerX86Backend) compileIRConst(ret []*x86.Instruction, instr *
 			return nil, ret
 		} else if instr.IsString() {
 			label := data.StoreString(*instr.StringValue)
-			ret = append(ret, x86.DoMov(
-				x86.CreateRelLabel(label),
-				x86.GetMemoryVarLocation(mem.Index, mem.Size),
+			ret = append(ret, x86.DoLoadDataIntoMemory(
+				mem.Index,
 				mem.Size,
+				label,
 			))
 			return nil, ret
 		} else {
@@ -108,10 +108,10 @@ func (backend CompilerX86Backend) compileIRConst(ret []*x86.Instruction, instr *
 			return nil, ret
 		} else if instr.IsString() {
 			label := data.StoreString(*instr.StringValue)
-			ret = append(ret, x86.DoMov(
+			ret = append(ret, x86.DoLoadDataIntoRegister(
 				reg.Reg,
-				x86.CreateRelLabel(label),
 				reg.Size,
+				label,
 			))
 			return nil, ret
 		} else {
@@ -158,10 +158,10 @@ func (backend CompilerX86Backend) compileIRCopy(ret []*x86.Instruction, instr *i
 			return nil, ret
 		} else if srcReg, ok := allocation.IsAllocReg(srcAlloc); ok {
 			// Reg -> Reg
-			ret = append(ret, x86.DoMov(
+			ret = append(ret, x86.DoRegistryCopy(
 				reg.Reg,
 				srcReg.Reg,
-				srcReg.Size,
+				reg.Size,
 			))
 			return nil, ret
 		} else {
@@ -176,10 +176,10 @@ func (backend CompilerX86Backend) compileIROpUnary(ret []*x86.Instruction, instr
 	if mem, ok := allocation.IsAllocMem(alloc); ok {
 		if srcReg, ok := allocation.IsAllocReg(srcAlloc); ok {
 			// MEM = Op(REG)
-			ret = append(ret, x86.DoSwap(
+			ret = append(ret, x86.DoSwapRegistryWithMemory(
+				mem.Index,
+				mem.Size,
 				srcReg.Reg,
-				x86.GetMemoryVarLocation(mem.Index, mem.Size),
-				srcReg.Size,
 			))
 			ret = append(ret, x86.DoUnaryOp(
 				srcReg.Reg,
@@ -188,10 +188,10 @@ func (backend CompilerX86Backend) compileIROpUnary(ret []*x86.Instruction, instr
 				srcReg.Size,
 				instr.Type,
 			)...)
-			ret = append(ret, x86.DoSwap(
+			ret = append(ret, x86.DoSwapRegistryWithMemory(
+				mem.Index,
+				mem.Size,
 				srcReg.Reg,
-				x86.GetMemoryVarLocation(mem.Index, mem.Size),
-				srcReg.Size,
 			))
 			return nil, ret
 		} else if _, ok := allocation.IsAllocMem(srcAlloc); ok {
@@ -260,7 +260,7 @@ func (backend CompilerX86Backend) compileIROpBinary(ret []*x86.Instruction, inst
 				))
 				ret = append(ret, x86.DoRegSetConditional(
 					reg.Reg,
-					reg.State.SubRegSize1,
+					reg.State.Specs.SubRegSize1,
 					reg.Size,
 					op,
 				)...)
@@ -292,10 +292,10 @@ func (backend CompilerX86Backend) compileIRValuedExit(ret []*x86.Instruction, is
 	} else if reg, ok := allocation.IsAllocReg(alloc); ok {
 		if reg.Reg != x86.EAX {
 			// Return value from reg other than EAX so we move the value
-			ret = append(ret, x86.DoMov(
+			ret = append(ret, x86.DoRegistryCopy(
 				x86.EAX,
 				reg.Reg,
-				reg.Size,
+				4,
 			))
 		}
 		if isMain {
@@ -310,16 +310,15 @@ func (backend CompilerX86Backend) compileIRValuedExit(ret []*x86.Instruction, is
 }
 
 func (backend CompilerX86Backend) compileIREmptyExit(ret []*x86.Instruction, instr *ir.IRExit) (error, []*x86.Instruction) {
-	ret = append(ret, x86.DoMov(
+	ret = append(ret, x86.DoZeroRegistry(
 		x86.EAX,
-		x86.Imm(0),
 		4,
 	))
 	ret = append(ret, x86.DoRet()...)
 	return nil, ret
 }
 
-func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName string, instr *ir.IRCall, name string, alloc ir.IRAllocation, argsOrder []string, argsAllocs map[string]ir.IRAllocation) (error, []*x86.Instruction) {
+func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName string, instr *ir.IRCall, name string, alloc ir.IRAllocation, argsOrder []string, argsAllocs ir.IRAllocationMap, allocContext ir.IRAllocationMap) (error, []*x86.Instruction) {
 	// for _, argName := range argsOrder {
 
 	// }
@@ -331,8 +330,12 @@ func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName s
 			entireStackSize += reg.Size
 		}
 	}
+	tagetName := instr.CallTarget
+	if !instr.IsBuiltin {
+		tagetName = fmt.Sprintf("_%s", instr.CallTarget)
+	}
 	//ret = append(ret, x86.DoSub(x86.RSP, x86.Imm(entireStackSize), 4))
-	ret = append(ret, x86.DoCall(fmt.Sprintf("_%s", instr.CallTarget)))
+	ret = append(ret, allocation.DoCall(tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext)...)
 	return nil, ret
 }
 
@@ -342,6 +345,18 @@ func (backend CompilerX86Backend) compileIRMacroCall(ret []*x86.Instruction, fnN
 		ret = append(ret, x86.DoPush(x86.RBX, 4))
 		ret = append(ret, x86.DoPush(x86.RCX, 4))
 		ret = append(ret, x86.DoPush(x86.RDX, 4))
+		return nil, ret
+	} else if macroName == "LoadInputFunctionArgument" {
+		// alloc := stmt.GetAllocationContext()[*instr.TargetName]
+		// argNo := macroData["ArgNo"].(int)
+		// if regAlloc, ok := allocation.IsAllocReg(alloc); ok {
+		// 	ret = append(ret, x86.DoMov(regAlloc.Reg, x86.Mem{
+		// 		Base: x86.RBP,
+		// 		Disp: int64(16 * (argNo + 1)),
+		// 	}, regAlloc.Size))
+		// } else {
+		// 	return fmt.Errorf("Invalid allocation for LoadInputFunctionArgument: %s", alloc.String()), nil
+		// }
 		return nil, ret
 	} else if macroName == "LoadFunctionArgument" {
 		alloc := stmt.GetAllocationContext()[instr.Var]
@@ -353,19 +368,37 @@ func (backend CompilerX86Backend) compileIRMacroCall(ret []*x86.Instruction, fnN
 		}
 	} else if macroName == "StoreFunctionResult" {
 		allocTgt := stmt.GetAllocationContext()[*instr.TargetName]
+		var usedReg *x86.Reg = nil
 		if mem, ok := allocation.IsAllocMem(allocTgt); ok {
-			ret = append(ret, x86.DoMov(x86.GetMemoryVarLocation(mem.Index, mem.Size), x86.EAX, 4))
+			ret = append(ret, x86.DoMemoryStore(mem.Index, mem.Size, x86.EAX))
 		} else if reg, ok := allocation.IsAllocReg(allocTgt); ok {
-			ret = append(ret, x86.DoMov(reg.Reg, x86.EAX, 4))
+			ret = append(ret, x86.DoRegistryCopy(reg.Reg, x86.EAX, 4))
+			usedReg = &reg.Reg
 		} else {
 			return fmt.Errorf("Invalid target location for %s macro (%v)", macroName, allocTgt), nil
 		}
 
 		// Preserve regs
-		ret = append(ret, x86.DoPop(x86.RDX, 4))
-		ret = append(ret, x86.DoPop(x86.RCX, 4))
-		ret = append(ret, x86.DoPop(x86.RBX, 4))
-		ret = append(ret, x86.DoPop(x86.RAX, 4))
+		if !x86.AreRegsCollidingConst(usedReg, x86.RDX) {
+			ret = append(ret, x86.DoPop(x86.RDX, 4))
+		} else {
+			ret = append(ret, x86.DoEmptyPop())
+		}
+		if !x86.AreRegsCollidingConst(usedReg, x86.RCX) {
+			ret = append(ret, x86.DoPop(x86.RCX, 4))
+		} else {
+			ret = append(ret, x86.DoEmptyPop())
+		}
+		if !x86.AreRegsCollidingConst(usedReg, x86.RBX) {
+			ret = append(ret, x86.DoPop(x86.RBX, 4))
+		} else {
+			ret = append(ret, x86.DoEmptyPop())
+		}
+		if !x86.AreRegsCollidingConst(usedReg, x86.RAX) {
+			ret = append(ret, x86.DoPop(x86.RAX, 4))
+		} else {
+			ret = append(ret, x86.DoEmptyPop())
+		}
 		return nil, ret
 	} else {
 		return fmt.Errorf("Unsupported macro was used: %s", macroName), nil
@@ -484,7 +517,7 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 				argsAllocs[name] = instr.GetAllocationContext()[name]
 			}
 
-			err, newRet := backend.compileIRCall(ret, fnName, call, name, alloc, call.Arguments, argsAllocs)
+			err, newRet := backend.compileIRCall(ret, fnName, call, name, alloc, call.Arguments, argsAllocs, instr.GetAllocationContext())
 			if err != nil {
 				return err, nil
 			}

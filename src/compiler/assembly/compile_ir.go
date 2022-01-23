@@ -11,7 +11,7 @@ func (CompilerX86Backend) fnHeader(fn *ir.IRFunction) []*x86.Instruction {
 	fnMeta := fn.GetMeta().(allocation.AssemblyFunctionMeta)
 	ret := []*x86.Instruction{
 		x86.DoPush(x86.RBP, 4),
-		x86.DoMov(x86.RBP, x86.RSP, 4),
+		x86.DoRegistryCopy(x86.RBP, x86.RSP, 8),
 	}
 	if fnMeta.VarLen > 0 {
 		ret = append(ret, x86.DoSub(x86.RSP, x86.Imm(fnMeta.VarLen), 4))

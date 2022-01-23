@@ -41,6 +41,7 @@ func (ir *IRGeneratorState) NextTempVar() string {
 }
 
 func translateType(t hindley_milner.Type) IRType {
+	fmt.Printf("Translate? %v\n", t)
 	resolvedType := IR_UNKNOWN
 	if _, ok := t.(*hindley_milner.FunctionType); ok {
 		resolvedType = IR_FN
@@ -51,16 +52,41 @@ func translateType(t hindley_milner.Type) IRType {
 			resolvedType = IR_BIT
 		} else if primitive.Name() == "string" {
 			resolvedType = IR_STRING
+		} else if primitive.Name() == "void" {
+			resolvedType = IR_VOID
 		}
 	}
 	return resolvedType
 }
 
 func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generic_ast.Expression) ([]*IRStatement, IRType, string) {
+	fmt.Printf("  -> Expr: %s{%s}\n", reflect.TypeOf(node), node.(generic_ast.PrintableNode).Print(c))
+
 	ret := []*IRStatement{}
 	resultVar := ir.NextTempVar()
 
-	if e, ok := node.(*ast.Primary); ok {
+	if syscallExpr, ok := node.(*ast.Syscall); ok {
+		argList := []string{}
+		argListT := []IRType{}
+		fmt.Printf("SYSCALL TARGET %v\n", syscallExpr.Target)
+		for _, arg := range syscallExpr.Arguments {
+			s, t, v := generateIRExpr(c, ir, arg)
+			ret = append(ret, s...)
+			argList = append(argList, v)
+			argListT = append(argListT, t)
+		}
+		ret = append(ret, WrapIRCall(&IRCall{
+			BaseASTNode:    syscallExpr.BaseASTNode,
+			TargetName:     "",
+			CallTarget:     syscallExpr.Target,
+			CallTargetType: IR_FN,
+			Type:           IR_VOID,
+			Arguments:      argList,
+			ArgumentsTypes: argListT,
+			IsBuiltin:      true,
+		}))
+		return ret, IR_VOID, ""
+	} else if e, ok := node.(*ast.Primary); ok {
 		if e.IsVariable() {
 			return []*IRStatement{}, translateType(e.ResolvedType), *e.Variable
 		} else if e.IsInt() {
@@ -103,6 +129,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			argList := []string{}
 			argListT := []IRType{}
 			sTarget, vType, vTarget := generateIRExpr(c, ir, e.Index)
+			fmt.Printf("CALL TARGET %v\n", vTarget)
 			ret = append(ret, sTarget...)
 			for _, arg := range e.Arguments {
 				s, t, v := generateIRExpr(c, ir, arg)
@@ -230,6 +257,8 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 	} else if expr, ok := node.(*ast.Expression); ok {
 		if expr.IsLogicalOperation() {
 			return generateIRExpr(c, ir, expr.LogicalOperation)
+		} else if expr.IsSyscall() {
+			return generateIRExpr(c, ir, expr.Syscall)
 		}
 	}
 	return ret, IR_UNKNOWN, resultVar
@@ -256,10 +285,11 @@ func extractIfBlockJumpID(ifBlock *ast.Statement, graph *cfg.CFG) int {
 }
 
 func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) {
+
 	//func(cfg *CFG, block *Block) []generic_ast.NormalNode
 	MapEntireGraph(graph, func(g *cfg.CFG, block *cfg.Block, node cfg.CFGCodeNode) []*IRStatement {
 		if node != nil {
-			//fmt.Printf("=> NODE[%d]: %s{%s}\n", block.ID, reflect.TypeOf(node), node.Print(c))
+			fmt.Printf("=> NODE[%d]: %s{%s}\n", block.ID, reflect.TypeOf(node), node.Print(c))
 		}
 		ret := []*IRStatement{}
 
@@ -284,11 +314,14 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 			}).SetComment("If condition"))
 			return ret
 		} else if expr, ok := node.(generic_ast.Expression); ok {
-			if _, ok := (expr.(*ast.Empty)); ok {
+			if exprStmt, ok := (expr.(*ast.Expression)); ok {
+				exprIR, _, _ := generateIRExpr(c, ir, exprStmt)
+				ret = append(ret, exprIR...)
+				return ret
+			} else if _, ok := (expr.(*ast.Empty)); ok {
 				//ret = append(ret, WrapIREmpty())
 				return ret
-			}
-			if assStmt, ok := (expr.(*ast.Assignment)); ok {
+			} else if assStmt, ok := (expr.(*ast.Assignment)); ok {
 				exprIR, varType, varName := generateIRExpr(c, ir, assStmt.Value)
 				ret = append(ret, exprIR...)
 				ret = append(ret, WrapIRCopy(&IRCopy{
@@ -297,6 +330,7 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 					Type:        varType,
 					Var:         varName,
 				}).SetComment("Assign variable %s", assStmt.TargetName))
+				return ret
 			} else if declStmt, ok := (expr.(*ast.Declaration)); ok {
 				for _, item := range declStmt.Items {
 					if item.HasInitializer() {
@@ -311,8 +345,7 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 					}
 				}
 				return ret
-			}
-			if retStmt, ok := (expr.(*ast.Return)); ok {
+			} else if retStmt, ok := (expr.(*ast.Return)); ok {
 				if retStmt.HasExpression() {
 					exprIR, varType, varName := generateIRExpr(c, ir, retStmt.Expression)
 					ret = append(ret, exprIR...)
@@ -383,6 +416,7 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 	}
 	graph := flow.Graph()
 	genrateIR(graph, c, ir)
+
 	for i := 0; i < 20; i++ {
 		if !collapseToSimpleBlocks(graph) {
 			break

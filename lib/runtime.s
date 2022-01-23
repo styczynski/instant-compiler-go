@@ -1,6 +1,8 @@
-  GNU nano 5.4                                                             custom.s                                                                       
 .text
-.global main
+.global AddStrings
+.global PrintString
+.LC_Print_Format_String:
+  .string "\n"
 AddStrings:
         pushq   %rbp
         movq    %rsp, %rbp
@@ -47,9 +49,8 @@ PrintString:
         subq    $16, %rsp
         movl    %edi, -4(%rbp)
         movl    -4(%rbp), %eax
-        cltq
-        movq    %rax, %rsi
-        movl    $.LC0, %edi
+        movl    %eax, %esi
+        movl    $.LC_Print_Format_String, %edi
         movl    $0, %eax
         call    printf
         nop
