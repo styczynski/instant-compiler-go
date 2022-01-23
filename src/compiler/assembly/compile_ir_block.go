@@ -331,11 +331,26 @@ func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName s
 		}
 	}
 	tagetName := instr.CallTarget
+	overrides := map[x86.Reg]int64{}
 	if !instr.IsBuiltin {
-		tagetName = fmt.Sprintf("_%s", instr.CallTarget)
+		tagetName = fmt.Sprintf("_%s", tagetName)
+	} else if tagetName == "printf" {
+		overrides[x86.EAX] = 0
+	} else if tagetName == "exit" {
+		// No-op
+	} else if tagetName == "strlen" {
+		// No-op
+	} else if tagetName == "strcpy" {
+		// No-op
+	} else if tagetName == "strcat" {
+		// No-op
+	} else if tagetName == "malloc" {
+		// No-op
+	} else {
+		return fmt.Errorf("Unknown system call: %s\n", tagetName), ret
 	}
 	//ret = append(ret, x86.DoSub(x86.RSP, x86.Imm(entireStackSize), 4))
-	ret = append(ret, allocation.DoCall(tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext)...)
+	ret = append(ret, allocation.DoCall(tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext, overrides)...)
 	return nil, ret
 }
 

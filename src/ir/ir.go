@@ -77,15 +77,15 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 		}
 		ret = append(ret, WrapIRCall(&IRCall{
 			BaseASTNode:    syscallExpr.BaseASTNode,
-			TargetName:     "",
+			TargetName:     resultVar,
 			CallTarget:     syscallExpr.Target,
 			CallTargetType: IR_FN,
-			Type:           IR_VOID,
+			Type:           translateType(syscallExpr.ResolvedType),
 			Arguments:      argList,
 			ArgumentsTypes: argListT,
 			IsBuiltin:      true,
 		}))
-		return ret, IR_VOID, ""
+		return ret, translateType(syscallExpr.ResolvedType), resultVar
 	} else if e, ok := node.(*ast.Primary); ok {
 		if e.IsVariable() {
 			return []*IRStatement{}, translateType(e.ResolvedType), *e.Variable
@@ -188,14 +188,26 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			rs, rt, rv := generateIRExpr(c, ir, e.Next)
 			ret = append(ret, ls...)
 			ret = append(ret, rs...)
-			ret = append(ret, WrapIRExpression(&IRExpression{
-				BaseASTNode:    e.BaseASTNode,
-				TargetName:     resultVar,
-				Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_NUMERIC),
-				Type:           translateType(e.ResolvedType),
-				Arguments:      []string{lv, rv},
-				ArgumentsTypes: []IRType{lt, rt},
-			}))
+			if lt == IR_STRING && rt == IR_STRING {
+				ret = append(ret, WrapIRCall(&IRCall{
+					BaseASTNode:    e.BaseASTNode,
+					TargetName:     resultVar,
+					CallTarget:     "AddStrings",
+					CallTargetType: IR_FN,
+					Type:           IR_STRING,
+					Arguments:      []string{lv, rv},
+					ArgumentsTypes: []IRType{lt, rt},
+				}))
+			} else {
+				ret = append(ret, WrapIRExpression(&IRExpression{
+					BaseASTNode:    e.BaseASTNode,
+					TargetName:     resultVar,
+					Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_NUMERIC),
+					Type:           translateType(e.ResolvedType),
+					Arguments:      []string{lv, rv},
+					ArgumentsTypes: []IRType{lt, rt},
+				}))
+			}
 			return ret, translateType(e.ResolvedType), resultVar
 		} else {
 			return generateIRExpr(c, ir, e.Multiplication)

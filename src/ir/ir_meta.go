@@ -40,6 +40,14 @@ func (cons IRAllocationConstraints) String() string {
 	return fmt.Sprintf("Require[%s]", strings.Join(descr, ", "))
 }
 
+func (alloc IRAllocationMap) Copy() IRAllocationMap {
+	newAlloc := IRAllocationMap{}
+	for varName, loc := range alloc {
+		newAlloc[varName] = loc
+	}
+	return newAlloc
+}
+
 func (alloc IRAllocationMap) String() string {
 	descr := []string{}
 	for varName, loc := range alloc {

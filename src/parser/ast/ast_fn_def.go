@@ -14,16 +14,22 @@ import (
 
 type FnDef struct {
 	generic_ast.BaseASTNode
-	ReturnType   Type   `@@`
-	Name         string `@Ident`
-	Arg          []*Arg `"(" (@@ ( "," @@ )*)? ")"`
-	FunctionBody *Block `@@`
-	ParentNode   generic_ast.TraversableNode
-	ResolvedType hindley_milner.Type
+	ReturnType     Type   `@@`
+	Name           string `@Ident`
+	Arg            []*Arg `"(" (@@ ( "," @@ )*)? ")"`
+	RuntimeKeyword string `((@"runtime")?)`
+	FunctionBody   *Block `@@`
+	ParentNode     generic_ast.TraversableNode
+	ResolvedType   hindley_milner.Type
 }
 
 func (ast *FnDef) OnTypeReturned(t hindley_milner.Type) {
 	ast.ResolvedType = t
+}
+
+func (ast *FnDef) IsRuntime() bool {
+	fmt.Printf("CHECK [%s] IS RUNTIME??\n", ast.RuntimeKeyword)
+	return ast.RuntimeKeyword == "runtime"
 }
 
 func (ast *FnDef) Parent() generic_ast.TraversableNode {
@@ -190,6 +196,9 @@ func (ast *FnDef) Args(c hindley_milner.InferContext) *hindley_milner.NameGroup 
 }
 
 func (ast *FnDef) Var(c hindley_milner.InferContext) *hindley_milner.NameGroup {
+	if ast.IsRuntime() {
+		return hindley_milner.EmptyNameGroup()
+	}
 	return hindley_milner.NameWithType(ast.Name, ast.GetDeclarationType())
 }
 
@@ -198,6 +207,9 @@ func (ast *FnDef) Body() generic_ast.Expression {
 }
 
 func (ast *FnDef) ExpressionType() hindley_milner.ExpressionType {
+	if ast.IsRuntime() {
+		return hindley_milner.E_FUNCTION
+	}
 	return hindley_milner.E_FUNCTION_DECLARATION
 }
 

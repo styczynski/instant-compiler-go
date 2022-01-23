@@ -6,7 +6,9 @@ tests/**/*.jasmine
 tests/**/*.ll
 custom.j
 custom.class
-custom.lat
+custom
+custom.s
+custom.valid_output
 logs.txt
 ./*.png
 

@@ -2,6 +2,7 @@ package assembly
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/styczynski/latte-compiler/src/compiler"
 	"github.com/styczynski/latte-compiler/src/compiler/assembly/allocation"
@@ -19,11 +20,13 @@ func init() {
 type CompilerX86BackendFactory struct{}
 
 func (CompilerX86BackendFactory) CreateEntity(c config.EntityConfig) interface{} {
-	return CreateCompilerX86Backend()
+	return CreateCompilerX86Backend(
+		c.Bool("gcc-docker"),
+	)
 }
 
 func (CompilerX86BackendFactory) Params(argSpec *config.EntityArgSpec) {
-
+	argSpec.AddBool("gcc-docker", false, "Prefer using dockerized GCC x64")
 }
 
 func (CompilerX86BackendFactory) EntityName() string {
@@ -31,11 +34,42 @@ func (CompilerX86BackendFactory) EntityName() string {
 }
 
 type CompilerX86Backend struct {
-	state *compiler.CompilerState
+	state           *compiler.CompilerState
+	preferGCCDocker bool
 }
 
 func (backend CompilerX86Backend) RunCompiledCode(runContext compiler.CompiledCodeRunContext, c *context.ParsingContext) ([]string, *compiler.RunError) {
-	return []string{}, nil
+	runCmd := "bash"
+	runArgs := []interface{}{
+		"-c",
+		"chmod +x ./$INPUT_FILE_BASE && (echo \"Output:\" ; ./$INPUT_FILE_BASE ; echo \"Exit code: $?\" ; true)",
+	}
+	if backend.preferGCCDocker {
+		runCmd = "docker"
+		runArgs = []interface{}{
+			"run",
+			"-t",
+			"-v", "$OUTPUT_DIR:/code",
+			"-w", "/code",
+			"gcc:11.2.0",
+			"bash", "-c", "chmod +x ./$INPUT_FILE_BASE && (echo \"Output:\" ; ./$INPUT_FILE_BASE ; echo \"Exit code: $?\" ; true)",
+		}
+	}
+
+	callOut, err := runContext.Call(runCmd, "rror", runArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	out := []string{}
+	for _, line := range callOut {
+		// && !strings.Contains(line, "_JAVA_OPTIONS")
+		line = strings.TrimSpace(line)
+		if len(line) > 0 {
+			out = append(out, line)
+		}
+	}
+	return out, nil
 }
 
 func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedProgram, c *context.ParsingContext, b *compiler.BuildContext) compiler.LatteCompiledProgramPromiseChan {
@@ -121,7 +155,17 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 		b.WriteOutput("X86 assembly source", "s", []byte(output.ProgramToText()))
 		b.WriteBuildFile("code.s", []byte(output.ProgramToText()))
 
-		validationErr = b.Call("gcc", "rror", "-c", "$BUILD_DIR/code.s", "-o", "$BUILD_DIR/code.o")
+		assemblyGccCmd := "gcc"
+		assemblyGccArgs := []interface{}{
+			"-c", "$BUILD_DIR/code.s", "-o", "$BUILD_DIR/code.o",
+		}
+		if backend.preferGCCDocker {
+			assemblyGccCmd = "docker"
+			assemblyGccArgs = []interface{}{
+				"run", "-v", "$BUILD_DIR:/code", "-w", "/code", "gcc:11.2.0", "gcc", "-c", "/code/code.s", "-o", "/code/code.o",
+			}
+		}
+		validationErr = b.Call(assemblyGccCmd, "rror", assemblyGccArgs...)
 		if validationErr != nil {
 			ret <- compiler.LatteCompiledProgram{
 				Program:          program,
@@ -131,7 +175,18 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 			return
 		}
 
-		validationErr = b.Call("gcc", "rror", "$BUILD_DIR/code.o", "-o", "$BUILD_DIR/code_exe")
+		linkerGccCmd := "gcc"
+		linkerGccArgs := []interface{}{
+			"$BUILD_DIR/code.o", "-o", "$BUILD_DIR/code_exe",
+		}
+		if backend.preferGCCDocker {
+			linkerGccCmd = "docker"
+			linkerGccArgs = []interface{}{
+				"run", "-v", "$BUILD_DIR:/code", "-w", "/code", "gcc:11.2.0", "gcc", "/code/code.o", "-o", "/code/code_exe",
+			}
+		}
+		validationErr = b.Call(linkerGccCmd, "rror", linkerGccArgs...)
+
 		if validationErr != nil {
 			ret <- compiler.LatteCompiledProgram{
 				Program:          program,
@@ -159,8 +214,9 @@ func (CompilerX86Backend) BackendName() string {
 	return "X86 Jasmine backend"
 }
 
-func CreateCompilerX86Backend() compiler.CompilerBackend {
+func CreateCompilerX86Backend(preferGCCDocker bool) compiler.CompilerBackend {
 	return CompilerX86Backend{
-		state: compiler.CreateCompilerState(),
+		state:           compiler.CreateCompilerState(),
+		preferGCCDocker: preferGCCDocker,
 	}
 }

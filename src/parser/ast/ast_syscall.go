@@ -13,7 +13,8 @@ import (
 
 type Syscall struct {
 	generic_ast.BaseASTNode
-	Target       string        `"syscall" @Ident`
+	ReturnType   Type          `"syscall" @@`
+	Target       string        `@Ident`
 	AppToken     string        `( @"("`
 	Arguments    []*Expression `(@@ ("," @@)*)? ")" )`
 	ParentNode   generic_ast.TraversableNode
@@ -91,7 +92,8 @@ func (ast *Syscall) Body() generic_ast.Expression {
 }
 
 func (ast *Syscall) EmbeddedType(c hindley_milner.InferContext) *hindley_milner.Scheme {
-	return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
+	return ast.ReturnType.GetType(nil)
+	//return hindley_milner.NewScheme(nil, CreatePrimitive(T_VOID))
 }
 
 func (ast *Syscall) ExpressionType() hindley_milner.ExpressionType {

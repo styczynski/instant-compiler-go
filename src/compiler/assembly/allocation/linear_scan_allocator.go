@@ -377,7 +377,7 @@ func (alloc *LinearScanAllocator) PerformAllocationForBlocks(blocks []*ir.IRBloc
 					&AllocConsAllowAll{},
 				}
 			}
-			stmt.SetAllocationInfo(stmtAlloc, alloc.state.All)
+			stmt.SetAllocationInfo(stmtAlloc, alloc.state.All.Copy())
 			stmt.SetTargetAllocationConstraintsMap(cons)
 		}
 	}

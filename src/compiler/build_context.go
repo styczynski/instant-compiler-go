@@ -67,6 +67,7 @@ func CreateBuildContext(program type_checker.LatteTypecheckedProgram, c *context
 
 	session.ShowCMD = false
 	session.PipeFail = true
+	session.PipeStdErrors = true
 
 	return &BuildContext{
 		Cmd:         session,
