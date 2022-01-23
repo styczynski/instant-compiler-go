@@ -7,7 +7,6 @@ tests/**/*.ll
 custom.j
 custom.class
 custom
-custom.s
 custom.valid_output
 logs.txt
 ./*.png
