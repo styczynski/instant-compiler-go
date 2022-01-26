@@ -5,6 +5,22 @@ import (
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
 
+func insertJmpAwareStmt(stmts []*IRStatement, newStmt *IRStatement) []*IRStatement {
+	newStmts := []*IRStatement{}
+	for i, stmt := range stmts {
+		if stmt.IsJump() {
+			newStmts = append(newStmts, newStmt)
+			// Copy the rest
+			newStmts = append(newStmts, stmts[i:]...)
+			return newStmts
+		} else {
+			newStmts = append(newStmts, stmt)
+		}
+	}
+	newStmts = append(newStmts, newStmt)
+	return newStmts
+}
+
 func phiElim(graph *cfg.CFG, c *context.ParsingContext) {
 	visitedIDs := map[int]struct{}{}
 	graph.VisitGraph(graph.Entry, func(g *cfg.CFG, block *cfg.Block, next func(blockID int)) {
@@ -18,7 +34,7 @@ func phiElim(graph *cfg.CFG, c *context.ParsingContext) {
 				phi := stmt.Phi
 				for i, pred := range phi.Blocks {
 					predCode := graph.GetBlockCode(pred).(*IRBlock)
-					predCode.Statements = append(predCode.Statements, WrapIRCopy(&IRCopy{
+					predCode.Statements = insertJmpAwareStmt(predCode.Statements, WrapIRCopy(&IRCopy{
 						BaseASTNode: phi.BaseASTNode,
 						TargetName:  phi.TargetName,
 						Type:        phi.Type,

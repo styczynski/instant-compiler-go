@@ -260,7 +260,6 @@ func (backend CompilerX86Backend) compileIROpBinary(ret []*x86.Instruction, inst
 				))
 				ret = append(ret, x86.DoRegSetConditional(
 					reg.Reg,
-					reg.State.Specs.SubRegSize1,
 					reg.Size,
 					op,
 				)...)
@@ -318,7 +317,7 @@ func (backend CompilerX86Backend) compileIREmptyExit(ret []*x86.Instruction, ins
 	return nil, ret
 }
 
-func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName string, instr *ir.IRCall, name string, alloc ir.IRAllocation, argsOrder []string, argsAllocs ir.IRAllocationMap, allocContext ir.IRAllocationMap) (error, []*x86.Instruction) {
+func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName string, instr *ir.IRCall, name string, alloc ir.IRAllocation, argsOrder []string, argsAllocs ir.IRAllocationMap, allocContext ir.IRAllocationMap, allocOutputContext ir.IRAllocationMap) (error, []*x86.Instruction) {
 	// for _, argName := range argsOrder {
 
 	// }
@@ -350,7 +349,7 @@ func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName s
 		return fmt.Errorf("Unknown system call: %s\n", tagetName), ret
 	}
 	//ret = append(ret, x86.DoSub(x86.RSP, x86.Imm(entireStackSize), 4))
-	ret = append(ret, allocation.DoCall(tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext, overrides)...)
+	ret = append(ret, allocation.DoCall(tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext, allocOutputContext, overrides)...)
 	return nil, ret
 }
 
@@ -420,6 +419,13 @@ func (backend CompilerX86Backend) compileIRMacroCall(ret []*x86.Instruction, fnN
 	}
 }
 
+func (backend CompilerX86Backend) compileIRJump(ret []*x86.Instruction, fnName string, instr *ir.IRJump) (error, []*x86.Instruction) {
+	ret = append(ret, x86.DoJump(
+		fmt.Sprintf("%s_block%d", fnName, instr.BlockTarget),
+	))
+	return nil, ret
+}
+
 func (backend CompilerX86Backend) compileIRIf(ret []*x86.Instruction, fnName string, instr *ir.IRIf, alloc ir.IRAllocation) (error, []*x86.Instruction) {
 	if mem, ok := allocation.IsAllocMem(alloc); ok {
 		ret = append(ret, x86.DoMemoryLoad(
@@ -432,6 +438,7 @@ func (backend CompilerX86Backend) compileIRIf(ret []*x86.Instruction, fnName str
 			fmt.Sprintf("%s_block%d", fnName, instr.BlockElse),
 			instr.HasElseBlock(),
 			x86.EAX,
+			instr.Negated,
 		)...)
 		return nil, ret
 	} else if reg, ok := allocation.IsAllocReg(alloc); ok {
@@ -440,6 +447,7 @@ func (backend CompilerX86Backend) compileIRIf(ret []*x86.Instruction, fnName str
 			fmt.Sprintf("%s_block%d", fnName, instr.BlockElse),
 			instr.HasElseBlock(),
 			reg.Reg,
+			instr.Negated,
 		)...)
 		return nil, ret
 	} else {
@@ -452,7 +460,13 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 	ret := []*x86.Instruction{
 		x86.Label(fmt.Sprintf("%s_block%d", fnName, code.BlockID)),
 	}
-	for _, instr := range code.Statements {
+	for stmtNo, instr := range code.Statements {
+
+		outputAlloc := ir.IRAllocationMap{}
+		if stmtNo < len(code.Statements)-1 {
+			outputAlloc = code.Statements[stmtNo+1].GetAllocationContext()
+		}
+
 		lastIndex := len(ret) - 1
 		if instr.IsConst() {
 			name, alloc := instr.GetAllocationTarget()
@@ -517,6 +531,13 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 				return err, nil
 			}
 			ret = newRet
+		} else if instr.IsJump() {
+			jumpStmt := instr.Jump
+			err, newRet := backend.compileIRJump(ret, fnName, jumpStmt)
+			if err != nil {
+				return err, nil
+			}
+			ret = newRet
 		} else if instr.IsMacroCall() {
 			macroCall := instr.MacroCall
 			err, newRet := backend.compileIRMacroCall(ret, fnName, instr, macroCall, macroCall.MacroName, macroCall.Data)
@@ -532,7 +553,7 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 				argsAllocs[name] = instr.GetAllocationContext()[name]
 			}
 
-			err, newRet := backend.compileIRCall(ret, fnName, call, name, alloc, call.Arguments, argsAllocs, instr.GetAllocationContext())
+			err, newRet := backend.compileIRCall(ret, fnName, call, name, alloc, call.Arguments, argsAllocs, instr.GetAllocationContext(), outputAlloc)
 			if err != nil {
 				return err, nil
 			}

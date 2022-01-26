@@ -17,6 +17,7 @@ type IRStatement struct {
 	generic_ast.BaseASTNode
 	Empty      *IREmpty      `@@`
 	Exit       *IRExit       `| @@`
+	Jump       *IRJump       `| @@`
 	If         *IRIf         `| @@`
 	Phi        *IRPhi        `| @@`
 	Expression *IRExpression `| @@`
@@ -174,6 +175,14 @@ func WrapIRMacroCall(ast *IRMacroCall) *IRStatement {
 	return ret
 }
 
+func WrapIRJump(ast *IRJump) *IRStatement {
+	ret := &IRStatement{
+		Jump: ast,
+	}
+	ast.OverrideParent(ret)
+	return ret
+}
+
 func WrapIRCopy(ast *IRCopy) *IRStatement {
 	ret := &IRStatement{
 		Copy: ast,
@@ -213,6 +222,7 @@ func (ast *IRStatement) GetNode() interface{} {
 func (ast *IRStatement) IsEmpty() bool {
 	return (ast.Empty != nil || (!ast.IsExit() &&
 		!ast.IsIf() &&
+		!ast.IsJump() &&
 		!ast.IsPhi() &&
 		!ast.IsCopy() &&
 		!ast.IsMacroCall() &&
@@ -227,6 +237,10 @@ func (ast *IRStatement) IsExit() bool {
 
 func (ast *IRStatement) IsIf() bool {
 	return ast.If != nil
+}
+
+func (ast *IRStatement) IsJump() bool {
+	return ast.Jump != nil
 }
 
 func (ast *IRStatement) IsPhi() bool {
@@ -261,6 +275,8 @@ func (ast *IRStatement) GetChildren() []generic_ast.TraversableNode {
 		return []generic_ast.TraversableNode{ast.Exit}
 	} else if ast.IsIf() {
 		return []generic_ast.TraversableNode{ast.If}
+	} else if ast.IsJump() {
+		return []generic_ast.TraversableNode{ast.Jump}
 	} else if ast.IsPhi() {
 		return []generic_ast.TraversableNode{ast.Phi}
 	} else if ast.IsCopy() {
@@ -316,6 +332,8 @@ func (ast *IRStatement) Print(c *context.ParsingContext) string {
 		ret = ast.Exit.Print(c)
 	} else if ast.IsIf() {
 		ret = ast.If.Print(c)
+	} else if ast.IsJump() {
+		ret = ast.Jump.Print(c)
 	} else if ast.IsPhi() {
 		ret = ast.Phi.Print(c)
 	} else if ast.IsCopy() {
@@ -351,6 +369,10 @@ func (ast *IRStatement) Body() generic_ast.Expression {
 		//return hindley_milner.Batch{Exp: []generic_ast.Expression{}}
 	} else if ast.IsExit() {
 		return ast.Exit
+	} else if ast.IsIf() {
+		return ast.If
+	} else if ast.IsJump() {
+		return ast.Jump
 	} else if ast.IsExpression() {
 		return ast.Expression
 	} else if ast.IsMacroCall() {
@@ -378,6 +400,11 @@ func feedExpressionIntoIRStatement(node interface{}, base generic_ast.BaseASTNod
 		return &IRStatement{
 			BaseASTNode: base,
 			If:          ifStmt,
+		}
+	} else if jumpStmt, ok := node.(*IRJump); ok {
+		return &IRStatement{
+			BaseASTNode: base,
+			Jump:        jumpStmt,
 		}
 	} else if expr, ok := node.(*IRExpression); ok {
 		return &IRStatement{
@@ -429,6 +456,8 @@ func (ast *IRStatement) BuildFlowGraph(builder cfg.CFGBuilder) {
 		builder.BuildNode(ast.Exit)
 	} else if ast.IsIf() {
 		builder.BuildNode(ast.If)
+	} else if ast.IsJump() {
+		builder.BuildNode(ast.Jump)
 	} else if ast.IsPhi() {
 		builder.BuildNode(ast.Phi)
 	} else if ast.IsExpression() {
@@ -448,6 +477,8 @@ func (ast *IRStatement) ResolveTypeOfVar(name string) IRType {
 	if ast.IsEmpty() {
 		return IR_UNKNOWN
 	} else if ast.IsExit() {
+		return IR_UNKNOWN
+	} else if ast.IsJump() {
 		return IR_UNKNOWN
 	} else if ast.IsIf() {
 		return IR_UNKNOWN

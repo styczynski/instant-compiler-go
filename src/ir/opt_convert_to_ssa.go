@@ -53,18 +53,20 @@ func convertToSSA(graph *cfg.CFG, ir *IRGeneratorState) {
 	})
 
 	visitedIDs = map[int]struct{}{}
+	subst := cfg.VariableSubstitutionMap{}
 	graph.VisitGraph(graph.Entry, func(g *cfg.CFG, block *cfg.Block, next func(blockID int)) {
 		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
 			return
 		}
+
 		visitedIDs[block.ID] = struct{}{}
 		code := graph.GetBlockCode(block.ID)
 		if codeBlock, ok := code.(*IRBlock); ok {
+			cfg.ReplaceVariables(code, subst, cfg.VariableSubstitutionMap{}, map[generic_ast.TraversableNode]struct{}{})
 			blockPreds := block.GetPreds()
 			if len(blockPreds) > 1 {
 				//blockOutputMappings := allBlockOutputMappings[block.ID]
 				blockInputMappings := allBlockInputMappings[block.ID]
-				subst := cfg.VariableSubstitutionMap{}
 
 				headers := []*IRStatement{}
 

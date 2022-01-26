@@ -1,0 +1,184 @@
+/*int main() {
+    int a, b, t, u, v, c, d;
+    a = 5;
+    b = 3;
+    c = 1;
+    t = a; // a=5, b=3, c=1, t=5
+    a = b; // a=3, b=3, c=1, t=5
+    b = t; // a=3, b=5, c=1, t=5
+    t = a-b; // a=3, b=5, c=1, t=-2
+    u = a-c; // a=3, b=5, c=1, t=-2, u=2
+    v = t+u; // a=3, b=5, c=1, t=-2, u=2, v=0
+    return v;
+}*/
+
+/*int main() {
+    int a, b, t, u, v, c, d;
+    a = 5;
+    b = 3;
+    c = 1;
+    t = a; // a=5, b=3, c=1, t=5
+    a = b; // a=3, b=3, c=1, t=5
+    b = t; // a=3, b=5, c=1, t=5
+    t = a-b; // a=3, b=5, c=1, t=-2
+    u = a-c; // a=3, b=5, c=1, t=5, u=2
+    v = t+u; // a=3, b=5, c=1, t=5, u=2, v=7
+    d = v+u; // a=3, b=5, c=1, t=5, u=2, v=7, d=9
+    printInt(d);
+    return d;
+}*/
+
+/*int main() {
+    int b, c, d;
+    d = 5;
+    int a = r(1)+2;
+    b = 3;
+    if (a == b) {
+        b = a+2;
+    }
+    c = b;
+    int q = 9ś
+    return c;
+}*/
+
+/*int main() {
+    int a = 12;
+    int b = 13;
+    boolean x = a <= b;
+    if (x) {
+        int p = 2;
+        return 4*p/3;
+    } else {
+        return 9;
+    }
+}*/
+
+
+/*int qpa(string x) {
+    return 8;
+}
+
+int r(int x) {
+    if(true) {
+        return 1;
+    }
+}*/
+
+string AddStrings(string a, string b) {
+    int a_len = syscall int strlen(a);
+    int b_len = syscall int strlen(b);
+    string result = syscall string malloc(a_len+b_len+1);
+    syscall void strcpy(result, a);
+    syscall void strcat(result, b);
+    return result;
+}
+
+void error(string message) runtime {
+    syscall void printf("Error: %s\n", message);
+    syscall void exit(1);
+    return;
+}
+
+void printString(string a) runtime {
+    syscall void printf("%s\n", a);
+    return;
+}
+
+void printInt(int a) runtime {
+    syscall void printf("%d\n", a);
+    return;
+}
+
+int main() {
+    int c = 0;
+    while(c<2) {
+        printInt(c);
+        c = c+1;
+    }
+    return 2;
+}
+
+/*int main() {
+    string t1 = "rawsx";
+    string t2 = "lol";
+    string t3 = t1+t2+t1;
+    printString(t3);
+    return 15;
+}*/
+
+/*int main() {
+	printInt(fac(10));
+	printInt(rfac(10));
+	printInt(mfac(10));
+        printInt(ifac(10));
+        string r ; // just to test blocks 
+	{
+	  int n = 10;
+	  int r = 1;
+	  while (n>0) {
+	    r = r * n;
+	    n--;
+	  }
+	  printInt(r);
+	}
+	printString (repStr("=",60));
+	printString ("hello ");
+        printString (" world") ;
+        return 0 ;
+}
+
+int fac(int a) {
+	int r;
+	int n;
+
+	r = 1;
+	n = a;
+	while (n > 0) {
+	  r = r * n;
+	  n = n - 1;
+	}
+	return r;
+}
+
+int rfac(int n) {
+	if (n == 0)
+	  return 1;
+	else
+	  return n * rfac(n-1);
+}
+
+int mfac(int n) {
+	if (n == 0)
+	  return 1;
+	else
+	  return n * nfac(n-1);
+}
+
+int nfac(int n) {
+	if (n != 0)
+	  return mfac(n-1) * n;
+	else
+	  return 1;
+}
+
+int ifac(int n) { return ifac2f(1,n); }
+
+int ifac2f(int l, int h) {
+        if (l == h)
+          return l;
+        if (l > h)
+          return 1;
+        int m;
+        m = (l + h) / 2;
+        return ifac2f(l,m) * ifac2f(m+1,h);
+}
+
+string repStr(string s, int n) {
+  string r = "";
+  int i = 0;
+  while(i<n) {
+    r = r + s;
+    i++;
+  }
+ return r;
+}*/

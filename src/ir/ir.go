@@ -65,7 +65,14 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 	ret := []*IRStatement{}
 	resultVar := ir.NextTempVar()
 
-	if syscallExpr, ok := node.(*ast.Syscall); ok {
+	if block, ok := node.(*ast.Block); ok {
+		// Nested block
+		for _, stmt := range block.Statements {
+			code, _, _ := generateIRExpr(c, ir, stmt)
+			ret = append(ret, code...)
+		}
+		return ret, IR_VOID, ""
+	} else if syscallExpr, ok := node.(*ast.Syscall); ok {
 		argList := []string{}
 		argListT := []IRType{}
 		fmt.Printf("SYSCALL TARGET %v\n", syscallExpr.Target)
@@ -279,7 +286,8 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 func extractIfBlockJumpID(ifBlock *ast.Statement, graph *cfg.CFG) int {
 	ifBlockChildren := ifBlock.GetChildren()
 	if len(ifBlockChildren) > 0 {
-		if block, ok := ifBlockChildren[0].(*ast.Block); ok {
+		child := ifBlockChildren[0]
+		if block, ok := child.(*ast.Block); ok {
 			if len(block.Statements) > 0 {
 				blockTopChildren := block.Statements[0].GetChildren()
 				if len(blockTopChildren) > 0 {
@@ -291,12 +299,20 @@ func extractIfBlockJumpID(ifBlock *ast.Statement, graph *cfg.CFG) int {
 					}
 				}
 			}
+		} else {
+			// Single statement
+			jumpBlock := graph.FindBlock(child.(cfg.CFGCodeNode))
+			if jumpBlock != nil {
+				return jumpBlock.ID
+			}
 		}
 	}
 	return -1
 }
 
 func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) {
+
+	blocksLoopBackJumps := map[int]int{}
 
 	//func(cfg *CFG, block *Block) []generic_ast.NormalNode
 	MapEntireGraph(graph, func(g *cfg.CFG, block *cfg.Block, node cfg.CFGCodeNode) []*IRStatement {
@@ -305,10 +321,56 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 		}
 		ret := []*IRStatement{}
 
-		if e, ok := node.(*ast.If); ok {
+		if bl, ok := node.(*ast.Block); ok {
+			exprIR, _, _ := generateIRExpr(c, ir, bl)
+			ret = append(ret, exprIR...)
+			return ret
+		} else if e, ok := node.(*ast.While); ok {
+			sCond, tCond, vCond := generateIRExpr(c, ir, e.Condition)
+			//doNode := e.Do.GetChildren()[0].(*ast.Block).Statements[0].GetChildren()[0].(cfg.CFGCodeNode)
+			//doBlockID := extractIfBlockJumpID(e.Do, graph)
+			ret = append(ret, sCond...)
+
+			doBlockID := extractIfBlockJumpID(e.Do, graph)
+			skipBlockID := -1
+			for _, succ := range block.GetSuccs() {
+				if succ != doBlockID {
+					skipBlockID = succ
+				}
+			}
+
+			traceBlockID := doBlockID
+			lastDoBlockID := doBlockID
+			started := false
+			for traceBlockID != block.ID || !started {
+				traceBlock := g.GetBlock(traceBlockID)
+				traceNext := traceBlock.GetSuccs()
+				if len(traceNext) != 1 {
+					panic("While failure")
+				}
+				traceBlockID, lastDoBlockID = traceNext[0], traceBlock.ID
+				started = true
+				fmt.Printf("--> While points to [%s]\n", g.GetBlockCode(traceBlockID).Print(c))
+			}
+
+			fmt.Printf("WHILE LOOP\n")
+			ret = append(ret, WrapIRIf(&IRIf{
+				BaseASTNode:   e.BaseASTNode,
+				Condition:     vCond,
+				ConditionType: tCond,
+				BlockThen:     skipBlockID,
+				BlockElse:     -1,
+				Negated:       true,
+			}).SetComment("While condition"))
+
+			// Append loop instruction
+			blocksLoopBackJumps[lastDoBlockID] = block.ID
+
+			return ret
+		} else if e, ok := node.(*ast.If); ok {
 			s, t, v := generateIRExpr(c, ir, e.Condition)
-			thenNode := e.Then.GetChildren()[0].(*ast.Block).Statements[0].GetChildren()[0].(cfg.CFGCodeNode)
-			fmt.Printf("[?] If contents: %s{%s}\n", reflect.TypeOf(thenNode), thenNode.Print(c))
+			// thenNode := e.Then.GetChildren()[0].(*ast.Block).Statements[0].GetChildren()[0].(cfg.CFGCodeNode)
+			// fmt.Printf("[?] If contents: %s{%s}\n", reflect.TypeOf(thenNode), thenNode.Print(c))
 
 			thenBlockID := extractIfBlockJumpID(e.Then, graph)
 			elseBlockID := -1
@@ -382,6 +444,13 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 		//ret = append(ret, WrapIREmpty())
 		return ret
 	})
+
+	for blockID, targetBlockID := range blocksLoopBackJumps {
+		bl := graph.GetBlockCode(blockID).(*IRBlock)
+		bl.Statements = append(bl.Statements, WrapIRJump(&IRJump{
+			BlockTarget: targetBlockID,
+		}).SetComment("While loop return to block_%d", targetBlockID))
+	}
 }
 
 type ControlFlowGraphMapper func(cfg *cfg.CFG, block *cfg.Block, node cfg.CFGCodeNode) []*IRStatement
@@ -438,8 +507,10 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 	phiElim(graph, c)
 	regSplit(graph, c)
 
-	outputCodeIR := outputIR(root, graph, c)
+	//outputCodeIR := outputIR(root, graph, c)
+	//fmt.Printf("\n\nSSA:\n\n%s", outputCodeIR.Print(c))
 
+	outputCodeIR := outputIR(root, graph, c)
 	irAnalysis := cfg.CreateFlowAnalysis(outputCodeIR)
 
 	irCFG := irAnalysis.Graph()

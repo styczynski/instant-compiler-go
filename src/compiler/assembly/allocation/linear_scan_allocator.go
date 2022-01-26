@@ -140,7 +140,7 @@ func (state *LinearScanAllocatorState) IsBlockAvailable(start int, size int) boo
 
 func (state *LinearScanAllocatorState) allocateAvailableRegistryUsing(name string, size int, reg x86.Reg) (*LocationRegister, bool) {
 	if regState, ok := state.AvailableRegistries[reg]; ok {
-		if !regState.Full && regState.Specs.Size >= size {
+		if !regState.Full && regState.Specs.DefaultSize >= size {
 			regState.Full = true
 			regState.Var = name
 			return &LocationRegister{
@@ -157,7 +157,7 @@ func (state *LinearScanAllocatorState) allocateAvailableRegistryUsing(name strin
 
 func (state *LinearScanAllocatorState) allocateAvailableRegistry(name string, size int) (*LocationRegister, bool) {
 	for reg, regState := range state.AvailableRegistries {
-		if !regState.Full && regState.Specs.Size >= size {
+		if !regState.Full && regState.Specs.DefaultSize >= size {
 			regState.Full = true
 			regState.Var = name
 			return &LocationRegister{
@@ -240,6 +240,10 @@ func (alloc *LinearScanAllocator) getStrongRegRequirements(cons ir.IRAllocationC
 func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, hasExistingAlloc bool, existingAllocName string, existingAlloc ir.IRAllocation, cons ir.IRAllocationConstraints) ir.IRAllocation {
 	// Check if the node has allocation data
 	blockSize := ir.GetIRTypeSize(varType) / 8
+	if currentAlloc, ok := alloc.state.All[name]; ok {
+		// Skip already allocated variables
+		return currentAlloc
+	}
 
 	strongRegReqs := alloc.getStrongRegRequirements(cons)
 	if len(strongRegReqs) > 0 {
@@ -259,7 +263,7 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 			regState.Var = name
 			return &LocationRegister{
 				Reg:   *newReg,
-				Size:  regState.Specs.Size,
+				Size:  regState.Specs.DefaultSize,
 				State: regState.Copy(),
 			}
 		} else {
@@ -288,10 +292,6 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 		}
 	}
 
-	if currentAlloc, ok := alloc.state.Current[name]; ok {
-		// Skip already allocated variables
-		return currentAlloc
-	}
 	freeMemoryIndex := 0
 	allocReg, regOk := alloc.state.allocateAvailableRegistry(name, blockSize)
 	if regOk {

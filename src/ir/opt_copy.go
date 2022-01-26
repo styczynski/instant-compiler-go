@@ -81,6 +81,7 @@ func copyCollaps(graph *cfg.CFG, c *context.ParsingContext, subst cfg.VariableSu
 		if _, wasVisited := visitedIDs[block.ID]; wasVisited {
 			return
 		}
+		visitedIDs[block.ID] = struct{}{}
 		b := graph.GetBlockCode(block.ID).(*IRBlock)
 		cfg.ReplaceVariables(b, subst, subst, map[generic_ast.TraversableNode]struct{}{})
 

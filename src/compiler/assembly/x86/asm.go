@@ -42,12 +42,18 @@ func (f *Function) GenerateSymbolLookup(c *GenerationContext, sl *SymbolLookup) 
 	}
 }
 
+func (f *Function) Label() string {
+	if f.Name == "main" {
+		return "main"
+	}
+	return fmt.Sprintf("_%s", f.Name)
+}
+
 func (f *Function) Generate(c *GenerationContext, slFn SymLookup) []string {
 	retInstrs := []string{}
 	additionalDescription := ""
-	fnLabel := fmt.Sprintf("_%s:", f.Name)
+	fnLabel := fmt.Sprintf("%s:", f.Label())
 	if f.Name == "main" {
-		fnLabel = "main:"
 		additionalDescription = " (Entrypoint)"
 	}
 	headers := []string{
@@ -90,8 +96,12 @@ func (sl *SymbolLookup) GetLookupFunction() SymLookup {
 	}
 }
 
+func (f *Instruction) IsLabel() bool {
+	return len(f.Label) > 0
+}
+
 func (f *Instruction) GenerateSymbolLookup(c *GenerationContext, sl *SymbolLookup) {
-	if len(f.Label) > 0 {
+	if f.IsLabel() {
 		sl.table[f.Label] = c.pc
 		sl.reverse[c.pc] = f.Label
 	} else {
@@ -116,7 +126,7 @@ func (f *Instruction) Generate(c *GenerationContext, slFn SymLookup) []string {
 	if len(f.Comment) > 0 {
 		commentStr = fmt.Sprintf(" # %s", f.Comment)
 	}
-	if len(f.Label) > 0 {
+	if f.IsLabel() {
 		c.IndentBack()
 		ret := []string{
 			fmt.Sprintf("%s%s:%s", strings.Repeat("  ", c.indent), f.Label, commentStr),

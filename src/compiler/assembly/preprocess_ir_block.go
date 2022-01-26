@@ -253,6 +253,10 @@ func (backend CompilerX86Backend) preprocessIREmptyExit(stmt *ir.IRStatement, in
 	return nil, []*ir.IRStatement{stmt}
 }
 
+func (backend CompilerX86Backend) preprocessIRJump(stmt *ir.IRStatement, fn *ir.IRFunction, instr *ir.IRJump) (error, []*ir.IRStatement) {
+	return nil, []*ir.IRStatement{stmt}
+}
+
 func (backend CompilerX86Backend) preprocessIRIf(stmt *ir.IRStatement, fn *ir.IRFunction, instr *ir.IRIf, alloc ir.IRAllocation) (error, []*ir.IRStatement) {
 	if _, ok := allocation.IsAllocMem(alloc); ok {
 		return nil, []*ir.IRStatement{stmt}
@@ -461,6 +465,13 @@ func (backend CompilerX86Backend) preprocessIRBlock(c *context.ParsingContext, f
 			ifStmt := instr.If
 			alloc := instr.GetAllocationContext()[ifStmt.Condition]
 			err, mappedInstrs := backend.preprocessIRIf(instr, fn, ifStmt, alloc)
+			if err != nil {
+				return err
+			}
+			ret = append(ret, mappedInstrs...)
+		} else if instr.IsJump() {
+			jumpStmt := instr.Jump
+			err, mappedInstrs := backend.preprocessIRJump(instr, fn, jumpStmt)
 			if err != nil {
 				return err
 			}

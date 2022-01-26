@@ -7,154 +7,171 @@ import (
 )
 
 type RegistrySpecs struct {
-	Size                int
-	TopReg              Reg
-	Reg                 Reg
-	SubRegSize1         Reg
-	SubRegSize2         Reg
+	Normalized          Reg
+	Reg8B               Reg
+	Reg1B               Reg
+	Reg2B               Reg
+	Reg4B               Reg
 	FnArgIndex          int
 	CanStoreFnArg       bool
 	FnReturnIndex       int
 	CanReturnFn         bool
 	IsPreserved         bool
 	ForbidForAllocation bool
+	DefaultSize         int
 }
 
 var ALL_REGS map[Reg]*RegistrySpecs = map[Reg]*RegistrySpecs{
-	ESP: {
-		Size:                4,
-		TopReg:              RSP,
-		Reg:                 ESP,
-		SubRegSize1:         SP,
-		SubRegSize2:         ESP,
-		ForbidForAllocation: true,
-	},
-	EBP: {
-		Size:                4,
-		TopReg:              RBP,
-		Reg:                 EBP,
-		SubRegSize1:         BP,
-		SubRegSize2:         EBP,
-		ForbidForAllocation: true,
-	},
 	EAX: {
-		Size:          4,
-		TopReg:        RAX,
-		Reg:           EAX,
-		SubRegSize1:   AL,
-		SubRegSize2:   EAX,
+		Normalized:    EAX,
+		Reg8B:         RAX,
+		Reg4B:         EAX,
+		Reg2B:         AX,
+		Reg1B:         AL,
 		FnReturnIndex: 0,
 		CanReturnFn:   true,
+		DefaultSize:   4,
 	},
 	EBX: {
-		Size:        4,
-		TopReg:      RBX,
-		Reg:         EBX,
-		SubRegSize1: BL,
-		SubRegSize2: EBX,
+		Normalized:  EBX,
+		Reg8B:       RBX,
+		Reg4B:       EBX,
+		Reg2B:       BX,
+		Reg1B:       BL,
 		IsPreserved: true,
+		DefaultSize: 4,
 	},
 	ECX: {
-		Size:          4,
-		TopReg:        RCX,
-		Reg:           ECX,
-		SubRegSize1:   CL,
-		SubRegSize2:   ECX,
+		Normalized:    ECX,
+		Reg8B:         RCX,
+		Reg4B:         ECX,
+		Reg2B:         CX,
+		Reg1B:         CL,
 		CanStoreFnArg: true,
 		FnArgIndex:    3,
+		DefaultSize:   4,
 	},
 	EDX: {
-		Size:          4,
-		TopReg:        RDX,
-		Reg:           EDX,
-		SubRegSize1:   DL,
-		SubRegSize2:   EDX,
+		Normalized:    EDX,
+		Reg8B:         RDX,
+		Reg4B:         EDX,
+		Reg2B:         DX,
+		Reg1B:         DL,
 		CanStoreFnArg: true,
 		FnArgIndex:    2,
 		FnReturnIndex: 1,
 		CanReturnFn:   true,
-	},
-	EDI: {
-		Size:          4,
-		TopReg:        RDI,
-		Reg:           EDI,
-		SubRegSize1:   DI,
-		SubRegSize2:   EDI,
-		CanStoreFnArg: true,
-		FnArgIndex:    0,
+		DefaultSize:   4,
 	},
 	ESI: {
-		Size:          4,
-		TopReg:        RSI,
-		Reg:           ESI,
-		SubRegSize1:   SI,
-		SubRegSize2:   ESI,
+		Normalized:    ESI,
+		Reg8B:         RSI,
+		Reg4B:         ESI,
+		Reg2B:         SI,
+		Reg1B:         SIB,
 		CanStoreFnArg: true,
 		FnArgIndex:    1,
+		DefaultSize:   4,
+	},
+	EDI: {
+		Normalized:    EDI,
+		Reg8B:         RDI,
+		Reg4B:         EDI,
+		Reg2B:         DI,
+		Reg1B:         DIB,
+		CanStoreFnArg: true,
+		FnArgIndex:    0,
+		DefaultSize:   4,
+	},
+	EBP: {
+		Normalized:          EBP,
+		Reg8B:               RBP,
+		Reg4B:               EBP,
+		Reg2B:               BP,
+		Reg1B:               BPB,
+		ForbidForAllocation: true,
+		DefaultSize:         4,
+	},
+	ESP: {
+		Normalized:          ESP,
+		Reg8B:               RSP,
+		Reg4B:               ESP,
+		Reg2B:               SP,
+		Reg1B:               SPB,
+		ForbidForAllocation: true,
+		DefaultSize:         4,
 	},
 	R8L: {
-		Size:          4,
-		TopReg:        R8,
-		Reg:           R8L,
-		SubRegSize1:   R8W,
-		SubRegSize2:   R8L,
+		Normalized:    R8L,
+		Reg8B:         R8,
+		Reg4B:         R8L,
+		Reg2B:         R8W,
+		Reg1B:         R8B,
 		CanStoreFnArg: true,
 		FnArgIndex:    4,
+		DefaultSize:   4,
 	},
 	R9L: {
-		Size:          4,
-		TopReg:        R9,
-		Reg:           R9L,
-		SubRegSize1:   R9W,
-		SubRegSize2:   R9L,
+		Normalized:    R9L,
+		Reg8B:         R9,
+		Reg4B:         R9L,
+		Reg2B:         R9W,
+		Reg1B:         R9B,
 		CanStoreFnArg: true,
 		FnArgIndex:    6,
+		DefaultSize:   4,
 	},
 	R10L: {
-		Size:        4,
-		TopReg:      R10,
-		Reg:         R10L,
-		SubRegSize1: R10W,
-		SubRegSize2: R10L,
+		Normalized:  R10L,
+		Reg8B:       R10,
+		Reg4B:       R10L,
+		Reg2B:       R10W,
+		Reg1B:       R10B,
+		DefaultSize: 4,
 	},
 	R11L: {
-		Size:        4,
-		TopReg:      R11,
-		Reg:         R11L,
-		SubRegSize1: R11W,
-		SubRegSize2: R11L,
+		Normalized:  R11L,
+		Reg8B:       R11,
+		Reg4B:       R11L,
+		Reg2B:       R11W,
+		Reg1B:       R11B,
+		DefaultSize: 4,
 	},
 	R12L: {
-		Size:        4,
-		TopReg:      R12,
-		Reg:         R12L,
-		SubRegSize1: R12W,
-		SubRegSize2: R12L,
+		Normalized:  R12L,
+		Reg8B:       R12,
+		Reg4B:       R12L,
+		Reg2B:       R12W,
+		Reg1B:       R12B,
 		IsPreserved: true,
+		DefaultSize: 4,
 	},
 	R13L: {
-		Size:        4,
-		TopReg:      R13,
-		Reg:         R13L,
-		SubRegSize1: R13W,
-		SubRegSize2: R13L,
+		Normalized:  R13L,
+		Reg8B:       R13,
+		Reg4B:       R13L,
+		Reg2B:       R13W,
+		Reg1B:       R13B,
 		IsPreserved: true,
+		DefaultSize: 4,
 	},
 	R14L: {
-		Size:        4,
-		TopReg:      R14,
-		Reg:         R14L,
-		SubRegSize1: R14W,
-		SubRegSize2: R14L,
+		Normalized:  R14L,
+		Reg8B:       R14,
+		Reg4B:       R14L,
+		Reg2B:       R14W,
+		Reg1B:       R14B,
 		IsPreserved: true,
+		DefaultSize: 4,
 	},
 	R15L: {
-		Size:        4,
-		TopReg:      R15,
-		Reg:         R15L,
-		SubRegSize1: R15W,
-		SubRegSize2: R15L,
+		Normalized:  R15L,
+		Reg8B:       R15,
+		Reg4B:       R15L,
+		Reg2B:       R15W,
+		Reg1B:       R15B,
 		IsPreserved: true,
+		DefaultSize: 4,
 	},
 }
 
@@ -165,18 +182,34 @@ func ResizeReg(a Reg, size int) (effectiveSize int, effectiveReg Reg) {
 	for reg, regSpecs := range ALL_REGS {
 		if AreRegsColliding(&a, &reg) {
 			// Matching reg
-			if size == 2 && regSpecs.SubRegSize1 != reg && regSpecs.SubRegSize1 != 0 {
-				effectiveSize, effectiveReg = 2, regSpecs.SubRegSize1
+			if size == 1 && regSpecs.Reg1B != 0 {
+				effectiveSize, effectiveReg = 1, regSpecs.Reg1B
 				return
-			} else if size == 4 && regSpecs.SubRegSize2 != reg && regSpecs.SubRegSize2 != 0 {
-				effectiveSize, effectiveReg = 4, regSpecs.SubRegSize2
+			} else if size == 2 && regSpecs.Reg2B != 0 {
+				effectiveSize, effectiveReg = 2, regSpecs.Reg2B
 				return
-			} else if size == 8 && regSpecs.TopReg != reg && regSpecs.TopReg != 0 {
-				effectiveSize, effectiveReg = 8, regSpecs.TopReg
+			} else if size == 4 && regSpecs.Reg4B != 0 {
+				effectiveSize, effectiveReg = 4, regSpecs.Reg4B
+				return
+			} else if size == 8 && regSpecs.Reg8B != 0 {
+				effectiveSize, effectiveReg = 8, regSpecs.Reg8B
 				return
 			} else {
-				effectiveSize, effectiveReg = regSpecs.Size, reg
-				return
+				if regSpecs.Reg4B != 0 {
+					effectiveSize, effectiveReg = 4, regSpecs.Reg4B
+					return
+				} else if regSpecs.Reg8B != 0 {
+					effectiveSize, effectiveReg = 8, regSpecs.Reg8B
+					return
+				} else if regSpecs.Reg2B != 0 {
+					effectiveSize, effectiveReg = 2, regSpecs.Reg2B
+					return
+				} else if regSpecs.Reg1B != 0 {
+					effectiveSize, effectiveReg = 1, regSpecs.Reg1B
+					return
+				} else {
+					panic("Invalid registry")
+				}
 			}
 		}
 	}
@@ -204,7 +237,7 @@ func AreRegsColliding(a *Reg, b *Reg) bool {
 	if usedSpecs == nil {
 		return false
 	}
-	return *a == *b || *compReg == usedSpecs.Reg || *compReg == usedSpecs.SubRegSize1 || *compReg == usedSpecs.SubRegSize2 || *compReg == usedSpecs.TopReg
+	return *a == *b || *compReg == usedSpecs.Reg1B || *compReg == usedSpecs.Reg2B || *compReg == usedSpecs.Reg4B || *compReg == usedSpecs.Reg8B
 }
 
 // A Label is a label reference
@@ -501,9 +534,12 @@ func DoMemoryLoad(index, size int, to Reg) *Instruction {
 	return doRawMov(toResized, GetMemoryVarLocation(index, size), toSize)
 }
 
-func DoRegSetConditional(reg Reg, subreg Reg, size int, op ir.IROperator) []*Instruction {
+func DoRegSetConditional(reg Reg, size int, op ir.IROperator) []*Instruction {
 	instSet := Inst{}
 	instSet.MemBytes = size
+
+	_, resizedReg := ResizeReg(reg, 1)
+
 	if op == ir.IR_OP_EQ {
 		instSet.Op = SETE
 	} else if op == ir.IR_OP_LT {
@@ -520,14 +556,14 @@ func DoRegSetConditional(reg Reg, subreg Reg, size int, op ir.IROperator) []*Ins
 		panic(fmt.Sprintf("Invalid operation specified for DoRegSetConditional: %v", op))
 	}
 	instSet.Args = Args{
-		subreg,
+		resizedReg,
 	}
 	instResize := Inst{}
 	instResize.MemBytes = size
 	instResize.Op = MOVZX
 	instResize.Args = Args{
 		reg,
-		subreg,
+		resizedReg,
 	}
 	return []*Instruction{
 		{
@@ -621,7 +657,18 @@ func DoMemoryToMemoryTransfer(src, srcSize, target, targetSize int, temp Reg) []
 	}
 }
 
-func DoIf(label string, labelElse string, hasElse bool, value Arg) []*Instruction {
+func DoJump(label string) *Instruction {
+	instJmp := Inst{}
+	instJmp.Op = JMP
+	instJmp.Args = Args{
+		CreateRelLabel(label),
+	}
+	return &Instruction{
+		Inst: instJmp,
+	}
+}
+
+func DoIf(label string, labelElse string, hasElse bool, value Arg, negated bool) []*Instruction {
 	instCmp := Inst{}
 	instCmp.Op = CMP
 	instCmp.Args = Args{
@@ -630,6 +677,9 @@ func DoIf(label string, labelElse string, hasElse bool, value Arg) []*Instructio
 	}
 	instJmp := Inst{}
 	instJmp.Op = JNE
+	if negated {
+		instJmp.Op = JE
+	}
 	instJmp.Args = Args{
 		&RelLabel{
 			label: label,

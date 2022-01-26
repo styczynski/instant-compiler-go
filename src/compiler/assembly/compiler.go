@@ -39,11 +39,14 @@ type CompilerX86Backend struct {
 }
 
 func (backend CompilerX86Backend) RunCompiledCode(runContext compiler.CompiledCodeRunContext, c *context.ParsingContext) ([]string, *compiler.RunError) {
+	//return []string{}, nil
+
 	runCmd := "bash"
 	runArgs := []interface{}{
 		"-c",
-		"chmod +x ./$INPUT_FILE_BASE && (echo \"Output:\" ; ./$INPUT_FILE_BASE ; echo \"Exit code: $?\" ; true)",
+		"chmod +x ./$INPUT_FILE_BASE && ./$INPUT_FILE_BASE",
 	}
+	//(echo \"Output:\" ; ./$INPUT_FILE_BASE ; echo \"Exit code: $?\" ; true)
 	if backend.preferGCCDocker {
 		runCmd = "docker"
 		runArgs = []interface{}{
@@ -52,7 +55,7 @@ func (backend CompilerX86Backend) RunCompiledCode(runContext compiler.CompiledCo
 			"-v", "$OUTPUT_DIR:/code",
 			"-w", "/code",
 			"gcc:11.2.0",
-			"bash", "-c", "chmod +x ./$INPUT_FILE_BASE && (echo \"Output:\" ; ./$INPUT_FILE_BASE ; echo \"Exit code: $?\" ; true)",
+			"bash", "-c", "chmod +x ./$INPUT_FILE_BASE && ./$INPUT_FILE_BASE",
 		}
 	}
 
@@ -95,7 +98,7 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 							stmt.SetTargetAllocationConstraints(*macroCall.TargetName, ir.IRAllocationConstraints{
 								&allocation.AllocConsRequireSpecificRegisters{
 									AllowedRegisters: []x86.Reg{
-										x86.GetRegisterForFunctionArg(argNo).Reg,
+										x86.GetRegisterForFunctionArg(argNo).Normalized,
 									},
 								},
 							})
@@ -136,6 +139,8 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 			return
 		}
 
+		entries = x86.Optimize(entries)
+
 		output := x86.Program{
 			Entries: entries,
 		}
@@ -155,50 +160,52 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 		b.WriteOutput("X86 assembly source", "s", []byte(output.ProgramToText()))
 		b.WriteBuildFile("code.s", []byte(output.ProgramToText()))
 
-		assemblyGccCmd := "gcc"
-		assemblyGccArgs := []interface{}{
-			"-c", "$BUILD_DIR/code.s", "-o", "$BUILD_DIR/code.o",
-		}
-		if backend.preferGCCDocker {
-			assemblyGccCmd = "docker"
-			assemblyGccArgs = []interface{}{
-				"run", "-v", "$BUILD_DIR:/code", "-w", "/code", "gcc:11.2.0", "gcc", "-c", "/code/code.s", "-o", "/code/code.o",
+		if 0 == 0 {
+			assemblyGccCmd := "gcc"
+			assemblyGccArgs := []interface{}{
+				"-c", "$BUILD_DIR/code.s", "-o", "$BUILD_DIR/code.o",
 			}
-		}
-		validationErr = b.Call(assemblyGccCmd, "rror", assemblyGccArgs...)
-		if validationErr != nil {
-			ret <- compiler.LatteCompiledProgram{
-				Program:          program,
-				CompiledProgram:  &output,
-				CompilationError: validationErr,
+			if backend.preferGCCDocker {
+				assemblyGccCmd = "docker"
+				assemblyGccArgs = []interface{}{
+					"run", "-v", "$BUILD_DIR:/code", "-w", "/code", "gcc:11.2.0", "gcc", "-c", "/code/code.s", "-o", "/code/code.o",
+				}
 			}
-			return
-		}
-
-		linkerGccCmd := "gcc"
-		linkerGccArgs := []interface{}{
-			"$BUILD_DIR/code.o", "-o", "$BUILD_DIR/code_exe",
-		}
-		if backend.preferGCCDocker {
-			linkerGccCmd = "docker"
-			linkerGccArgs = []interface{}{
-				"run", "-v", "$BUILD_DIR:/code", "-w", "/code", "gcc:11.2.0", "gcc", "/code/code.o", "-o", "/code/code_exe",
+			validationErr = b.Call(assemblyGccCmd, "rror", assemblyGccArgs...)
+			if validationErr != nil {
+				ret <- compiler.LatteCompiledProgram{
+					Program:          program,
+					CompiledProgram:  &output,
+					CompilationError: validationErr,
+				}
+				return
 			}
-		}
-		validationErr = b.Call(linkerGccCmd, "rror", linkerGccArgs...)
 
-		if validationErr != nil {
-			ret <- compiler.LatteCompiledProgram{
-				Program:          program,
-				CompiledProgram:  &output,
-				CompilationError: validationErr,
+			linkerGccCmd := "gcc"
+			linkerGccArgs := []interface{}{
+				"$BUILD_DIR/code.o", "-o", "$BUILD_DIR/code_exe",
 			}
-			return
+			if backend.preferGCCDocker {
+				linkerGccCmd = "docker"
+				linkerGccArgs = []interface{}{
+					"run", "-v", "$BUILD_DIR:/code", "-w", "/code", "gcc:11.2.0", "gcc", "/code/code.o", "-o", "/code/code_exe",
+				}
+			}
+			validationErr = b.Call(linkerGccCmd, "rror", linkerGccArgs...)
+
+			if validationErr != nil {
+				ret <- compiler.LatteCompiledProgram{
+					Program:          program,
+					CompiledProgram:  &output,
+					CompilationError: validationErr,
+				}
+				return
+			}
+
+			outputX86Executable := b.ReadBuildFile("code_exe")
+
+			b.WriteOutput("X86 program", "", outputX86Executable)
 		}
-
-		outputX86Executable := b.ReadBuildFile("code_exe")
-
-		b.WriteOutput("X86 program", "", outputX86Executable)
 
 		ret <- compiler.LatteCompiledProgram{
 			Program:          program,

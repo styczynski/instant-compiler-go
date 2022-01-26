@@ -1,98 +1,13 @@
-/*int main() {
-    int a, b, t, u, v, c, d;
-    a = 5;
-    b = 3;
-    c = 1;
-    t = a; // a=5, b=3, c=1, t=5
-    a = b; // a=3, b=3, c=1, t=5
-    b = t; // a=3, b=5, c=1, t=5
-    t = a-b; // a=3, b=5, c=1, t=-2
-    u = a-c; // a=3, b=5, c=1, t=-2, u=2
-    v = t+u; // a=3, b=5, c=1, t=-2, u=2, v=0
-    return v;
-}*/
-
-/*int main() {
-    int a, b, t, u, v, c, d;
-    a = 5;
-    b = 3;
-    c = 1;
-    t = a; // a=5, b=3, c=1, t=5
-    a = b; // a=3, b=3, c=1, t=5
-    b = t; // a=3, b=5, c=1, t=5
-    t = a-b; // a=3, b=5, c=1, t=-2
-    u = a-c; // a=3, b=5, c=1, t=5, u=2
-    v = t+u; // a=3, b=5, c=1, t=5, u=2, v=7
-    d = v+u; // a=3, b=5, c=1, t=5, u=2, v=7, d=9
-    printInt(d);
-    return d;
-}*/
-
-/*int main() {
-    int b, c, d;
-    d = 5;
-    int a = r(1)+2;
-    b = 3;
-    if (a == b) {
-        b = a+2;
-    }
-    c = b;
-    int q = 9ś
-    return c;
-}*/
-
-/*int main() {
-    int a = 12;
-    int b = 13;
-    boolean x = a <= b;
-    if (x) {
-        int p = 2;
-        return 4*p/3;
-    } else {
-        return 9;
-    }
-}*/
-
-
-/*int qpa(string x) {
-    return 8;
-}
-
-int r(int x) {
-    if(true) {
-        return 1;
-    }
-}*/
-
-string AddStrings(string a, string b) {
-    int a_len = syscall int strlen(a);
-    int b_len = syscall int strlen(b);
-    string result = syscall string malloc(a_len+b_len+1);
-    syscall void strcpy(result, a);
-    syscall void strcat(result, b);
-    return result;
-}
-
-void error(string message) runtime {
-    syscall void printf("Error: %s\n", message);
-    syscall void exit(1);
-    return;
-}
-
-void printString(string a) runtime {
-    syscall void printf("%s\n", a);
-    return;
-}
-
 void printInt(int a) runtime {
     syscall void printf("%d\n", a);
     return;
 }
 
 int main() {
-    string t1 = "rawsx";
-    string t2 = "lol";
-    string t3 = t1+t2+t1;
-    printString(t3);
-    return 15;
+    int c = 0;
+    while(c<2) {
+        c = c+1;
+    }
+    printInt(c);
+    return 0;
 }

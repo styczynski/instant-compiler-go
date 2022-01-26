@@ -9,6 +9,7 @@ import (
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/parser/utils"
+	"github.com/styczynski/latte-compiler/src/type_checker/hindley_milner"
 )
 
 type IRIf struct {
@@ -18,6 +19,7 @@ type IRIf struct {
 	BlockThen     int    `"jump" "to" @Int`
 	BlockElse     int    `"else" @Int`
 	ParentNode    generic_ast.TraversableNode
+	Negated       bool
 }
 
 func (ast *IRIf) Parent() generic_ast.TraversableNode {
@@ -51,10 +53,14 @@ func (ast *IRIf) HasElseBlock() bool {
 }
 
 func (ast *IRIf) Print(c *context.ParsingContext) string {
-	if !ast.HasElseBlock() {
-		return utils.PrintASTNode(c, ast, "If %s %s jump to block%d else continue", ast.ConditionType, ast.Condition, ast.BlockThen)
+	ifPostfix := " "
+	if ast.Negated {
+		ifPostfix = " not "
 	}
-	return utils.PrintASTNode(c, ast, "If %s %s jump to block%d else block%d", ast.ConditionType, ast.Condition, ast.BlockThen, ast.BlockElse)
+	if !ast.HasElseBlock() {
+		return utils.PrintASTNode(c, ast, "If%s%s %s jump to block%d else continue", ifPostfix, ast.ConditionType, ast.Condition, ast.BlockThen)
+	}
+	return utils.PrintASTNode(c, ast, "If%s%s %s jump to block%d else block%d", ifPostfix, ast.ConditionType, ast.Condition, ast.BlockThen, ast.BlockElse)
 }
 
 func (ast *IRIf) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
@@ -76,8 +82,32 @@ func (ast *IRIf) BuildFlowGraph(builder cfg.CFGBuilder) {
 
 	ctrlExits := builder.GetPrev() // aggregate of builder.prev from each condition
 
-	builder.UpdatePrev([]generic_ast.NormalNode{ast})
-	builder.BuildNode(ast.ParentNode.(*IRStatement).LookupBlock(ast.BlockElse))
-	ctrlExits = append(ctrlExits, builder.GetPrev()...)
+	if ast.HasElseBlock() {
+		builder.UpdatePrev([]generic_ast.NormalNode{ast})
+		builder.BuildNode(ast.ParentNode.(*IRStatement).LookupBlock(ast.BlockElse))
+		ctrlExits = append(ctrlExits, builder.GetPrev()...)
+	} else {
+		ctrlExits = append(ctrlExits, ast)
+	}
 	builder.UpdatePrev(ctrlExits)
+}
+
+func (ast *IRIf) Body() generic_ast.Expression {
+	return hindley_milner.Batch{}
+}
+
+func (ast *IRIf) Map(parent generic_ast.Expression, mapper generic_ast.ExpressionMapper, context generic_ast.VisitorContext) generic_ast.Expression {
+	return mapper(parent, &IRIf{
+		BaseASTNode:   ast.BaseASTNode,
+		ConditionType: ast.ConditionType,
+		Condition:     ast.Condition,
+		BlockThen:     ast.BlockThen,
+		BlockElse:     ast.BlockElse,
+		Negated:       ast.Negated,
+		ParentNode:    parent.(generic_ast.TraversableNode),
+	}, context, true)
+}
+
+func (ast *IRIf) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
+	mapper(parent, ast, context)
 }

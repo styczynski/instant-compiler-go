@@ -14,11 +14,12 @@ func DoCall(
 	argsOrder []string,
 	argsAllocs ir.IRAllocationMap,
 	allocationContext ir.IRAllocationMap,
+	allocationOutputContext ir.IRAllocationMap,
 	registriesOverrides map[x86.Reg]int64,
 ) []*x86.Instruction {
 
 	usedRegs := []*x86.RegistrySpecs{}
-	for _, alloc := range allocationContext {
+	for _, alloc := range allocationOutputContext {
 		if allocReg, ok := IsAllocReg(alloc); ok {
 			usedRegs = append(usedRegs, allocReg.State.Specs)
 		}
@@ -32,7 +33,7 @@ func DoCall(
 		specs := x86.GetRegisterForFunctionArg(argNo)
 		if specs != nil {
 			targetRegs = append(targetRegs, specs)
-			targetRegsSet[specs.Reg] = specs
+			targetRegsSet[specs.Normalized] = specs
 		}
 	}
 
@@ -55,7 +56,7 @@ func DoCall(
 	// Determine registry to preserve
 	for _, usedReg := range usedRegs {
 		if true || !usedReg.IsPreserved {
-			regsToPreserve[usedReg.Reg] = usedReg
+			regsToPreserve[usedReg.Normalized] = usedReg
 		}
 	}
 
@@ -65,7 +66,7 @@ func DoCall(
 		if allocReg, ok := IsAllocReg(arg); ok {
 			regsArgsLocations = append(regsArgsLocations, allocReg.State.Specs)
 			regsArgsLocationsIndexes = append(regsArgsLocationsIndexes, argNo)
-			regsArgsLocationsSet[allocReg.State.Specs.Reg] = struct{}{}
+			regsArgsLocationsSet[allocReg.State.Specs.Normalized] = struct{}{}
 			regsArgsLocationsIndexesMap[allocReg.State.Specs] = argNo
 			//var regUsed *x86.RegistrySpecs = nil
 			// Check used registries
@@ -87,12 +88,12 @@ func DoCall(
 	// Calculate return location
 	doNotPreserveReturn := map[x86.Reg]struct{}{}
 	returnTransferInstrs := []*x86.Instruction{}
-	returnLocation := x86.GetRegisterForFunctionReturn(0).TopReg
+	returnLocation := x86.GetRegisterForFunctionReturn(0).Reg8B
 	if targetType != ir.IR_VOID {
 		if targetAllocReg, ok := IsAllocReg(targetAlloc); ok {
 			returnTransferInstrs = append(returnTransferInstrs, x86.DoRegistryCopy(targetAllocReg.Reg, returnLocation, targetAllocReg.Size))
-			doNotPreserveReturn[targetAllocReg.State.Specs.Reg] = struct{}{}
-			fmt.Printf("RETURN LOC: %v\n", targetAllocReg.State.Specs.Reg)
+			doNotPreserveReturn[targetAllocReg.State.Specs.Normalized] = struct{}{}
+			fmt.Printf("RETURN LOC: %v\n", targetAllocReg.State.Specs.Normalized)
 		} else if targetAllocMem, ok := IsAllocMem(targetAlloc); ok {
 			returnTransferInstrs = append(returnTransferInstrs, x86.DoMemoryStore(targetAllocMem.Index, targetAllocMem.Size, returnLocation))
 		}
@@ -101,18 +102,18 @@ func DoCall(
 	// We need to preserver regsToPreserve before the call
 	regsPreserveOrder := []x86.Reg{}
 	for _, specs := range regsToPreserve {
-		fmt.Printf("CHECK RETURN REG SHOULD PRESERVED BE?: %v\n", specs.Reg)
-		if _, ok := doNotPreserveReturn[specs.Reg]; !ok {
+		fmt.Printf("CHECK RETURN REG SHOULD PRESERVED BE?: %v\n", specs.Normalized)
+		if _, ok := doNotPreserveReturn[specs.Normalized]; !ok {
 			fmt.Printf("   PROCEED I CHUJ!\n")
-			regsPreserveOrder = append(regsPreserveOrder, specs.TopReg)
-			ret = append(ret, x86.DoPush(specs.TopReg, 8))
+			regsPreserveOrder = append(regsPreserveOrder, specs.Reg8B)
+			ret = append(ret, x86.DoPush(specs.Reg8B, 8))
 		}
 	}
 
 	// if targetType != ir.IR_VOID {
 	// 	if targetRegAlloc, ok := IsAllocReg(targetAlloc); ok {
-	// 		regsPreserveOrder = append(regsPreserveOrder, targetRegAlloc.State.Specs.TopReg)
-	// 		ret = append(ret, x86.DoPush(targetRegAlloc.State.Specs.TopReg, 8))
+	// 		regsPreserveOrder = append(regsPreserveOrder, targetRegAlloc.State.Specs.Reg8B)
+	// 		ret = append(ret, x86.DoPush(targetRegAlloc.State.Specs.Reg8B, 8))
 	// 	}
 	// }
 
@@ -120,27 +121,27 @@ func DoCall(
 	for argNo, argReg := range regsArgsLocations {
 		targetSpecs := targetRegs[regsArgsLocationsIndexes[argNo]]
 		// Registry not used if teraget has override
-		if _, hasOverride := registriesOverrides[targetSpecs.Reg]; hasOverride {
+		if _, hasOverride := registriesOverrides[targetSpecs.Normalized]; hasOverride {
 			continue
 		}
-		fmt.Printf("ARGUMENT %d FOR CALL WILL BE TRANSFERED TO: %v\n", argNo, targetSpecs.Reg)
-		if _, ok := regsArgsLocationsSet[argReg.Reg]; ok {
+		fmt.Printf("ARGUMENT %d FOR CALL WILL BE TRANSFERED TO: %v\n", argNo, targetSpecs.Normalized)
+		if _, ok := regsArgsLocationsSet[argReg.Normalized]; ok {
 			// We have this register as an input so we do swap
-			if targetSpecs.TopReg != argReg.TopReg {
-				fmt.Printf("ARGUMENT SWAP %v %v\n", targetSpecs.Reg, argReg.Reg)
-				ret = append(ret, x86.DoSwap(targetSpecs.Reg, argReg.Reg, argReg.Size))
+			if targetSpecs.Reg8B != argReg.Reg8B {
+				fmt.Printf("ARGUMENT SWAP %v %v\n", targetSpecs.Normalized, argReg.Normalized)
+				ret = append(ret, x86.DoSwap(targetSpecs.Normalized, argReg.Normalized, argReg.DefaultSize))
 				// Swap args in array
 				regsArgsLocations[argNo], regsArgsLocations[regsArgsLocationsIndexesMap[targetSpecs]] = regsArgsLocations[regsArgsLocationsIndexesMap[targetSpecs]], regsArgsLocations[argNo]
 			}
 		} else {
 			// We only do mov as it's safe
-			ret = append(ret, x86.DoRegistryCopy(targetSpecs.Reg, argReg.Reg, argReg.Size))
+			ret = append(ret, x86.DoRegistryCopy(targetSpecs.Normalized, argReg.Normalized, argReg.DefaultSize))
 		}
 	}
 
 	// Transfer args (memory)
 	for memNo, argMem := range argsMem {
-		ret = append(ret, x86.DoMemoryLoad(argMem.Index, argMem.Size, targetRegs[argsMemIndexes[memNo]].TopReg))
+		ret = append(ret, x86.DoMemoryLoad(argMem.Index, argMem.Size, targetRegs[argsMemIndexes[memNo]].Reg8B))
 	}
 
 	// Set overrides
