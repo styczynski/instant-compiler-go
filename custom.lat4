@@ -1,0 +1,118 @@
+void error(string message) runtime {
+    syscall void printf("Error: %s\n", message);
+    syscall void exit(1);
+    return;
+}
+
+void printInt(int a) runtime {
+    syscall void printf("%d\n", a);
+    return;
+}
+
+void assert(boolean a) {
+	if(a) {
+		int x = 2;
+	} else {
+		error("FAILED ASSERTION");
+	}
+	return;
+}
+
+void assertEq(int a, int b) {
+	assert(a == b);
+	return;
+}
+
+int sth(int e1, int e2, int e3, int e4, int e5, int e6, int e7, int e8, int e9, int e10) {
+	//	return e1+e2+e3+e4+e5+e6+e7+e8+e9+e10;
+	int g1 = 901;
+	int g2 = 902;
+	int g3 = 903;
+	int g4 = 904;
+	int g5 = 905;
+	int g6 = 906;
+	int g7 = 907;
+	int g8 = 908;
+	int g9 = 909;
+	int g10 = 910;
+	int g11 = 911;
+	int g12 = 912;
+	
+	assertEq(g1, 901);
+	assertEq(e1, 1);
+
+	assertEq(g2, 902);
+	assertEq(e2, 2);
+
+	assertEq(g3, 903);
+	assertEq(e3, 3);
+
+	assertEq(g4, 904);
+	assertEq(e4, 4);
+
+	assertEq(g5, 905);
+	assertEq(e5, 5);
+
+	assertEq(g6, 906);
+	assertEq(e6, 6);
+
+	assertEq(g7, 907);
+	assertEq(e7, 7);
+
+	assertEq(g8, 908);
+	assertEq(e8, 8);
+
+	assertEq(g9, 909);
+	assertEq(e9, 9);
+
+	assertEq(g10, 910);
+	assertEq(e10, 10);
+
+	/*assertEq(g11, 911);
+	assertEq(e10, 10);
+
+	assertEq(g12, 912);
+	assertEq(e10, 10);*/
+	
+	printInt(g1);
+	printInt(e1);
+
+	printInt(g2);
+	printInt(e2);
+
+	printInt(g3);
+	printInt(e3);
+
+	printInt(g4);
+	printInt(e4);
+
+	printInt(g5);
+	printInt(e5);
+
+	printInt(g6);
+	printInt(e6);
+
+	printInt(g7);
+	printInt(e7);
+
+	printInt(g8);
+	printInt(e8);
+
+	printInt(g9);
+	printInt(e9);
+
+	printInt(g10);
+	printInt(e10);
+
+	printInt(g11);
+	printInt(e10);
+
+	printInt(g12);
+	printInt(e10);
+
+	return 0;
+}
+
+int main() {
+	return sth(1,2,3,4,5,6,7,8,9,10);
+}
