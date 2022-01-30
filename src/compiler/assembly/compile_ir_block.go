@@ -5,6 +5,7 @@ import (
 
 	"github.com/styczynski/latte-compiler/src/compiler/assembly/allocation"
 	"github.com/styczynski/latte-compiler/src/compiler/assembly/x86"
+	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/ir"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
@@ -317,10 +318,26 @@ func (backend CompilerX86Backend) compileIREmptyExit(ret []*x86.Instruction, ins
 	return nil, ret
 }
 
-func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName string, instr *ir.IRCall, name string, alloc ir.IRAllocation, argsOrder []string, argsAllocs ir.IRAllocationMap, allocContext ir.IRAllocationMap, allocOutputContext ir.IRAllocationMap) (error, []*x86.Instruction) {
+func (backend CompilerX86Backend) compileIRCall(
+	ret []*x86.Instruction,
+	parentFn *ir.IRFunction,
+	fnName string,
+	instr *ir.IRCall,
+	name string,
+	alloc ir.IRAllocation,
+	argsOrder []string,
+	argsAllocs ir.IRAllocationMap,
+	allocContext ir.IRAllocationMap,
+	allocOutputVars cfg.VariableSet,
+	allocAllContext ir.IRAllocationMap,
+) (error, []*x86.Instruction, allocation.AssemblyFunctionMeta, bool) {
 	// for _, argName := range argsOrder {
 
 	// }
+
+	allocOutputContext := allocContext.Copy()
+	allocOutputContext.PreserveOnly(allocOutputVars)
+
 	entireStackSize := 4 * 4
 	for _, argName := range argsOrder {
 		if mem, ok := allocation.IsAllocMem(argsAllocs[argName]); ok {
@@ -329,6 +346,9 @@ func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName s
 			entireStackSize += reg.Size
 		}
 	}
+	shouldGetResult := true
+	shouldPreserveRegs := true
+	shouldContinueTrace := true
 	tagetName := instr.CallTarget
 	overrides := map[x86.Reg]int64{}
 	if !instr.IsBuiltin {
@@ -336,7 +356,9 @@ func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName s
 	} else if tagetName == "printf" {
 		overrides[x86.EAX] = 0
 	} else if tagetName == "exit" {
-		// No-op
+		shouldGetResult = false
+		shouldPreserveRegs = false
+		shouldContinueTrace = false
 	} else if tagetName == "strlen" {
 		// No-op
 	} else if tagetName == "strcpy" {
@@ -346,11 +368,12 @@ func (backend CompilerX86Backend) compileIRCall(ret []*x86.Instruction, fnName s
 	} else if tagetName == "malloc" {
 		// No-op
 	} else {
-		return fmt.Errorf("Unknown system call: %s\n", tagetName), ret
+		return fmt.Errorf("Unknown system call: %s\n", tagetName), ret, allocation.AssemblyFunctionMeta{}, false
 	}
 	//ret = append(ret, x86.DoSub(x86.RSP, x86.Imm(entireStackSize), 4))
-	ret = append(ret, allocation.DoCall(tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext, allocOutputContext, overrides)...)
-	return nil, ret
+	meta, instrs := allocation.DoCall(parentFn, tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext, allocOutputContext, overrides, shouldGetResult, shouldPreserveRegs)
+	ret = append(ret, instrs...)
+	return nil, ret, meta, shouldContinueTrace
 }
 
 func (backend CompilerX86Backend) compileIRMacroCall(ret []*x86.Instruction, fnName string, stmt *ir.IRStatement, instr *ir.IRMacroCall, macroName string, macroData map[string]interface{}) (error, []*x86.Instruction) {
@@ -463,8 +486,10 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 	for stmtNo, instr := range code.Statements {
 
 		outputAlloc := ir.IRAllocationMap{}
+		outputAliveVars := instr.VarIn
 		if stmtNo < len(code.Statements)-1 {
 			outputAlloc = code.Statements[stmtNo+1].GetAllocationContext()
+			outputAliveVars = code.Statements[stmtNo+1].VarIn
 		}
 
 		lastIndex := len(ret) - 1
@@ -553,11 +578,22 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 				argsAllocs[name] = instr.GetAllocationContext()[name]
 			}
 
-			err, newRet := backend.compileIRCall(ret, fnName, call, name, alloc, call.Arguments, argsAllocs, instr.GetAllocationContext(), outputAlloc)
+			instr.GetAllocationTarget()
+			err, newRet, meta, shouldContinueTrace := backend.compileIRCall(ret, fn, fnName, call, name, alloc, call.Arguments, argsAllocs, instr.GetAllocationContext(), outputAliveVars, outputAlloc)
 			if err != nil {
 				return err, nil
 			}
 			ret = newRet
+
+			currentMeta := fn.GetMeta().(allocation.AssemblyFunctionMeta)
+			if meta.VarLen > currentMeta.VarLen {
+				currentMeta.VarLen = meta.VarLen
+			}
+			fn.SetMeta(currentMeta)
+
+			if !shouldContinueTrace {
+				return nil, ret
+			}
 		} else {
 			return fmt.Errorf("Invalid IR code to preprocess: %s", instr.Print(c)), nil
 		}

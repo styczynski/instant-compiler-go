@@ -161,12 +161,35 @@ func (c *CodeCursorSlice) IsOutside() bool {
 	return false
 }
 
+func inlineFunction(fn *Function, returnLabel string) []*Instruction {
+	output := []*Instruction{}
+	wasLabelUsed := false
+	for i, stmt := range fn.Body {
+		if !stmt.IsLabel() && stmt.Inst.Op == RET {
+			if i == len(fn.Body)-1 {
+				// We do not add return jump because it's the last statement in the inlined function
+				break
+			}
+			wasLabelUsed = true
+			output = append(output, DoJump(returnLabel))
+			continue
+		}
+		output = append(output, stmt)
+	}
+	if wasLabelUsed {
+		output = append(output, Label(returnLabel))
+	}
+	return output
+}
+
 func Optimize(code []Entry) []Entry {
 	others := []Entry{}
 	funcs := []*Function{}
+	funcMap := map[string]*Function{}
 	for _, entry := range code {
 		if fn, ok := entry.(*Function); ok {
 			funcs = append(funcs, fn)
+			funcMap[fn.Label()] = fn
 		} else {
 			others = append(others, entry)
 			//panic(fmt.Sprintf("Invalid optimization target: %s", reflect.TypeOf(entry).String()))
@@ -174,12 +197,18 @@ func Optimize(code []Entry) []Entry {
 	}
 
 	// Filter unused functions
-	usedLabels := map[string]struct{}{}
+	usedLabels := map[string]int{}
 	for _, fn := range funcs {
 		cursor := CreateCursor(fn.Body)
 		_, usedLabelsPartial := GetUnusedLabels(cursor)
-		for label, _ := range usedLabelsPartial {
-			usedLabels[label] = struct{}{}
+		for label, count := range usedLabelsPartial {
+			if count > 0 {
+				if val, ok := usedLabels[label]; ok {
+					usedLabels[label] = val + count
+				} else {
+					usedLabels[label] = count
+				}
+			}
 		}
 	}
 	filteredFns := []*Function{}
@@ -187,9 +216,18 @@ func Optimize(code []Entry) []Entry {
 		if _, ok := usedLabels[fn.Label()]; ok || fn.Label() == "main" {
 			// Function is used
 			filteresInstrs := []*Instruction{}
-			for _, instr := range fn.Body {
+			for i, instr := range fn.Body {
 				if instr.IsLabel() {
 					if _, ok := usedLabels[instr.Label]; !ok {
+						continue
+					}
+				} else if instr.Op == CALL {
+					label := instr.Args[0].(*RelLabel).label
+					if calledFn, ok := funcMap[label]; ok {
+						// Inline function
+						backLabel := fmt.Sprintf("inline_call_%d_return_%s", i, fn.Label())
+						inlinedContent := inlineFunction(calledFn, backLabel)
+						filteresInstrs = append(filteresInstrs, inlinedContent...)
 						continue
 					}
 				}
@@ -220,14 +258,18 @@ func Optimize(code []Entry) []Entry {
 	return output
 }
 
-func GetUnusedLabels(cursor CodeCursor) (CodeCursor, map[string]struct{}) {
-	usedLabels := map[string]struct{}{}
+func GetUnusedLabels(cursor CodeCursor) (CodeCursor, map[string]int) {
+	usedLabels := map[string]int{}
 	for !cursor.IsOutside() {
 		instr := cursor.GetInstruction(0)
 		if !instr.IsLabel() {
 			for _, arg := range instr.Args {
 				if l, ok := arg.(*RelLabel); ok {
-					usedLabels[l.label] = struct{}{}
+					if val, ok := usedLabels[l.label]; ok {
+						usedLabels[l.label] = val + 1
+					} else {
+						usedLabels[l.label] = 1
+					}
 				}
 			}
 		}

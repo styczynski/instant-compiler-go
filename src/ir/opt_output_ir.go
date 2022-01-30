@@ -57,8 +57,9 @@ func outputIR(root generic_ast.Expression, graph *cfg.CFG, c *context.ParsingCon
 				Type: translateType(argTypes[argNo]),
 				Var:  "",
 				Data: map[string]interface{}{
-					"ArgNo": argNo,
-					"Type":  argAst.ResolvedType,
+					"ArgNo":     argNo,
+					"ArgLastNo": len(topDef.Function.Arg) - 1,
+					"Type":      argAst.ResolvedType,
 				},
 				MacroName:  "LoadInputFunctionArgument",
 				TargetName: &argAst.Name,
@@ -68,6 +69,7 @@ func outputIR(root generic_ast.Expression, graph *cfg.CFG, c *context.ParsingCon
 			newStmts = append(newStmts, stmt)
 		}
 		ret.FunctionBody[0].Statements = newStmts
+		//fmt.Printf("FUN RET CHECK: <<%v>>\n", newStmts)
 	}
 
 	return ret

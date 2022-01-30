@@ -118,7 +118,7 @@ var ALL_REGS map[Reg]*RegistrySpecs = map[Reg]*RegistrySpecs{
 		Reg2B:         R9W,
 		Reg1B:         R9B,
 		CanStoreFnArg: true,
-		FnArgIndex:    6,
+		FnArgIndex:    5,
 		DefaultSize:   4,
 	},
 	R10L: {
@@ -626,6 +626,12 @@ func DoMemoryStoreConst(index, size int, value int64) *Instruction {
 }
 
 func GetMemoryVarLocation(index int, size int) Mem {
+	if -index-size >= 0 {
+		return Mem{
+			Base: RBP,
+			Disp: int64(-index - size),
+		}
+	}
 	return Mem{
 		Base: RBP,
 		Disp: int64(-index - size),
@@ -721,6 +727,20 @@ func GetRegisterForFunctionArg(index int) *RegistrySpecs {
 		}
 	}
 	return nil
+}
+
+func GetMemoryForFunctionArg(index int) (int, int) {
+	maxIndex := 0
+	for _, reg := range ALL_REGS {
+		if reg.CanStoreFnArg && maxIndex < reg.FnArgIndex {
+			maxIndex = reg.FnArgIndex
+		}
+	}
+	if index <= maxIndex {
+		panic("Invalid memory index")
+	}
+	stackOffset := (index - maxIndex - 1) * 4
+	return stackOffset, 4
 }
 
 func GetRegisterForFunctionReturn(index int) *RegistrySpecs {

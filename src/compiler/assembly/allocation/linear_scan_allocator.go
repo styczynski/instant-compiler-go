@@ -18,6 +18,18 @@ func (cons *AllocConsAllowAll) String() string {
 
 func (cons *AllocConsAllowAll) IsAllocationConstraint() {}
 
+///
+type AllocConsSkip struct {
+}
+
+func (cons *AllocConsSkip) String() string {
+	return "SKIP_ALLOCATION"
+}
+
+func (cons *AllocConsSkip) IsAllocationConstraint() {}
+
+///
+
 type AllocConsRequireRegisters struct {
 }
 
@@ -40,6 +52,17 @@ func (cons *AllocConsRequireSpecificRegisters) String() string {
 }
 
 func (cons *AllocConsRequireSpecificRegisters) IsAllocationConstraint() {}
+
+type AllocConsRequireMemoryStackTop struct {
+	Offset int
+	Size   int
+}
+
+func (cons *AllocConsRequireMemoryStackTop) String() string {
+	return fmt.Sprintf("MUST_BE_ON_TOP_OF_THE_STACK(OFFSET=%d, SIZE=%d)", cons.Offset, cons.Size)
+}
+
+func (cons *AllocConsRequireMemoryStackTop) IsAllocationConstraint() {}
 
 type LocationMemory struct {
 	Index int
@@ -97,10 +120,11 @@ type AssemblyFunctionMeta struct {
 }
 
 type LinearScanAllocatorState struct {
-	Current             ir.IRAllocationMap
-	All                 ir.IRAllocationMap
-	LastBlock           int
-	AvailableRegistries map[x86.Reg]*RegistryState
+	Current                ir.IRAllocationMap
+	All                    ir.IRAllocationMap
+	LastBlock              int
+	AvailableRegistries    map[x86.Reg]*RegistryState
+	StackTopOffsetSequence int
 }
 
 func (state *LinearScanAllocatorState) allocateBlockUsing(start int, size int) bool {
@@ -138,6 +162,22 @@ func (state *LinearScanAllocatorState) IsBlockAvailable(start int, size int) boo
 	return true
 }
 
+func (state *LinearScanAllocatorState) allocateAvailableBlock(blockSize int) *LocationMemory {
+	freeMemoryIndex := 0
+	for {
+		// Check if block is available
+		if state.IsBlockAvailable(freeMemoryIndex, blockSize) {
+			break
+		}
+		freeMemoryIndex++
+	}
+	state.AllocateBlock(freeMemoryIndex, blockSize)
+	return &LocationMemory{
+		Index: freeMemoryIndex,
+		Size:  blockSize,
+	}
+}
+
 func (state *LinearScanAllocatorState) allocateAvailableRegistryUsing(name string, size int, reg x86.Reg) (*LocationRegister, bool) {
 	if regState, ok := state.AvailableRegistries[reg]; ok {
 		if !regState.Full && regState.Specs.DefaultSize >= size {
@@ -170,6 +210,20 @@ func (state *LinearScanAllocatorState) allocateAvailableRegistry(name string, si
 	return nil, false
 }
 
+func (state *LinearScanAllocatorState) LastMemoryBlock() (*LocationMemory, int) {
+	lastIndex := 0
+	lastSize := 0
+	var lastMem *LocationMemory = nil
+	for _, alloc := range state.Current {
+		if mem, ok := alloc.(*LocationMemory); ok {
+			if lastIndex < mem.Index {
+				lastMem, lastSize, lastIndex = mem, mem.Size, mem.Index
+			}
+		}
+	}
+	return lastMem, lastIndex + lastSize
+}
+
 func (state *LinearScanAllocatorState) PreserveOnly(allVars cfg.VariableSet) {
 	state.Current.PreserveOnly(allVars)
 	for _, regState := range state.AvailableRegistries {
@@ -196,6 +250,17 @@ func (alloc *LinearScanAllocator) AreContraintsMet(currentAlloc ir.IRAllocation,
 	for _, con := range cons {
 		if _, ok := con.(*AllocConsAllowAll); ok {
 			return true
+		} else if _, ok := con.(*AllocConsSkip); ok {
+			return true
+		} else if conStackTop, ok := con.(*AllocConsRequireMemoryStackTop); ok {
+			if mem, ok := IsAllocMem(currentAlloc); ok {
+				// Calculate stack top
+				//_, lastIndex := alloc.state.LastMemoryBlock()
+
+				// Check the block offsets
+				return -conStackTop.Offset == mem.Index
+			}
+			return false
 		} else if consReg, ok := con.(*AllocConsRequireSpecificRegisters); ok {
 			if alloc, ok := IsAllocReg(currentAlloc); ok {
 				a := alloc.Reg
@@ -284,7 +349,7 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 					return allocReg
 				}
 			} else if mem, ok := existingAlloc.(*LocationMemory); ok {
-				ok := alloc.state.allocateBlockUsing(mem.Index, mem.Size)
+				ok := alloc.state.IsBlockAvailable(mem.Index, mem.Size)
 				if ok {
 					return mem
 				}
@@ -292,24 +357,34 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 		}
 	}
 
-	freeMemoryIndex := 0
+	// Check if memory should be allocated
+	for _, con := range cons {
+		if conStackTop, ok := con.(*AllocConsRequireMemoryStackTop); ok {
+			//stackBlockSize := 4
+			//_, end := alloc.state.LastMemoryBlock()
+			//if alloc.state.StackTopOffsetSequence > 0 {
+			//	end = alloc.state.StackTopOffsetSequence
+			//}
+			//alloc.state.StackTopOffsetSequence = end + stackBlockSize
+			//fmt.Printf("ALLOCATE STACK TOP OFFSET=%d ON POS=%d SIZE=%d\n", conStackTop.Offset, end, stackBlockSize)
+			//ok := alloc.state.IsBlockAvailable(end, stackBlockSize)
+			//if !ok {
+			//	panic(fmt.Sprintf("Failed to allocate block on the stack top with offset: %d", conStackTop.Offset))
+			//}
+			return &LocationMemory{
+				Index: -conStackTop.Offset,
+				Size:  conStackTop.Size,
+			}
+		}
+	}
+	alloc.state.StackTopOffsetSequence = 0
+
 	allocReg, regOk := alloc.state.allocateAvailableRegistry(name, blockSize)
 	if regOk {
 		return allocReg
 	}
 
-	for {
-		// Check if block is available
-		if alloc.state.IsBlockAvailable(freeMemoryIndex, blockSize) {
-			break
-		}
-		freeMemoryIndex++
-	}
-	alloc.state.AllocateBlock(freeMemoryIndex, blockSize)
-	return &LocationMemory{
-		Index: freeMemoryIndex,
-		Size:  blockSize,
-	}
+	return alloc.state.allocateAvailableBlock(blockSize)
 }
 
 func (alloc *LinearScanAllocator) Initialize() {
@@ -367,16 +442,36 @@ func (alloc *LinearScanAllocator) PerformAllocationForBlocks(blocks []*ir.IRBloc
 			existingAllocName, existingAlloc, hasExistingAlloc := stmt.TryToGetAllocationTarget()
 			_, existingCons := stmt.GetAllocationTargetContraints()
 
-			for varName, _ := range decl {
-				// TODO: Fix ir type
-				loc := alloc.allocateVar(varName, ir.IR_INT32, hasExistingAlloc, existingAllocName, existingAlloc, existingCons)
-				alloc.state.Current[varName] = loc
-				alloc.state.All[varName] = loc
-				stmtAlloc[varName] = loc
-				cons[varName] = ir.IRAllocationConstraints{
-					&AllocConsAllowAll{},
+			shouldSkip := false
+			for _, cons := range existingCons {
+				if _, ok := cons.(*AllocConsSkip); ok {
+					shouldSkip = true
+					break
 				}
 			}
+			if !shouldSkip {
+				for varName, _ := range decl {
+					// TODO: Fix ir type
+					loc := alloc.allocateVar(varName, ir.IR_INT32, hasExistingAlloc, existingAllocName, existingAlloc, existingCons)
+					alloc.state.Current[varName] = loc
+					alloc.state.All[varName] = loc
+					stmtAlloc[varName] = loc
+					cons[varName] = ir.IRAllocationConstraints{
+						&AllocConsAllowAll{},
+					}
+				}
+			} else {
+				for varName, _ := range decl {
+					// TODO: Fix ir type
+					alloc.state.Current[varName] = nil
+					alloc.state.All[varName] = nil
+					stmtAlloc[varName] = nil
+					cons[varName] = ir.IRAllocationConstraints{
+						&AllocConsAllowAll{},
+					}
+				}
+			}
+
 			stmt.SetAllocationInfo(stmtAlloc, alloc.state.All.Copy())
 			stmt.SetTargetAllocationConstraintsMap(cons)
 		}

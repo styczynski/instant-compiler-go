@@ -376,6 +376,12 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 			elseBlockID := -1
 			if e.HasElseBlock() {
 				elseBlockID = extractIfBlockJumpID(e.Else, graph)
+			} else {
+				for _, succ := range block.GetSuccs() {
+					if succ != thenBlockID {
+						elseBlockID = succ
+					}
+				}
 			}
 
 			ret = append(ret, s...)
@@ -504,11 +510,13 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 		}
 	}
 	convertToSSA(graph, ir)
+
+	// outputCodeIR := outputIR(root, graph, c)
+	// fmt.Printf("\n\nSSA:\n\n%s", outputCodeIR.Print(c))
+
 	phiElim(graph, c)
 	regSplit(graph, c)
-
-	//outputCodeIR := outputIR(root, graph, c)
-	//fmt.Printf("\n\nSSA:\n\n%s", outputCodeIR.Print(c))
+	ifOrder(graph, c)
 
 	outputCodeIR := outputIR(root, graph, c)
 	irAnalysis := cfg.CreateFlowAnalysis(outputCodeIR)

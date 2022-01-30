@@ -1,0 +1,56 @@
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[R12L(size=4)]
+ARGUMENT 1 FOR CALL IS ALLOCATED ON: Register[EDI(size=4)]
+ARGUMENT 2 FOR CALL IS ALLOCATED ON: Register[R14L(size=4)]
+ARGUMENT 3 FOR CALL IS ALLOCATED ON: Register[R11L(size=4)]
+ARGUMENT 4 FOR CALL IS ALLOCATED ON: Register[R15L(size=4)]
+ARGUMENT 5 FOR CALL IS ALLOCATED ON: Register[R8L(size=4)]
+ARGUMENT 6 FOR CALL IS ALLOCATED ON: Register[R10L(size=4)]
+ARGUMENT 7 FOR CALL IS ALLOCATED ON: Register[R9L(size=4)]
+ARGUMENT 8 FOR CALL IS ALLOCATED ON: Register[R13L(size=4)]
+ARGUMENT 9 FOR CALL IS ALLOCATED ON: Register[ESI(size=4)]
+[?] Resize RAX (size 4) into EAX (size 4)
+[?] Resize EDX (size 4) into EDX (size 4)
+RETURN LOC: EDX
+CHECK RETURN REG SHOULD PRESERVED BE?: EDX
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI R12L
+[?] Resize R12L (size 4) into R12L (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+CALL ARGS ==> [ {0: EDI}  {1: R12L}  {2: R14L}  {3: R11L}  {4: R15L}  {5: R8L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: ESI} ]
+ARGUMENT 1 FOR CALL WILL BE TRANSFERED TO: ESI
+ARGUMENT SWAP ESI R12L
+[?] Resize R12L (size 4) into R12L (size 4)
+[?] Resize ESI (size 4) into ESI (size 4)
+CALL ARGS ==> [ {0: EDI}  {1: ESI}  {2: R14L}  {3: R11L}  {4: R15L}  {5: R8L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: R12L} ]
+ARGUMENT 2 FOR CALL WILL BE TRANSFERED TO: EDX
+ARGUMENT SWAP EDX R14L
+[?] Resize R14L (size 4) into R14L (size 4)
+[?] Resize EDX (size 4) into EDX (size 4)
+CALL ARGS ==> [ {0: R14L}  {1: ESI}  {2: EDI}  {3: R11L}  {4: R15L}  {5: R8L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: R12L} ]
+ARGUMENT 3 FOR CALL WILL BE TRANSFERED TO: ECX
+ARGUMENT SWAP ECX R11L
+[?] Resize R11L (size 4) into R11L (size 4)
+[?] Resize ECX (size 4) into ECX (size 4)
+CALL ARGS ==> [ {0: R11L}  {1: ESI}  {2: EDI}  {3: R14L}  {4: R15L}  {5: R8L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: R12L} ]
+ARGUMENT 4 FOR CALL WILL BE TRANSFERED TO: R8L
+ARGUMENT SWAP R8L R15L
+[?] Resize R15L (size 4) into R15L (size 4)
+[?] Resize R8L (size 4) into R8L (size 4)
+CALL ARGS ==> [ {0: R11L}  {1: ESI}  {2: EDI}  {3: R14L}  {4: R8L}  {5: R15L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: R12L} ]
+ARGUMENT 5 FOR CALL WILL BE TRANSFERED TO: R9L
+ARGUMENT SWAP R9L R15L
+[?] Resize R15L (size 4) into R15L (size 4)
+[?] Resize R9L (size 4) into R9L (size 4)
+CALL ARGS ==> [ {0: R11L}  {1: ESI}  {2: EDI}  {3: R14L}  {4: R8L}  {5: R9L}  {6: R10L}  {7: R15L}  {8: R13L}  {9: R12L} ]
+ARGUMENT 6 FOR CALL WILL BE TRANSFERED TO MEMORY WITH OFFSET: 12
+[?] Resize R10L (size 4) into R10L (size 4)
+ARGUMENT 7 FOR CALL WILL BE TRANSFERED TO MEMORY WITH OFFSET: 8
+[?] Resize R15L (size 4) into R15L (size 4)
+ARGUMENT 8 FOR CALL WILL BE TRANSFERED TO MEMORY WITH OFFSET: 4
+[?] Resize R13L (size 4) into R13L (size 4)
+ARGUMENT 9 FOR CALL WILL BE TRANSFERED TO MEMORY WITH OFFSET: 0
+[?] Resize R12L (size 4) into R12L (size 4)
+[?] Resize EDX (size 4) into EDX (size 4)
+[?] Resize EAX (size 4) into EAX (size 4)
+[?] Resize RSP (size 8) into RSP (size 8)
+[?] Resize RBP (size 8) into RBP (size 8)

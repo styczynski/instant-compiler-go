@@ -51,7 +51,11 @@ func (alloc IRAllocationMap) Copy() IRAllocationMap {
 func (alloc IRAllocationMap) String() string {
 	descr := []string{}
 	for varName, loc := range alloc {
-		descr = append(descr, fmt.Sprintf("%s: %s", varName, loc.String()))
+		if loc == nil {
+			descr = append(descr, fmt.Sprintf("%s: ?", varName))
+		} else {
+			descr = append(descr, fmt.Sprintf("%s: %s", varName, loc.String()))
+		}
 	}
 	return fmt.Sprintf("Allocation(%s)", strings.Join(descr, ", "))
 }

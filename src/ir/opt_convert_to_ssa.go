@@ -90,6 +90,12 @@ func convertToSSA(graph *cfg.CFG, ir *IRGeneratorState) {
 							phiBlocks,
 						)))
 						subst[varName] = phiTarget
+						for _, pred := range blockPreds {
+							predOutputs := allBlockOutputMappings[pred]
+							if predVarName, ok := predOutputs[origVarName]; ok {
+								subst[predVarName] = phiTarget
+							}
+						}
 					}
 				}
 

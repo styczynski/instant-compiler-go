@@ -95,13 +95,24 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 						macroCall := stmt.MacroCall
 						argNo := macroCall.Data["ArgNo"].(int)
 						if macroCall.MacroName == "LoadInputFunctionArgument" {
-							stmt.SetTargetAllocationConstraints(*macroCall.TargetName, ir.IRAllocationConstraints{
-								&allocation.AllocConsRequireSpecificRegisters{
-									AllowedRegisters: []x86.Reg{
-										x86.GetRegisterForFunctionArg(argNo).Normalized,
+							argReg := x86.GetRegisterForFunctionArg(argNo)
+							if argReg == nil {
+								// Do not allocate anything
+								pos, _ := x86.GetMemoryForFunctionArg(argNo)
+								stmt.SetTargetAllocationConstraints(*macroCall.TargetName, ir.IRAllocationConstraints{
+									&allocation.AllocConsRequireMemoryStackTop{
+										Offset: pos + 16,
 									},
-								},
-							})
+								})
+							} else {
+								stmt.SetTargetAllocationConstraints(*macroCall.TargetName, ir.IRAllocationConstraints{
+									&allocation.AllocConsRequireSpecificRegisters{
+										AllowedRegisters: []x86.Reg{
+											argReg.Normalized,
+										},
+									},
+								})
+							}
 						}
 					}
 				}
@@ -139,7 +150,9 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 			return
 		}
 
-		entries = x86.Optimize(entries)
+		for i := 0; i < 0; i++ {
+			entries = x86.Optimize(entries)
+		}
 
 		output := x86.Program{
 			Entries: entries,
