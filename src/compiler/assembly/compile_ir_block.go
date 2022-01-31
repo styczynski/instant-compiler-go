@@ -255,6 +255,18 @@ func (backend CompilerX86Backend) compileIROpBinary(ret []*x86.Instruction, inst
 	} else if reg, ok := allocation.IsAllocReg(alloc); ok {
 		if srcReg1, ok := allocation.IsAllocReg(srcAlloc1); ok {
 			if srcReg2, ok := allocation.IsAllocReg(srcAlloc2); ok {
+
+				if op == ir.IR_OP_AND || op == ir.IR_OP_OR {
+					ret = append(ret, x86.DoLogicOp(
+						reg.Reg,
+						srcReg1.Reg,
+						srcReg2.Reg,
+						op,
+						reg.Size,
+					)...)
+					return nil, ret
+				}
+
 				ret = append(ret, x86.DoCompare(
 					srcReg1.Reg,
 					srcReg2.Reg,

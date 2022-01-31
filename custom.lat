@@ -1,16 +1,16 @@
 /* parity of positive integers by recursion */
 
-int main () {
-  printInt(ev(17)) ;
-  return 0 ;
+void printBool(boolean x) {
+  if (x) {
+    printString("true");
+  } else {
+    printString("false");
+  }
 }
 
-int ev (int y) {
-  if (y > 0)
-    return ev (y-2) ;
-  else
-    if (y < 0)
-      return 0 ;
-    else
-      return 1 ;
+int main () {
+  boolean a = true;
+  boolean b = false;
+  printBool(a || b) ;
+  return 0 ;
 }

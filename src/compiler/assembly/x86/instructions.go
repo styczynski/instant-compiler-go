@@ -419,59 +419,87 @@ func DoSwap(to Reg, from Reg, size int) *Instruction {
 	return doRawSwap(toResized, fromResized, fromSize)
 }
 
+func doRawSetNotEqual(target Arg, size int) *Instruction {
+	instSet := Inst{}
+	instSet.Op = SETNE
+	instSet.MemBytes = size
+	instSet.Args = Args{
+		target,
+	}
+	return &Instruction{
+		Inst: instSet,
+	}
+}
+
+func DoLogicOp(target Reg, valA Reg, valB Reg, operation ir.IROperator, size int) []*Instruction {
+	inst := Inst{}
+	inst.MemBytes = size
+	if operation == ir.IR_OP_AND {
+		instr := Inst{}
+		instr.Op = AND
+		instr.MemBytes = size
+		instr.Args = Args{
+			target, valB,
+		}
+		return []*Instruction{
+			doRawMov(target, valA, size),
+			{
+				Inst: instr,
+			},
+		}
+	} else if operation == ir.IR_OP_OR {
+		instr := Inst{}
+		instr.Op = OR
+		instr.MemBytes = size
+		instr.Args = Args{
+			target, valB,
+		}
+		return []*Instruction{
+			doRawMov(target, valA, size),
+			{
+				Inst: instr,
+			},
+		}
+	} else {
+		panic(fmt.Sprintf("Unsuported operation for DoLogicOp: %v", operation))
+	}
+}
+
 func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int, argType ir.IRType) []*Instruction {
 	inst := Inst{}
 	inst.MemBytes = size
 
 	if operation == ir.IR_OP_SELF_ADD {
 		inst.Op = ADD
+	} else if operation == ir.IR_OP_SELF_DIV {
 
-		if argType == ir.IR_STRING {
-			// String addition
-			instFirst := doRawMov(EDI, self, size)
-			instSecond := doRawMov(ESI, val, size)
-
-			instCall := Inst{}
-			instCall.Op = CALL
-			instCall.Args = Args{
-				&RelLabel{
-					label: "AddStrings",
-				},
-			}
-
-			instResult := doRawMov(self, EAX, size)
-
-			return []*Instruction{
-				instFirst,
-				instSecond,
-				{
-					Inst: instCall,
-				},
-				instResult,
-			}
+		// Move self to EAX
+		if self == EAX || self == EBX || val == EAX || val == EBX {
+			panic("Invalid division (source EAX or EBX)!")
 		}
 
-	} else if operation == ir.IR_OP_SELF_DIV {
-		inst.Op = IDIV
-		inst.Args = Args{}
-
-		instClear := Inst{}
-		instClear.Op = XOR
-		instClear.Args = Args{
-			RDX, RDX,
+		// Perform division
+		instDiv := Inst{}
+		instDiv.MemBytes = size
+		instDiv.Op = IDIV
+		instDiv.Args = Args{
+			val,
 		}
 
 		return []*Instruction{
-			// DoPush(RDX, 8),
-			// DoPush(RAX, 8),
-			// {
-			// 	Inst: instClear,
-			// },
-			// {
-			// 	Inst: inst,
-			// },
-			// DoPop(RDX, 8),
-			// DoPop(RAX, 8),
+			// Preserve RDX
+			doRawMov(RBX, RDX, 8),
+			// Load argument
+			DoZeroRegistry(RDX, 8),
+			doRawMov(EAX, self, size),
+			// Division
+			{
+				Inst: instDiv,
+			},
+			// Get result
+			doRawMov(self, EAX, size),
+			// Preserve (rollback)
+			doRawMov(RDX, RBX, 8),
 		}
 	} else if operation == ir.IR_OP_SELF_SUB {
 		inst.Op = SUB
