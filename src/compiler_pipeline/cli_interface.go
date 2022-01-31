@@ -42,7 +42,7 @@ func (RunCompilerPipelineCliInterface) Run() {
 		},
 		Action: func(c *cli.Context) error {
 			p := config.CreateEntity(config.ENTITY_COMPILER_PIPELINE, "compiler-pipeline", c).(CompilerPipeline)
-			message, _, ok := p.RunPipeline(c, input_reader.CreateLatteInputReader(c.Args().Slice()))
+			message, _, ok := p.RunPipeline(c, input_reader.CreateLatteInputReader(c.Args().Slice(), input_reader.DEFAULT_RUNTIME_INCLUDES))
 			if !ok {
 				os.Stderr.WriteString("ERROR\n")
 				fmt.Print(message)

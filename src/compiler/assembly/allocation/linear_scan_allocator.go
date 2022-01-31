@@ -226,17 +226,16 @@ func (state *LinearScanAllocatorState) LastMemoryBlock() (*LocationMemory, int) 
 
 func (state *LinearScanAllocatorState) PreserveOnly(allVars cfg.VariableSet) {
 	state.Current.PreserveOnly(allVars)
+
 	for _, regState := range state.AvailableRegistries {
-		isOk := false
-		for varName, _ := range allVars {
-			if regState.Var == varName && regState.Full {
-				isOk = true
-				break
-			}
-		}
-		if !isOk {
-			regState.Var = ""
-			regState.Full = false
+		regState.Full = false
+		regState.Var = ""
+	}
+
+	for varName, alloc := range state.Current {
+		if reg, ok := IsAllocReg(alloc); ok {
+			state.AvailableRegistries[reg.Reg].Full = true
+			state.AvailableRegistries[reg.Reg].Var = varName
 		}
 	}
 }
@@ -307,7 +306,36 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 	blockSize := ir.GetIRTypeSize(varType) / 8
 	if currentAlloc, ok := alloc.state.All[name]; ok {
 		// Skip already allocated variables
-		return currentAlloc
+		//return currentAlloc
+		existingAlloc := currentAlloc
+		if reg, ok := existingAlloc.(*LocationRegister); ok {
+			if regState, ok := alloc.state.AvailableRegistries[reg.Reg]; ok {
+				regState.Full = true
+				regState.Var = name
+				fmt.Printf(" -> Allocated: Exisitng alloc (reg)\n")
+				return existingAlloc
+			} else {
+				panic("Not allowed: Same register reallocated?")
+			}
+		} else if existingMem, ok := existingAlloc.(*LocationMemory); ok {
+			ok := alloc.state.IsBlockAvailable(existingMem.Index, existingMem.Size)
+			if ok {
+				fmt.Printf(" -> Allocated: Exisitng alloc (mem - free)\n")
+				return existingAlloc
+			} else {
+				for varName, alloc := range alloc.state.Current {
+					if mem, ok := alloc.(*LocationMemory); ok {
+						if mem.Index == existingMem.Index && mem.Size == existingMem.Size && varName == name {
+							// Ok
+							fmt.Printf(" -> Allocated: Exisitng alloc (mem)\n")
+							return existingAlloc
+						}
+					}
+				}
+				panic("Not allowed: Same memory reallocated?")
+			}
+		}
+		panic("Not allowed: Reaclloacted entity.")
 	}
 
 	strongRegReqs := alloc.getStrongRegRequirements(cons)
@@ -326,6 +354,7 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 			regState := alloc.state.AvailableRegistries[*newReg]
 			regState.Full = true
 			regState.Var = name
+			fmt.Printf(" -> Allocated: Strong reg requirement (%v)\n", regState.Specs.Normalized)
 			return &LocationRegister{
 				Reg:   *newReg,
 				Size:  regState.Specs.DefaultSize,
@@ -346,11 +375,13 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 			if reg, ok := existingAlloc.(*LocationRegister); ok {
 				allocReg, regOk := alloc.state.allocateAvailableRegistryUsing(name, blockSize, reg.Reg)
 				if regOk {
+					fmt.Printf(" -> Allocated: Exisitng alloc (contraints for reg)\n")
 					return allocReg
 				}
 			} else if mem, ok := existingAlloc.(*LocationMemory); ok {
 				ok := alloc.state.IsBlockAvailable(mem.Index, mem.Size)
 				if ok {
+					fmt.Printf(" -> Allocated: Exisitng alloc (contraints for mem)\n")
 					return mem
 				}
 			}
@@ -371,6 +402,7 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 			//if !ok {
 			//	panic(fmt.Sprintf("Failed to allocate block on the stack top with offset: %d", conStackTop.Offset))
 			//}
+			fmt.Printf(" -> Allocated: Stack top (mem)\n")
 			return &LocationMemory{
 				Index: -conStackTop.Offset,
 				Size:  conStackTop.Size,
@@ -381,9 +413,11 @@ func (alloc *LinearScanAllocator) allocateVar(name string, varType ir.IRType, ha
 
 	allocReg, regOk := alloc.state.allocateAvailableRegistry(name, blockSize)
 	if regOk {
+		fmt.Printf(" -> Allocated: Casual reg\n")
 		return allocReg
 	}
 
+	fmt.Printf(" -> Allocated: Casual mem\n")
 	return alloc.state.allocateAvailableBlock(blockSize)
 }
 
@@ -434,6 +468,7 @@ func (alloc *LinearScanAllocator) PerformAllocationForBlocks(blocks []*ir.IRBloc
 			decl := cfg.GetAllDeclaredVariables(stmt, map[generic_ast.TraversableNode]struct{}{})
 			stmtAlloc := ir.IRAllocationMap{}
 			// Cleanup allocation using live ariables
+			alloc.state.Current = alloc.state.All.Copy()
 			allVars := stmt.VarIn.Copy()
 			allVars.Insert(stmt.VarOut)
 			alloc.state.PreserveOnly(allVars)
@@ -453,6 +488,7 @@ func (alloc *LinearScanAllocator) PerformAllocationForBlocks(blocks []*ir.IRBloc
 				for varName, _ := range decl {
 					// TODO: Fix ir type
 					loc := alloc.allocateVar(varName, ir.IR_INT32, hasExistingAlloc, existingAllocName, existingAlloc, existingCons)
+					fmt.Printf("Allocated var %s => %v {%s}\n", varName, loc, alloc.state.Current.String())
 					alloc.state.Current[varName] = loc
 					alloc.state.All[varName] = loc
 					stmtAlloc[varName] = loc

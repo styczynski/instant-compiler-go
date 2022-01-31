@@ -54,6 +54,7 @@ func DoCall(
 	preserveAnything bool,
 ) (AssemblyFunctionMeta, []*x86.Instruction) {
 
+	fmt.Printf("OUTPUT CONTEXT FOR %s IS %v\n", label, allocationOutputContext)
 	usedRegs := []*x86.RegistrySpecs{}
 	for _, alloc := range allocationOutputContext {
 		if allocReg, ok := IsAllocReg(alloc); ok {
@@ -113,6 +114,7 @@ func DoCall(
 		// Determine registry to preserve
 		for _, usedReg := range usedRegs {
 			if true || !usedReg.IsPreserved {
+				fmt.Printf("REQUEST PRESERVE REGISTRY!: %s %v\n", label, usedReg.Normalized)
 				regsToPreserve[usedReg.Normalized] = usedReg
 			}
 		}
@@ -184,7 +186,7 @@ func DoCall(
 
 	if preserveAnything {
 		for _, specs := range regsToPreserve {
-			fmt.Printf("CHECK RETURN REG SHOULD PRESERVED BE?: %v\n", specs.Normalized)
+			fmt.Printf("CHECK RETURN REG SHOULD PRESERVED BE?: %s %v\n", label, specs.Normalized)
 			if _, ok := doNotPreserveReturn[specs.Normalized]; !ok {
 				fmt.Printf("   PROCEED I CHUJ!\n")
 				regsPreserveOrder = append(regsPreserveOrder, specs.Reg8B)

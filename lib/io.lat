@@ -1,0 +1,14 @@
+/*
+ * Runtime Latte library
+ * @Piotr Styczyński
+ */
+
+void printInt(int a) runtime {
+    syscall void printf("%d\n", a);
+    return;
+}
+
+void printString(int a) runtime {
+    syscall void printf("%s\n", a);
+    return;
+}

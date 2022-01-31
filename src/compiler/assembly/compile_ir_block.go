@@ -335,6 +335,7 @@ func (backend CompilerX86Backend) compileIRCall(
 
 	// }
 
+	fmt.Printf("output vars for %s are: %v\n", name, allocOutputVars.String())
 	allocOutputContext := allocContext.Copy()
 	allocOutputContext.PreserveOnly(allocOutputVars)
 

@@ -1,0 +1,15 @@
+/*
+ * Runtime Latte library
+ * @Piotr Styczyński 2021
+ */
+
+// Adds two strings
+string AddStrings(string a, string b) {
+    int a_len = syscall int strlen(a);
+    int b_len = syscall int strlen(b);
+    string result = syscall string malloc(a_len+b_len+1);
+    syscall void strcpy(result, a);
+    syscall void strcat(result, b);
+    return result;
+}
+

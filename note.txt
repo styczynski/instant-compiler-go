@@ -1,56 +1,895 @@
-ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[R12L(size=4)]
-ARGUMENT 1 FOR CALL IS ALLOCATED ON: Register[EDI(size=4)]
-ARGUMENT 2 FOR CALL IS ALLOCATED ON: Register[R14L(size=4)]
-ARGUMENT 3 FOR CALL IS ALLOCATED ON: Register[R11L(size=4)]
-ARGUMENT 4 FOR CALL IS ALLOCATED ON: Register[R15L(size=4)]
-ARGUMENT 5 FOR CALL IS ALLOCATED ON: Register[R8L(size=4)]
-ARGUMENT 6 FOR CALL IS ALLOCATED ON: Register[R10L(size=4)]
-ARGUMENT 7 FOR CALL IS ALLOCATED ON: Register[R9L(size=4)]
-ARGUMENT 8 FOR CALL IS ALLOCATED ON: Register[R13L(size=4)]
-ARGUMENT 9 FOR CALL IS ALLOCATED ON: Register[ESI(size=4)]
+ENTIRE CODE IS HERE:
+
+
+string AddStrings(string a, string b) {
+  int a_len = syscall strlen(a)
+  int b_len = syscall strlen(b)
+  string result = syscall malloc(a_len + b_len + 1)
+  syscall strcpy(result, a);
+  syscall strcat(result, b);
+  return result;
+}
+
+
+=> NODE[1]: *generic_ast.VirtualNode{ENTRY}
+=> NODE[6]: *ast.Declaration{int a_len = syscall strlen(a)}
+  -> Expr: *ast.Expression{syscall strlen(a)}
+  -> Expr: *ast.Syscall{syscall strlen(a)}
+SYSCALL TARGET strlen
+  -> Expr: *ast.Expression{a}
+  -> Expr: *ast.LogicalOperation{a}
+  -> Expr: *ast.Equality{a}
+  -> Expr: *ast.Comparison{a}
+  -> Expr: *ast.Addition{a}
+  -> Expr: *ast.Multiplication{a}
+  -> Expr: *ast.Unary{a}
+  -> Expr: *ast.UnaryApplication{a}
+  -> Expr: *ast.Index{a}
+  -> Expr: *ast.Primary{a}
+Translate? <nil>
+Translate? int
+Translate? int
+=> NODE[3]: *ast.Declaration{int b_len = syscall strlen(b)}
+  -> Expr: *ast.Expression{syscall strlen(b)}
+  -> Expr: *ast.Syscall{syscall strlen(b)}
+SYSCALL TARGET strlen
+  -> Expr: *ast.Expression{b}
+  -> Expr: *ast.LogicalOperation{b}
+  -> Expr: *ast.Equality{b}
+  -> Expr: *ast.Comparison{b}
+  -> Expr: *ast.Addition{b}
+  -> Expr: *ast.Multiplication{b}
+  -> Expr: *ast.Unary{b}
+  -> Expr: *ast.UnaryApplication{b}
+  -> Expr: *ast.Index{b}
+  -> Expr: *ast.Primary{b}
+Translate? <nil>
+Translate? int
+Translate? int
+=> NODE[7]: *ast.Declaration{string result = syscall malloc(a_len + b_len + 1)}
+  -> Expr: *ast.Expression{syscall malloc(a_len + b_len + 1)}
+  -> Expr: *ast.Syscall{syscall malloc(a_len + b_len + 1)}
+SYSCALL TARGET malloc
+  -> Expr: *ast.Expression{a_len + b_len + 1}
+  -> Expr: *ast.LogicalOperation{a_len + b_len + 1}
+  -> Expr: *ast.Equality{a_len + b_len + 1}
+  -> Expr: *ast.Comparison{a_len + b_len + 1}
+  -> Expr: *ast.Addition{a_len + b_len + 1}
+  -> Expr: *ast.Multiplication{a_len}
+  -> Expr: *ast.Unary{a_len}
+  -> Expr: *ast.UnaryApplication{a_len}
+  -> Expr: *ast.Index{a_len}
+  -> Expr: *ast.Primary{a_len}
+Translate? <nil>
+  -> Expr: *ast.Addition{b_len + 1}
+  -> Expr: *ast.Multiplication{b_len}
+  -> Expr: *ast.Unary{b_len}
+  -> Expr: *ast.UnaryApplication{b_len}
+  -> Expr: *ast.Index{b_len}
+  -> Expr: *ast.Primary{b_len}
+Translate? <nil>
+  -> Expr: *ast.Addition{1}
+  -> Expr: *ast.Multiplication{1}
+  -> Expr: *ast.Unary{1}
+  -> Expr: *ast.UnaryApplication{1}
+  -> Expr: *ast.Index{1}
+  -> Expr: *ast.Primary{1}
+Translate? <nil>
+Translate? <nil>
+Translate? <nil>
+Translate? <nil>
+Translate? <nil>
+Translate? <nil>
+Translate? string
+Translate? string
+=> NODE[4]: *ast.Expression{syscall strcpy(result, a)}
+  -> Expr: *ast.Expression{syscall strcpy(result, a)}
+  -> Expr: *ast.Syscall{syscall strcpy(result, a)}
+SYSCALL TARGET strcpy
+  -> Expr: *ast.Expression{result}
+  -> Expr: *ast.LogicalOperation{result}
+  -> Expr: *ast.Equality{result}
+  -> Expr: *ast.Comparison{result}
+  -> Expr: *ast.Addition{result}
+  -> Expr: *ast.Multiplication{result}
+  -> Expr: *ast.Unary{result}
+  -> Expr: *ast.UnaryApplication{result}
+  -> Expr: *ast.Index{result}
+  -> Expr: *ast.Primary{result}
+Translate? <nil>
+  -> Expr: *ast.Expression{a}
+  -> Expr: *ast.LogicalOperation{a}
+  -> Expr: *ast.Equality{a}
+  -> Expr: *ast.Comparison{a}
+  -> Expr: *ast.Addition{a}
+  -> Expr: *ast.Multiplication{a}
+  -> Expr: *ast.Unary{a}
+  -> Expr: *ast.UnaryApplication{a}
+  -> Expr: *ast.Index{a}
+  -> Expr: *ast.Primary{a}
+Translate? <nil>
+Translate? void
+Translate? void
+=> NODE[8]: *ast.Expression{syscall strcat(result, b)}
+  -> Expr: *ast.Expression{syscall strcat(result, b)}
+  -> Expr: *ast.Syscall{syscall strcat(result, b)}
+SYSCALL TARGET strcat
+  -> Expr: *ast.Expression{result}
+  -> Expr: *ast.LogicalOperation{result}
+  -> Expr: *ast.Equality{result}
+  -> Expr: *ast.Comparison{result}
+  -> Expr: *ast.Addition{result}
+  -> Expr: *ast.Multiplication{result}
+  -> Expr: *ast.Unary{result}
+  -> Expr: *ast.UnaryApplication{result}
+  -> Expr: *ast.Index{result}
+  -> Expr: *ast.Primary{result}
+Translate? <nil>
+  -> Expr: *ast.Expression{b}
+  -> Expr: *ast.LogicalOperation{b}
+  -> Expr: *ast.Equality{b}
+  -> Expr: *ast.Comparison{b}
+  -> Expr: *ast.Addition{b}
+  -> Expr: *ast.Multiplication{b}
+  -> Expr: *ast.Unary{b}
+  -> Expr: *ast.UnaryApplication{b}
+  -> Expr: *ast.Index{b}
+  -> Expr: *ast.Primary{b}
+Translate? <nil>
+Translate? void
+Translate? void
+=> NODE[9]: *ast.Return{return result;}
+  -> Expr: *ast.Expression{result}
+  -> Expr: *ast.LogicalOperation{result}
+  -> Expr: *ast.Equality{result}
+  -> Expr: *ast.Comparison{result}
+  -> Expr: *ast.Addition{result}
+  -> Expr: *ast.Multiplication{result}
+  -> Expr: *ast.Unary{result}
+  -> Expr: *ast.UnaryApplication{result}
+  -> Expr: *ast.Index{result}
+  -> Expr: *ast.Primary{result}
+Translate? string
+=> NODE[5]: *generic_ast.VirtualNode{EXIT}
+Translate? string
+FUNCTION ROOT *ast.TopDef
+RESOLVING ARGS!!!!! => string
+Translate? string
+RESOLVING ARGS!!!!! => string
+Translate? string
+ENTIRE CODE IS HERE:
+
+
+void printInt(int a) {
+  syscall printf(""%d\n"", a);
+  return;
+}
+
+
+=> NODE[1]: *generic_ast.VirtualNode{ENTRY}
+=> NODE[5]: *ast.Expression{syscall printf(""%d\n"", a)}
+  -> Expr: *ast.Expression{syscall printf(""%d\n"", a)}
+  -> Expr: *ast.Syscall{syscall printf(""%d\n"", a)}
+SYSCALL TARGET printf
+  -> Expr: *ast.Expression{""%d\n""}
+  -> Expr: *ast.LogicalOperation{""%d\n""}
+  -> Expr: *ast.Equality{""%d\n""}
+  -> Expr: *ast.Comparison{""%d\n""}
+  -> Expr: *ast.Addition{""%d\n""}
+  -> Expr: *ast.Multiplication{""%d\n""}
+  -> Expr: *ast.Unary{""%d\n""}
+  -> Expr: *ast.UnaryApplication{""%d\n""}
+  -> Expr: *ast.Index{""%d\n""}
+  -> Expr: *ast.Primary{""%d\n""}
+Translate? <nil>
+Translate? <nil>
+  -> Expr: *ast.Expression{a}
+  -> Expr: *ast.LogicalOperation{a}
+  -> Expr: *ast.Equality{a}
+  -> Expr: *ast.Comparison{a}
+  -> Expr: *ast.Addition{a}
+  -> Expr: *ast.Multiplication{a}
+  -> Expr: *ast.Unary{a}
+  -> Expr: *ast.UnaryApplication{a}
+  -> Expr: *ast.Index{a}
+  -> Expr: *ast.Primary{a}
+Translate? <nil>
+Translate? void
+Translate? void
+=> NODE[2]: *ast.Return{return;}
+=> NODE[3]: *generic_ast.VirtualNode{EXIT}
+Translate? int → void
+FUNCTION ROOT *ast.TopDef
+RESOLVING ARGS!!!!! => int
+Translate? int
+ENTIRE CODE IS HERE:
+
+
+void printString(int a) {
+  syscall printf(""%s\n"", a);
+  return;
+}
+
+
+=> NODE[1]: *generic_ast.VirtualNode{ENTRY}
+=> NODE[2]: *ast.Expression{syscall printf(""%s\n"", a)}
+  -> Expr: *ast.Expression{syscall printf(""%s\n"", a)}
+  -> Expr: *ast.Syscall{syscall printf(""%s\n"", a)}
+SYSCALL TARGET printf
+  -> Expr: *ast.Expression{""%s\n""}
+  -> Expr: *ast.LogicalOperation{""%s\n""}
+  -> Expr: *ast.Equality{""%s\n""}
+  -> Expr: *ast.Comparison{""%s\n""}
+  -> Expr: *ast.Addition{""%s\n""}
+  -> Expr: *ast.Multiplication{""%s\n""}
+  -> Expr: *ast.Unary{""%s\n""}
+  -> Expr: *ast.UnaryApplication{""%s\n""}
+  -> Expr: *ast.Index{""%s\n""}
+  -> Expr: *ast.Primary{""%s\n""}
+Translate? <nil>
+Translate? <nil>
+  -> Expr: *ast.Expression{a}
+  -> Expr: *ast.LogicalOperation{a}
+  -> Expr: *ast.Equality{a}
+  -> Expr: *ast.Comparison{a}
+  -> Expr: *ast.Addition{a}
+  -> Expr: *ast.Multiplication{a}
+  -> Expr: *ast.Unary{a}
+  -> Expr: *ast.UnaryApplication{a}
+  -> Expr: *ast.Index{a}
+  -> Expr: *ast.Primary{a}
+Translate? <nil>
+Translate? void
+Translate? void
+=> NODE[3]: *ast.Return{return;}
+=> NODE[4]: *generic_ast.VirtualNode{EXIT}
+Translate? int → void
+FUNCTION ROOT *ast.TopDef
+RESOLVING ARGS!!!!! => int
+Translate? int
+ENTIRE CODE IS HERE:
+
+
+int main() {
+  printInt(rfac(10));
+  return 0;
+}
+
+
+=> NODE[1]: *generic_ast.VirtualNode{ENTRY}
+=> NODE[2]: *ast.Expression{printInt(rfac(10))}
+  -> Expr: *ast.Expression{printInt(rfac(10))}
+  -> Expr: *ast.LogicalOperation{printInt(rfac(10))}
+  -> Expr: *ast.Equality{printInt(rfac(10))}
+  -> Expr: *ast.Comparison{printInt(rfac(10))}
+  -> Expr: *ast.Addition{printInt(rfac(10))}
+  -> Expr: *ast.Multiplication{printInt(rfac(10))}
+  -> Expr: *ast.Unary{printInt(rfac(10))}
+  -> Expr: *ast.UnaryApplication{printInt(rfac(10))}
+  -> Expr: *ast.Index{printInt}
+  -> Expr: *ast.Primary{printInt}
+Translate? int → void
+CALL TARGET printInt
+  -> Expr: *ast.Expression{rfac(10)}
+  -> Expr: *ast.LogicalOperation{rfac(10)}
+  -> Expr: *ast.Equality{rfac(10)}
+  -> Expr: *ast.Comparison{rfac(10)}
+  -> Expr: *ast.Addition{rfac(10)}
+  -> Expr: *ast.Multiplication{rfac(10)}
+  -> Expr: *ast.Unary{rfac(10)}
+  -> Expr: *ast.UnaryApplication{rfac(10)}
+  -> Expr: *ast.Index{rfac}
+  -> Expr: *ast.Primary{rfac}
+Translate? int → int
+CALL TARGET rfac
+  -> Expr: *ast.Expression{10}
+  -> Expr: *ast.LogicalOperation{10}
+  -> Expr: *ast.Equality{10}
+  -> Expr: *ast.Comparison{10}
+  -> Expr: *ast.Addition{10}
+  -> Expr: *ast.Multiplication{10}
+  -> Expr: *ast.Unary{10}
+  -> Expr: *ast.UnaryApplication{10}
+  -> Expr: *ast.Index{10}
+  -> Expr: *ast.Primary{10}
+Translate? int
+Translate? int
+Translate? int
+Translate? int
+Translate? void
+Translate? void
+=> NODE[3]: *ast.Return{return 0;}
+  -> Expr: *ast.Expression{0}
+  -> Expr: *ast.LogicalOperation{0}
+  -> Expr: *ast.Equality{0}
+  -> Expr: *ast.Comparison{0}
+  -> Expr: *ast.Addition{0}
+  -> Expr: *ast.Multiplication{0}
+  -> Expr: *ast.Unary{0}
+  -> Expr: *ast.UnaryApplication{0}
+  -> Expr: *ast.Index{0}
+  -> Expr: *ast.Primary{0}
+Translate? int
+Translate? int
+=> NODE[4]: *generic_ast.VirtualNode{EXIT}
+Translate? int
+FUNCTION ROOT *ast.TopDef
+ENTIRE CODE IS HERE:
+
+
+int rfac(int n) {
+  if (n == 0) {
+    return 1;
+  } else {
+    return n * rfac(n - 1);
+  }
+}
+
+
+=> NODE[1]: *generic_ast.VirtualNode{ENTRY}
+=> NODE[3]: *ast.If{if (n == 0) {
+  return 1;
+} else {
+  return n * rfac(n - 1);
+}}
+  -> Expr: *ast.Expression{n == 0}
+  -> Expr: *ast.LogicalOperation{n == 0}
+  -> Expr: *ast.Equality{n == 0}
+  -> Expr: *ast.Comparison{n == 0}
+  -> Expr: *ast.Addition{n}
+  -> Expr: *ast.Multiplication{n}
+  -> Expr: *ast.Unary{n}
+  -> Expr: *ast.UnaryApplication{n}
+  -> Expr: *ast.Index{n}
+  -> Expr: *ast.Primary{n}
+Translate? int
+  -> Expr: *ast.Comparison{0}
+  -> Expr: *ast.Addition{0}
+  -> Expr: *ast.Multiplication{0}
+  -> Expr: *ast.Unary{0}
+  -> Expr: *ast.UnaryApplication{0}
+  -> Expr: *ast.Index{0}
+  -> Expr: *ast.Primary{0}
+Translate? int
+Translate? int
+Translate? boolean
+Translate? boolean
+=> NODE[2]: *ast.Return{return 1;}
+  -> Expr: *ast.Expression{1}
+  -> Expr: *ast.LogicalOperation{1}
+  -> Expr: *ast.Equality{1}
+  -> Expr: *ast.Comparison{1}
+  -> Expr: *ast.Addition{1}
+  -> Expr: *ast.Multiplication{1}
+  -> Expr: *ast.Unary{1}
+  -> Expr: *ast.UnaryApplication{1}
+  -> Expr: *ast.Index{1}
+  -> Expr: *ast.Primary{1}
+Translate? int
+Translate? int
+=> NODE[4]: *generic_ast.VirtualNode{EXIT}
+=> NODE[6]: *ast.Return{return n * rfac(n - 1);}
+  -> Expr: *ast.Expression{n * rfac(n - 1)}
+  -> Expr: *ast.LogicalOperation{n * rfac(n - 1)}
+  -> Expr: *ast.Equality{n * rfac(n - 1)}
+  -> Expr: *ast.Comparison{n * rfac(n - 1)}
+  -> Expr: *ast.Addition{n * rfac(n - 1)}
+  -> Expr: *ast.Multiplication{n * rfac(n - 1)}
+  -> Expr: *ast.Unary{n}
+  -> Expr: *ast.UnaryApplication{n}
+  -> Expr: *ast.Index{n}
+  -> Expr: *ast.Primary{n}
+Translate? int
+  -> Expr: *ast.Multiplication{rfac(n - 1)}
+  -> Expr: *ast.Unary{rfac(n - 1)}
+  -> Expr: *ast.UnaryApplication{rfac(n - 1)}
+  -> Expr: *ast.Index{rfac}
+  -> Expr: *ast.Primary{rfac}
+Translate? int → int
+CALL TARGET rfac
+  -> Expr: *ast.Expression{n - 1}
+  -> Expr: *ast.LogicalOperation{n - 1}
+  -> Expr: *ast.Equality{n - 1}
+  -> Expr: *ast.Comparison{n - 1}
+  -> Expr: *ast.Addition{n - 1}
+  -> Expr: *ast.Multiplication{n}
+  -> Expr: *ast.Unary{n}
+  -> Expr: *ast.UnaryApplication{n}
+  -> Expr: *ast.Index{n}
+  -> Expr: *ast.Primary{n}
+Translate? int
+  -> Expr: *ast.Addition{1}
+  -> Expr: *ast.Multiplication{1}
+  -> Expr: *ast.Unary{1}
+  -> Expr: *ast.UnaryApplication{1}
+  -> Expr: *ast.Index{1}
+  -> Expr: *ast.Primary{1}
+Translate? int
+Translate? int
+Translate? int
+Translate? int
+Translate? int
+Translate? int
+Translate? int
+Translate? int
+Translate? int
+FUNCTION ROOT *ast.TopDef
+RESOLVING ARGS!!!!! => int
+Translate? int
+IRIF BUILD FLOW
+ -> Allocated: Strong reg requirement (EDI)
+Allocated var a => Register[EDI(size=4)] {Allocation()}
+ -> Allocated: Strong reg requirement (ESI)
+Allocated var b => Register[ESI(size=4)] {Allocation(a: Register[EDI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_2 => Register[R14L(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_14 => Register[ECX(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_48 => Register[R12L(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)])}
+ -> Allocated: Exisitng alloc (reg)
+Allocated var temp_14 => Register[ECX(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)])}
+ -> Allocated: Exisitng alloc (reg)
+Allocated var temp_2 => Register[R14L(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_26 => Register[ECX(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_50 => Register[R14L(size=4)] {Allocation(temp_26: Register[ECX(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_72 => Register[R11L(size=4)] {Allocation(temp_26: Register[ECX(size=4)], b: Register[ESI(size=4)])}
+ -> Allocated: Strong reg requirement (EDI)
+Allocated var a => Register[EDI(size=4)] {Allocation()}
+ -> Allocated: Casual reg
+Allocated var temp_12 => Register[ECX(size=4)] {Allocation(a: Register[EDI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_2 => Register[EDX(size=4)] {Allocation(a: Register[EDI(size=4)], temp_12: Register[ECX(size=4)])}
+ -> Allocated: Strong reg requirement (EDI)
+Allocated var a => Register[EDI(size=4)] {Allocation()}
+ -> Allocated: Casual reg
+Allocated var temp_12 => Register[ESI(size=4)] {Allocation(a: Register[EDI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_2 => Register[R13L(size=4)] {Allocation(a: Register[EDI(size=4)], temp_12: Register[ESI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_30 => Register[R15L(size=4)] {Allocation()}
+ -> Allocated: Casual reg
+Allocated var temp_18 => Register[R13L(size=4)] {Allocation(temp_30: Register[R15L(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_8 => Register[R9L(size=4)] {Allocation(temp_18: Register[R13L(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_40 => Register[ESI(size=4)] {Allocation()}
+ -> Allocated: Strong reg requirement (EDI)
+Allocated var n => Register[EDI(size=4)] {Allocation()}
+ -> Allocated: Casual reg
+Allocated var temp_17 => Register[R9L(size=4)] {Allocation(n: Register[EDI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_4 => Register[R15L(size=4)] {Allocation(temp_17: Register[R9L(size=4)], n: Register[EDI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_27 => Register[ECX(size=4)] {Allocation()}
+ -> Allocated: Casual reg
+Allocated var temp_58 => Register[EDI(size=4)] {Allocation(n: Register[EDI(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_47 => Register[R9L(size=4)] {Allocation(temp_58: Register[EDI(size=4)], n: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (reg)
+Allocated var temp_47 => Register[R9L(size=4)] {Allocation(n: Register[EDI(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)])}
+ -> Allocated: Casual reg
+Allocated var temp_40 => Register[ESI(size=4)] {Allocation(n: Register[EDI(size=4)], temp_47: Register[R9L(size=4)])}
+ -> Allocated: Exisitng alloc (reg)
+Allocated var n => Register[EDI(size=4)] {Allocation(temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)])}
+?BASED?
+Function String AddStrings()
+{
+    block6: ; block
+      String a = CallMacro[LoadInputFunctionArgument](String ) [strcpy, strcat, strlen, malloc] [strlen, malloc, strcpy, strcat, a] Meta{Target:Allocation(a: Register[EDI(size=4)]), Context:Allocation(a: Register[EDI(size=4)])} (begin 0:0)
+      String b = CallMacro[LoadInputFunctionArgument](String ) [strlen, malloc, strcpy, strcat, a] [strcpy, strcat, a, b, strlen, malloc] Meta{Target:Allocation(b: Register[ESI(size=4)]), Context:Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)])} (begin 0:0)
+      Int32 temp_2 = Call(FunctionPtr strlen) (Unknown a) [strcpy, strcat, a, b, strlen, malloc] [malloc, strcpy, strcat, a, b, temp_2, strlen] Meta{Target:Allocation(temp_2: Register[R14L(size=4)]), Context:Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)])} (begin 0:0)
+      Int32 temp_14 = Call(FunctionPtr strlen) (Unknown b) [b, strlen, temp_2, malloc, strcpy, strcat, a] [strcat, a, b, temp_2, temp_14, malloc, strcpy] Meta{Target:Allocation(temp_14: Register[ECX(size=4)]), Context:Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)])} (begin 0:0)
+      Unknown temp_48 = Const(1) [malloc, strcpy, strcat, a, b, temp_2, temp_14] [a, b, temp_2, temp_14, malloc, temp_48, strcpy, strcat] Meta{Target:Allocation(temp_48: Register[R12L(size=4)]), Context:Allocation(temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])} (begin 0:0) ; Const int 1
+      Unknown temp_14 = (Unknown) SelfAdd(temp_48); [temp_2, malloc, temp_14, temp_48, strcpy, strcat, a, b] [a, b, temp_2, malloc, temp_14, strcpy, strcat] Meta{Target:Allocation(temp_14: Register[ECX(size=4)]), Context:Allocation(b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], a: Register[EDI(size=4)])} (begin 0:0)
+      Unknown temp_2 = (Unknown) SelfAdd(temp_14); [malloc, temp_2, temp_14, strcpy, strcat, a, b] [strcpy, strcat, a, b, malloc, temp_2] Meta{Target:Allocation(temp_2: Register[R14L(size=4)]), Context:Allocation(temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)])} (begin 0:0)
+      String temp_26 = Call(FunctionPtr malloc) (Unknown temp_2) [strcat, a, b, malloc, temp_2, strcpy] [strcpy, strcat, a, b, temp_26] Meta{Target:Allocation(temp_26: Register[ECX(size=4)]), Context:Allocation(temp_26: Register[ECX(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)])} (begin 0:0)
+      Void temp_50 = Call(FunctionPtr strcpy) (Unknown temp_26,Unknown a) [a, b, temp_26, strcpy, strcat] [strcat, b, temp_26] Meta{Target:Allocation(temp_50: Register[R14L(size=4)]), Context:Allocation(temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], temp_26: Register[ECX(size=4)], temp_50: Register[R14L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])} (begin 0:0)
+      Void temp_72 = Call(FunctionPtr strcat) (Unknown temp_26,Unknown b) [temp_26, strcat, b] [temp_26] Meta{Target:Allocation(temp_72: Register[R11L(size=4)]), Context:Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], temp_26: Register[ECX(size=4)], temp_50: Register[R14L(size=4)], temp_72: Register[R11L(size=4)])} (begin 0:0)
+      Exit String (temp_26) [temp_26] [] Meta{Target:Allocation(), Context:Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], temp_26: Register[ECX(size=4)], temp_50: Register[R14L(size=4)], temp_72: Register[R11L(size=4)])} (begin 0:0)
+    
+}
+
+Function FunctionPtr printInt()
+{
+    block5: ; block
+      Int32 a = CallMacro[LoadInputFunctionArgument](Int32 ) [printf] [printf, a] Meta{Target:Allocation(a: Register[EDI(size=4)]), Context:Allocation(a: Register[EDI(size=4)])} (begin 0:0)
+      Unknown temp_12 = Const("%d\n") [printf, a] [printf, temp_12, a] Meta{Target:Allocation(temp_12: Register[ECX(size=4)]), Context:Allocation(a: Register[EDI(size=4)], temp_12: Register[ECX(size=4)])} (begin 0:0) ; Const string "%d\n"
+      Void temp_2 = Call(FunctionPtr printf) (Unknown temp_12,Unknown a) [printf, temp_12, a] [] Meta{Target:Allocation(temp_2: Register[EDX(size=4)]), Context:Allocation(a: Register[EDI(size=4)], temp_12: Register[ECX(size=4)], temp_2: Register[EDX(size=4)])} (begin 0:0)
+      Exit  () [] [] Meta{Target:Allocation(), Context:Allocation(a: Register[EDI(size=4)], temp_12: Register[ECX(size=4)], temp_2: Register[EDX(size=4)])} (begin 0:0)
+    
+}
+
+Function FunctionPtr printString()
+{
+    block2: ; block
+      Int32 a = CallMacro[LoadInputFunctionArgument](Int32 ) [printf] [a, printf] Meta{Target:Allocation(a: Register[EDI(size=4)]), Context:Allocation(a: Register[EDI(size=4)])} (begin 0:0)
+      Unknown temp_12 = Const("%s\n") [a, printf] [temp_12, a, printf] Meta{Target:Allocation(temp_12: Register[ESI(size=4)]), Context:Allocation(a: Register[EDI(size=4)], temp_12: Register[ESI(size=4)])} (begin 0:0) ; Const string "%s\n"
+      Void temp_2 = Call(FunctionPtr printf) (Unknown temp_12,Unknown a) [temp_12, a, printf] [] Meta{Target:Allocation(temp_2: Register[R13L(size=4)]), Context:Allocation(a: Register[EDI(size=4)], temp_12: Register[ESI(size=4)], temp_2: Register[R13L(size=4)])} (begin 0:0)
+      Exit  () [] [] Meta{Target:Allocation(), Context:Allocation(temp_12: Register[ESI(size=4)], temp_2: Register[R13L(size=4)], a: Register[EDI(size=4)])} (begin 0:0)
+    
+}
+
+Function Int32 main()
+{
+    block2: ; block
+      Int32 temp_30 = Const(10) [rfac, printInt] [temp_30, rfac, printInt] Meta{Target:Allocation(temp_30: Register[R15L(size=4)]), Context:Allocation(temp_30: Register[R15L(size=4)])} (begin 0:0) ; Const int 10
+      Int32 temp_18 = Call(FunctionPtr rfac) (Int32 temp_30) [temp_30, rfac, printInt] [temp_18, printInt] Meta{Target:Allocation(temp_18: Register[R13L(size=4)]), Context:Allocation(temp_30: Register[R15L(size=4)], temp_18: Register[R13L(size=4)])} (begin 0:0)
+      Void temp_8 = Call(FunctionPtr printInt) (Int32 temp_18) [temp_18, printInt] [] Meta{Target:Allocation(temp_8: Register[R9L(size=4)]), Context:Allocation(temp_18: Register[R13L(size=4)], temp_8: Register[R9L(size=4)], temp_30: Register[R15L(size=4)])} (begin 0:0)
+      Int32 temp_40 = Const(0) [] [temp_40] Meta{Target:Allocation(temp_40: Register[ESI(size=4)]), Context:Allocation(temp_30: Register[R15L(size=4)], temp_18: Register[R13L(size=4)], temp_8: Register[R9L(size=4)], temp_40: Register[ESI(size=4)])} (begin 0:0) ; Const int 0
+      Exit Int32 (temp_40) [temp_40] [] Meta{Target:Allocation(), Context:Allocation(temp_8: Register[R9L(size=4)], temp_40: Register[ESI(size=4)], temp_30: Register[R15L(size=4)], temp_18: Register[R13L(size=4)])} (begin 0:0)
+    
+}
+
+Function Int32 rfac()
+{
+    block3: ; block
+      Int32 n = CallMacro[LoadInputFunctionArgument](Int32 ) [rfac] [n, rfac] Meta{Target:Allocation(n: Register[EDI(size=4)]), Context:Allocation(n: Register[EDI(size=4)])} (begin 0:0)
+      Int32 temp_17 = Const(0) [n, rfac] [n, temp_17, rfac] Meta{Target:Allocation(temp_17: Register[R9L(size=4)]), Context:Allocation(temp_17: Register[R9L(size=4)], n: Register[EDI(size=4)])} (begin 0:0) ; Const int 0
+      Bit temp_4 = (Int32,Int32) Eq(n,temp_17); [n, temp_17, rfac] [n, temp_4, rfac] Meta{Target:Allocation(temp_4: Register[R15L(size=4)]), Context:Allocation(temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], n: Register[EDI(size=4)])} (begin 0:0)
+      If not Bit temp_4 jump to block6 else continue [temp_4, rfac, n] [rfac, n] Meta{Target:Allocation(), Context:Allocation(temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], n: Register[EDI(size=4)])} (begin 0:0) ; If condition
+    
+    block2: ; block
+      Int32 temp_27 = Const(1) [] [temp_27] Meta{Target:Allocation(temp_27: Register[ECX(size=4)]), Context:Allocation(temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)])} (begin 0:0) ; Const int 1
+      Exit Int32 (temp_27) [temp_27] [] Meta{Target:Allocation(), Context:Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)])} (begin 0:0)
+    
+    block6: ; block
+      Int32 temp_58 = Const(1) [rfac, n] [n, temp_58, rfac] Meta{Target:Allocation(temp_58: Register[EDI(size=4)]), Context:Allocation(temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)])} (begin 0:0) ; Const int 1
+      Int32 temp_47 = Copy(n) [n, temp_58, rfac] [rfac, n, temp_58, temp_47] Meta{Target:Allocation(temp_47: Register[R9L(size=4)]), Context:Allocation(temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)])} (begin 0:0)
+      Int32 temp_47 = (Int32) SelfSub(temp_58); [n, temp_58, temp_47, rfac] [rfac, n, temp_47] Meta{Target:Allocation(temp_47: Register[R9L(size=4)]), Context:Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)])} (begin 0:0)
+      Int32 temp_40 = Call(FunctionPtr rfac) (Int32 temp_47) [rfac, n, temp_47] [n, temp_40] Meta{Target:Allocation(temp_40: Register[ESI(size=4)]), Context:Allocation(temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)], temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)])} (begin 0:0)
+      Int32 n = (Int32) SelfMul(temp_40); [n, temp_40] [n] Meta{Target:Allocation(n: Register[EDI(size=4)]), Context:Allocation(temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)], temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)])} (begin 0:0)
+      Exit Int32 (n) [n] [] Meta{Target:Allocation(), Context:Allocation(temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)], temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)])} (begin 0:0)
+    
+}
+
+
+%!s(MISSING) -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var a => Register[EDI(size=4)] {Allocation()}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var b => Register[ESI(size=4)] {Allocation(a: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_2 => Register[R14L(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_14 => Register[ECX(size=4)] {Allocation(temp_2: Register[R14L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_48 => Register[R12L(size=4)] {Allocation(b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], a: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (reg)
+Allocated var temp_14 => Register[ECX(size=4)] {Allocation(temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)])}
+ -> Allocated: Exisitng alloc (reg)
+Allocated var temp_2 => Register[R14L(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_26 => Register[ECX(size=4)] {Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_50 => Register[R14L(size=4)] {Allocation(temp_26: Register[ECX(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_72 => Register[R11L(size=4)] {Allocation(b: Register[ESI(size=4)], temp_26: Register[ECX(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var a => Register[EDI(size=4)] {Allocation()}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_12 => Register[ECX(size=4)] {Allocation(a: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_2 => Register[EDX(size=4)] {Allocation(a: Register[EDI(size=4)], temp_12: Register[ECX(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var a => Register[EDI(size=4)] {Allocation()}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_12 => Register[ESI(size=4)] {Allocation(a: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_2 => Register[R13L(size=4)] {Allocation(a: Register[EDI(size=4)], temp_12: Register[ESI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_30 => Register[R15L(size=4)] {Allocation()}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_18 => Register[R13L(size=4)] {Allocation(temp_30: Register[R15L(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_8 => Register[R9L(size=4)] {Allocation(temp_18: Register[R13L(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_40 => Register[ESI(size=4)] {Allocation()}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var n => Register[EDI(size=4)] {Allocation()}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_17 => Register[R9L(size=4)] {Allocation(n: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_4 => Register[R15L(size=4)] {Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_27 => Register[ECX(size=4)] {Allocation()}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_58 => Register[EDI(size=4)] {Allocation(n: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_47 => Register[R9L(size=4)] {Allocation(n: Register[EDI(size=4)], temp_58: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (reg)
+Allocated var temp_47 => Register[R9L(size=4)] {Allocation(temp_47: Register[R9L(size=4)], n: Register[EDI(size=4)], temp_58: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (contraints for reg)
+Allocated var temp_40 => Register[ESI(size=4)] {Allocation(temp_47: Register[R9L(size=4)], n: Register[EDI(size=4)])}
+ -> Allocated: Exisitng alloc (reg)
+Allocated var n => Register[EDI(size=4)] {Allocation(temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)])}
+
+AFTER PREPROCESSING STEP:
+Function String AddStrings()
+{
+    block6: ; block
+      String a = CallMacro[LoadInputFunctionArgument](String ) [strcpy, strcat, strlen, malloc] [strlen, malloc, strcpy, strcat, a] Meta{Target:Allocation(a: Register[EDI(size=4)]), Context:Allocation(a: Register[EDI(size=4)])} (begin 0:0)
+      String b = CallMacro[LoadInputFunctionArgument](String ) [a, strlen, malloc, strcpy, strcat] [strcpy, strcat, a, b, strlen, malloc] Meta{Target:Allocation(b: Register[ESI(size=4)]), Context:Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)])} (begin 0:0)
+      Int32 temp_2 = Call(FunctionPtr strlen) (Unknown a) [strcat, a, b, strlen, malloc, strcpy] [strcpy, strcat, a, b, temp_2, strlen, malloc] Meta{Target:Allocation(temp_2: Register[R14L(size=4)]), Context:Allocation(b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], a: Register[EDI(size=4)])} (begin 0:0)
+      Int32 temp_14 = Call(FunctionPtr strlen) (Unknown b) [malloc, strcpy, strcat, a, b, strlen, temp_2] [malloc, strcpy, strcat, a, b, temp_2, temp_14] Meta{Target:Allocation(temp_14: Register[ECX(size=4)]), Context:Allocation(temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])} (begin 0:0)
+      Unknown temp_48 = Const(1) [malloc, strcpy, strcat, a, b, temp_2, temp_14] [strcpy, strcat, a, b, temp_2, temp_14, malloc, temp_48] Meta{Target:Allocation(temp_48: Register[R12L(size=4)]), Context:Allocation(temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])} (begin 0:0) ; Const int 1
+      Unknown temp_14 = (Unknown) SelfAdd(temp_48); [malloc, temp_14, temp_48, strcpy, strcat, a, b, temp_2] [b, temp_2, malloc, temp_14, strcpy, strcat, a] Meta{Target:Allocation(temp_14: Register[ECX(size=4)]), Context:Allocation(temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])} (begin 0:0)
+      Unknown temp_2 = (Unknown) SelfAdd(temp_14); [strcpy, strcat, a, b, malloc, temp_2, temp_14] [temp_2, strcpy, strcat, a, b, malloc] Meta{Target:Allocation(temp_2: Register[R14L(size=4)]), Context:Allocation(temp_48: Register[R12L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)])} (begin 0:0)
+      String temp_26 = Call(FunctionPtr malloc) (Unknown temp_2) [temp_2, strcpy, strcat, a, b, malloc] [a, b, temp_26, strcpy, strcat] Meta{Target:Allocation(temp_26: Register[ECX(size=4)]), Context:Allocation(temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], temp_26: Register[ECX(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])} (begin 0:0)
+      Void temp_50 = Call(FunctionPtr strcpy) (Unknown temp_26,Unknown a) [a, b, temp_26, strcpy, strcat] [b, temp_26, strcat] Meta{Target:Allocation(temp_50: Register[R14L(size=4)]), Context:Allocation(b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], temp_26: Register[ECX(size=4)], temp_50: Register[R14L(size=4)], a: Register[EDI(size=4)])} (begin 0:0)
+      Void temp_72 = Call(FunctionPtr strcat) (Unknown temp_26,Unknown b) [temp_26, strcat, b] [temp_26] Meta{Target:Allocation(temp_72: Register[R11L(size=4)]), Context:Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)], temp_48: Register[R12L(size=4)], temp_26: Register[ECX(size=4)], temp_50: Register[R14L(size=4)], temp_72: Register[R11L(size=4)])} (begin 0:0)
+      Exit String (temp_26) [temp_26] [] Meta{Target:Allocation(), Context:Allocation(temp_48: Register[R12L(size=4)], temp_26: Register[ECX(size=4)], temp_50: Register[R14L(size=4)], temp_72: Register[R11L(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)])} (begin 0:0)
+    
+}
+
+Function FunctionPtr printInt()
+{
+    block5: ; block
+      Int32 a = CallMacro[LoadInputFunctionArgument](Int32 ) [printf] [printf, a] Meta{Target:Allocation(a: Register[EDI(size=4)]), Context:Allocation(a: Register[EDI(size=4)])} (begin 0:0)
+      Unknown temp_12 = Const("%d\n") [printf, a] [a, printf, temp_12] Meta{Target:Allocation(temp_12: Register[ECX(size=4)]), Context:Allocation(a: Register[EDI(size=4)], temp_12: Register[ECX(size=4)])} (begin 0:0) ; Const string "%d\n"
+      Void temp_2 = Call(FunctionPtr printf) (Unknown temp_12,Unknown a) [a, printf, temp_12] [] Meta{Target:Allocation(temp_2: Register[EDX(size=4)]), Context:Allocation(temp_12: Register[ECX(size=4)], temp_2: Register[EDX(size=4)], a: Register[EDI(size=4)])} (begin 0:0)
+      Exit  () [] [] Meta{Target:Allocation(), Context:Allocation(a: Register[EDI(size=4)], temp_12: Register[ECX(size=4)], temp_2: Register[EDX(size=4)])} (begin 0:0)
+    
+}
+
+Function FunctionPtr printString()
+{
+    block2: ; block
+      Int32 a = CallMacro[LoadInputFunctionArgument](Int32 ) [printf] [a, printf] Meta{Target:Allocation(a: Register[EDI(size=4)]), Context:Allocation(a: Register[EDI(size=4)])} (begin 0:0)
+      Unknown temp_12 = Const("%s\n") [a, printf] [temp_12, a, printf] Meta{Target:Allocation(temp_12: Register[ESI(size=4)]), Context:Allocation(a: Register[EDI(size=4)], temp_12: Register[ESI(size=4)])} (begin 0:0) ; Const string "%s\n"
+      Void temp_2 = Call(FunctionPtr printf) (Unknown temp_12,Unknown a) [temp_12, a, printf] [] Meta{Target:Allocation(temp_2: Register[R13L(size=4)]), Context:Allocation(temp_12: Register[ESI(size=4)], temp_2: Register[R13L(size=4)], a: Register[EDI(size=4)])} (begin 0:0)
+      Exit  () [] [] Meta{Target:Allocation(), Context:Allocation(temp_12: Register[ESI(size=4)], temp_2: Register[R13L(size=4)], a: Register[EDI(size=4)])} (begin 0:0)
+    
+}
+
+Function Int32 main()
+{
+    block2: ; block
+      Int32 temp_30 = Const(10) [rfac, printInt] [printInt, temp_30, rfac] Meta{Target:Allocation(temp_30: Register[R15L(size=4)]), Context:Allocation(temp_30: Register[R15L(size=4)])} (begin 0:0) ; Const int 10
+      Int32 temp_18 = Call(FunctionPtr rfac) (Int32 temp_30) [temp_30, rfac, printInt] [temp_18, printInt] Meta{Target:Allocation(temp_18: Register[R13L(size=4)]), Context:Allocation(temp_30: Register[R15L(size=4)], temp_18: Register[R13L(size=4)])} (begin 0:0)
+      Void temp_8 = Call(FunctionPtr printInt) (Int32 temp_18) [temp_18, printInt] [] Meta{Target:Allocation(temp_8: Register[R9L(size=4)]), Context:Allocation(temp_30: Register[R15L(size=4)], temp_18: Register[R13L(size=4)], temp_8: Register[R9L(size=4)])} (begin 0:0)
+      Int32 temp_40 = Const(0) [] [temp_40] Meta{Target:Allocation(temp_40: Register[ESI(size=4)]), Context:Allocation(temp_30: Register[R15L(size=4)], temp_18: Register[R13L(size=4)], temp_8: Register[R9L(size=4)], temp_40: Register[ESI(size=4)])} (begin 0:0) ; Const int 0
+      Exit Int32 (temp_40) [temp_40] [] Meta{Target:Allocation(), Context:Allocation(temp_8: Register[R9L(size=4)], temp_40: Register[ESI(size=4)], temp_30: Register[R15L(size=4)], temp_18: Register[R13L(size=4)])} (begin 0:0)
+    
+}
+
+Function Int32 rfac()
+{
+    block3: ; block
+      Int32 n = CallMacro[LoadInputFunctionArgument](Int32 ) [rfac] [rfac, n] Meta{Target:Allocation(n: Register[EDI(size=4)]), Context:Allocation(n: Register[EDI(size=4)])} (begin 0:0)
+      Int32 temp_17 = Const(0) [n, rfac] [rfac, n, temp_17] Meta{Target:Allocation(temp_17: Register[R9L(size=4)]), Context:Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)])} (begin 0:0) ; Const int 0
+      Bit temp_4 = (Int32,Int32) Eq(n,temp_17); [n, temp_17, rfac] [n, temp_4, rfac] Meta{Target:Allocation(temp_4: Register[R15L(size=4)]), Context:Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)])} (begin 0:0)
+      If not Bit temp_4 jump to block6 else continue [rfac, n, temp_4] [n, rfac] Meta{Target:Allocation(), Context:Allocation(temp_4: Register[R15L(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)])} (begin 0:0) ; If condition
+    
+    block2: ; block
+      Int32 temp_27 = Const(1) [] [temp_27] Meta{Target:Allocation(temp_27: Register[ECX(size=4)]), Context:Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)])} (begin 0:0) ; Const int 1
+      Exit Int32 (temp_27) [temp_27] [] Meta{Target:Allocation(), Context:Allocation(temp_27: Register[ECX(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)])} (begin 0:0)
+    
+    block6: ; block
+      Int32 temp_58 = Const(1) [n, rfac] [rfac, n, temp_58] Meta{Target:Allocation(temp_58: Register[EDI(size=4)]), Context:Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)])} (begin 0:0) ; Const int 1
+      Int32 temp_47 = Copy(n) [n, temp_58, rfac] [n, temp_58, temp_47, rfac] Meta{Target:Allocation(temp_47: Register[R9L(size=4)]), Context:Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)])} (begin 0:0)
+      Int32 temp_47 = (Int32) SelfSub(temp_58); [n, temp_58, temp_47, rfac] [rfac, n, temp_47] Meta{Target:Allocation(temp_47: Register[R9L(size=4)]), Context:Allocation(temp_47: Register[R9L(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)])} (begin 0:0)
+      Int32 temp_40 = Call(FunctionPtr rfac) (Int32 temp_47) [rfac, n, temp_47] [n, temp_40] Meta{Target:Allocation(temp_40: Register[ESI(size=4)]), Context:Allocation(n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)], temp_40: Register[ESI(size=4)])} (begin 0:0)
+      Int32 n = (Int32) SelfMul(temp_40); [n, temp_40] [n] Meta{Target:Allocation(n: Register[EDI(size=4)]), Context:Allocation(temp_4: Register[R15L(size=4)], temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)], temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)])} (begin 0:0)
+      Exit Int32 (n) [n] [] Meta{Target:Allocation(), Context:Allocation(temp_27: Register[ECX(size=4)], temp_58: Register[EDI(size=4)], temp_47: Register[R9L(size=4)], temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)], temp_17: Register[R9L(size=4)], temp_4: Register[R15L(size=4)])} (begin 0:0)
+    
+}
+
+
+%!s(MISSING)
+==========END=========
+
+output vars for temp_2 are: [b, strlen, temp_2, malloc, strcpy, strcat, a]
+OUTPUT CONTEXT FOR strlen IS Allocation(b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], a: Register[EDI(size=4)])
+REQUEST PRESERVE REGISTRY!: strlen ESI
+REQUEST PRESERVE REGISTRY!: strlen R14L
+REQUEST PRESERVE REGISTRY!: strlen EDI
+DOCALL FOR strlen WITH OUTPUT ALLOC Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)])
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[EDI(size=4)]
 [?] Resize RAX (size 4) into EAX (size 4)
-[?] Resize EDX (size 4) into EDX (size 4)
-RETURN LOC: EDX
-CHECK RETURN REG SHOULD PRESERVED BE?: EDX
-ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
-ARGUMENT SWAP EDI R12L
-[?] Resize R12L (size 4) into R12L (size 4)
-[?] Resize EDI (size 4) into EDI (size 4)
-CALL ARGS ==> [ {0: EDI}  {1: R12L}  {2: R14L}  {3: R11L}  {4: R15L}  {5: R8L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: ESI} ]
-ARGUMENT 1 FOR CALL WILL BE TRANSFERED TO: ESI
-ARGUMENT SWAP ESI R12L
-[?] Resize R12L (size 4) into R12L (size 4)
-[?] Resize ESI (size 4) into ESI (size 4)
-CALL ARGS ==> [ {0: EDI}  {1: ESI}  {2: R14L}  {3: R11L}  {4: R15L}  {5: R8L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: R12L} ]
-ARGUMENT 2 FOR CALL WILL BE TRANSFERED TO: EDX
-ARGUMENT SWAP EDX R14L
 [?] Resize R14L (size 4) into R14L (size 4)
-[?] Resize EDX (size 4) into EDX (size 4)
-CALL ARGS ==> [ {0: R14L}  {1: ESI}  {2: EDI}  {3: R11L}  {4: R15L}  {5: R8L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: R12L} ]
-ARGUMENT 3 FOR CALL WILL BE TRANSFERED TO: ECX
-ARGUMENT SWAP ECX R11L
-[?] Resize R11L (size 4) into R11L (size 4)
+RETURN LOC: R14L
+CHECK RETURN REG SHOULD PRESERVED BE?: strlen ESI
+   PROCEED I CHUJ!
+[?] Resize RSI (size 8) into RSI (size 8)
+CHECK RETURN REG SHOULD PRESERVED BE?: strlen R14L
+CHECK RETURN REG SHOULD PRESERVED BE?: strlen EDI
+   PROCEED I CHUJ!
+[?] Resize RDI (size 8) into RDI (size 8)
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+[?] Resize RSI (size 8) into RSI (size 8)
+[?] Resize RDI (size 8) into RDI (size 8)
+output vars for temp_14 are: [temp_14, malloc, strcpy, strcat, a, b, temp_2]
+OUTPUT CONTEXT FOR strlen IS Allocation(temp_14: Register[ECX(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)])
+REQUEST PRESERVE REGISTRY!: strlen ECX
+REQUEST PRESERVE REGISTRY!: strlen EDI
+REQUEST PRESERVE REGISTRY!: strlen ESI
+REQUEST PRESERVE REGISTRY!: strlen R14L
+DOCALL FOR strlen WITH OUTPUT ALLOC Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_2: Register[R14L(size=4)], temp_14: Register[ECX(size=4)])
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[ESI(size=4)]
+[?] Resize RAX (size 4) into EAX (size 4)
 [?] Resize ECX (size 4) into ECX (size 4)
-CALL ARGS ==> [ {0: R11L}  {1: ESI}  {2: EDI}  {3: R14L}  {4: R15L}  {5: R8L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: R12L} ]
-ARGUMENT 4 FOR CALL WILL BE TRANSFERED TO: R8L
-ARGUMENT SWAP R8L R15L
-[?] Resize R15L (size 4) into R15L (size 4)
-[?] Resize R8L (size 4) into R8L (size 4)
-CALL ARGS ==> [ {0: R11L}  {1: ESI}  {2: EDI}  {3: R14L}  {4: R8L}  {5: R15L}  {6: R10L}  {7: R9L}  {8: R13L}  {9: R12L} ]
-ARGUMENT 5 FOR CALL WILL BE TRANSFERED TO: R9L
-ARGUMENT SWAP R9L R15L
-[?] Resize R15L (size 4) into R15L (size 4)
-[?] Resize R9L (size 4) into R9L (size 4)
-CALL ARGS ==> [ {0: R11L}  {1: ESI}  {2: EDI}  {3: R14L}  {4: R8L}  {5: R9L}  {6: R10L}  {7: R15L}  {8: R13L}  {9: R12L} ]
-ARGUMENT 6 FOR CALL WILL BE TRANSFERED TO MEMORY WITH OFFSET: 12
-[?] Resize R10L (size 4) into R10L (size 4)
-ARGUMENT 7 FOR CALL WILL BE TRANSFERED TO MEMORY WITH OFFSET: 8
-[?] Resize R15L (size 4) into R15L (size 4)
-ARGUMENT 8 FOR CALL WILL BE TRANSFERED TO MEMORY WITH OFFSET: 4
-[?] Resize R13L (size 4) into R13L (size 4)
-ARGUMENT 9 FOR CALL WILL BE TRANSFERED TO MEMORY WITH OFFSET: 0
-[?] Resize R12L (size 4) into R12L (size 4)
-[?] Resize EDX (size 4) into EDX (size 4)
+RETURN LOC: ECX
+CHECK RETURN REG SHOULD PRESERVED BE?: strlen ECX
+CHECK RETURN REG SHOULD PRESERVED BE?: strlen EDI
+   PROCEED I CHUJ!
+[?] Resize RDI (size 8) into RDI (size 8)
+CHECK RETURN REG SHOULD PRESERVED BE?: strlen ESI
+   PROCEED I CHUJ!
+[?] Resize RSI (size 8) into RSI (size 8)
+CHECK RETURN REG SHOULD PRESERVED BE?: strlen R14L
+   PROCEED I CHUJ!
+[?] Resize R14 (size 8) into R14 (size 8)
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI ESI
+[?] Resize ESI (size 4) into ESI (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+[?] Resize RDI (size 8) into RDI (size 8)
+[?] Resize RSI (size 8) into RSI (size 8)
+[?] Resize R14 (size 8) into R14 (size 8)
+output vars for temp_26 are: [strcat, a, b, temp_26, strcpy]
+OUTPUT CONTEXT FOR malloc IS Allocation(a: Register[EDI(size=4)], b: Register[ESI(size=4)], temp_26: Register[ECX(size=4)])
+REQUEST PRESERVE REGISTRY!: malloc ECX
+REQUEST PRESERVE REGISTRY!: malloc EDI
+REQUEST PRESERVE REGISTRY!: malloc ESI
+DOCALL FOR malloc WITH OUTPUT ALLOC Allocation(temp_26: Register[ECX(size=4)], a: Register[EDI(size=4)], b: Register[ESI(size=4)])
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[R14L(size=4)]
+[?] Resize RAX (size 4) into EAX (size 4)
+[?] Resize ECX (size 4) into ECX (size 4)
+RETURN LOC: ECX
+CHECK RETURN REG SHOULD PRESERVED BE?: malloc ECX
+CHECK RETURN REG SHOULD PRESERVED BE?: malloc EDI
+   PROCEED I CHUJ!
+[?] Resize RDI (size 8) into RDI (size 8)
+CHECK RETURN REG SHOULD PRESERVED BE?: malloc ESI
+   PROCEED I CHUJ!
+[?] Resize RSI (size 8) into RSI (size 8)
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI R14L
+[?] Resize R14L (size 4) into R14L (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+[?] Resize RDI (size 8) into RDI (size 8)
+[?] Resize RSI (size 8) into RSI (size 8)
+output vars for temp_50 are: [temp_26, strcat, b]
+OUTPUT CONTEXT FOR strcpy IS Allocation(b: Register[ESI(size=4)], temp_26: Register[ECX(size=4)])
+REQUEST PRESERVE REGISTRY!: strcpy ECX
+REQUEST PRESERVE REGISTRY!: strcpy ESI
+DOCALL FOR strcpy WITH OUTPUT ALLOC Allocation(temp_26: Register[ECX(size=4)], b: Register[ESI(size=4)])
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[ECX(size=4)]
+ARGUMENT 1 FOR CALL IS ALLOCATED ON: Register[EDI(size=4)]
+CHECK RETURN REG SHOULD PRESERVED BE?: strcpy ECX
+   PROCEED I CHUJ!
+[?] Resize RCX (size 8) into RCX (size 8)
+CHECK RETURN REG SHOULD PRESERVED BE?: strcpy ESI
+   PROCEED I CHUJ!
+[?] Resize RSI (size 8) into RSI (size 8)
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI ECX
+[?] Resize ECX (size 4) into ECX (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+ARGUMENT 1 FOR CALL WILL BE TRANSFERED TO: ESI
+ARGUMENT SWAP ESI ECX
+[?] Resize ECX (size 4) into ECX (size 4)
+[?] Resize ESI (size 4) into ESI (size 4)
+[?] Resize RCX (size 8) into RCX (size 8)
+[?] Resize RSI (size 8) into RSI (size 8)
+output vars for temp_72 are: [temp_26]
+OUTPUT CONTEXT FOR strcat IS Allocation(temp_26: Register[ECX(size=4)])
+REQUEST PRESERVE REGISTRY!: strcat ECX
+DOCALL FOR strcat WITH OUTPUT ALLOC Allocation(temp_26: Register[ECX(size=4)])
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[ECX(size=4)]
+ARGUMENT 1 FOR CALL IS ALLOCATED ON: Register[ESI(size=4)]
+CHECK RETURN REG SHOULD PRESERVED BE?: strcat ECX
+   PROCEED I CHUJ!
+[?] Resize RCX (size 8) into RCX (size 8)
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI ECX
+[?] Resize ECX (size 4) into ECX (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+ARGUMENT 1 FOR CALL WILL BE TRANSFERED TO: ESI
+[?] Resize RCX (size 8) into RCX (size 8)
+[?] Resize ECX (size 4) into ECX (size 4)
 [?] Resize EAX (size 4) into EAX (size 4)
 [?] Resize RSP (size 8) into RSP (size 8)
 [?] Resize RBP (size 8) into RBP (size 8)
+[?] Resize ECX (size 4) into ECX (size 4)
+output vars for temp_2 are: []
+OUTPUT CONTEXT FOR printf IS Allocation()
+[?] Resize EAX (size 4) into EAX (size 4)
+DOCALL FOR printf WITH OUTPUT ALLOC Allocation()
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[ECX(size=4)]
+ARGUMENT 1 FOR CALL IS ALLOCATED ON: Register[EDI(size=4)]
+CHECK RETURN REG SHOULD PRESERVED BE?: printf EAX
+   PROCEED I CHUJ!
+[?] Resize RAX (size 8) into RAX (size 8)
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI ECX
+[?] Resize ECX (size 4) into ECX (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+ARGUMENT 1 FOR CALL WILL BE TRANSFERED TO: ESI
+ARGUMENT SWAP ESI ECX
+[?] Resize ECX (size 4) into ECX (size 4)
+[?] Resize ESI (size 4) into ESI (size 4)
+[?] Resize RAX (size 8) into RAX (size 8)
+[?] Resize EAX (size 4) into EAX (size 4)
+[?] Resize RSP (size 8) into RSP (size 8)
+[?] Resize RBP (size 8) into RBP (size 8)
+[?] Resize ESI (size 4) into ESI (size 4)
+output vars for temp_2 are: []
+OUTPUT CONTEXT FOR printf IS Allocation()
+[?] Resize EAX (size 4) into EAX (size 4)
+DOCALL FOR printf WITH OUTPUT ALLOC Allocation()
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[ESI(size=4)]
+ARGUMENT 1 FOR CALL IS ALLOCATED ON: Register[EDI(size=4)]
+CHECK RETURN REG SHOULD PRESERVED BE?: printf EAX
+   PROCEED I CHUJ!
+[?] Resize RAX (size 8) into RAX (size 8)
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI ESI
+[?] Resize ESI (size 4) into ESI (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+ARGUMENT 1 FOR CALL WILL BE TRANSFERED TO: ESI
+[?] Resize RAX (size 8) into RAX (size 8)
+[?] Resize EAX (size 4) into EAX (size 4)
+[?] Resize RSP (size 8) into RSP (size 8)
+[?] Resize RBP (size 8) into RBP (size 8)
+output vars for temp_18 are: [temp_18, printInt]
+OUTPUT CONTEXT FOR _rfac IS Allocation(temp_18: Register[R13L(size=4)])
+REQUEST PRESERVE REGISTRY!: _rfac R13L
+DOCALL FOR _rfac WITH OUTPUT ALLOC Allocation(temp_18: Register[R13L(size=4)])
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[R15L(size=4)]
+[?] Resize RAX (size 4) into EAX (size 4)
+[?] Resize R13L (size 4) into R13L (size 4)
+RETURN LOC: R13L
+CHECK RETURN REG SHOULD PRESERVED BE?: _rfac R13L
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI R15L
+[?] Resize R15L (size 4) into R15L (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+output vars for temp_8 are: []
+OUTPUT CONTEXT FOR _printInt IS Allocation()
+DOCALL FOR _printInt WITH OUTPUT ALLOC Allocation()
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[R13L(size=4)]
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI R13L
+[?] Resize R13L (size 4) into R13L (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+[?] Resize ESI (size 4) into ESI (size 4)
+[?] Resize EAX (size 4) into EAX (size 4)
+[?] Resize R15L (size 1) into R15B (size 1)
+[?] Resize ECX (size 4) into ECX (size 4)
+[?] Resize EAX (size 4) into EAX (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+[?] Resize R9L (size 4) into R9L (size 4)
+output vars for temp_40 are: [n, temp_40]
+OUTPUT CONTEXT FOR _rfac IS Allocation(temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)])
+REQUEST PRESERVE REGISTRY!: _rfac EDI
+REQUEST PRESERVE REGISTRY!: _rfac ESI
+DOCALL FOR _rfac WITH OUTPUT ALLOC Allocation(temp_40: Register[ESI(size=4)], n: Register[EDI(size=4)])
+ARGUMENT 0 FOR CALL IS ALLOCATED ON: Register[R9L(size=4)]
+[?] Resize RAX (size 4) into EAX (size 4)
+[?] Resize ESI (size 4) into ESI (size 4)
+RETURN LOC: ESI
+CHECK RETURN REG SHOULD PRESERVED BE?: _rfac EDI
+   PROCEED I CHUJ!
+[?] Resize RDI (size 8) into RDI (size 8)
+CHECK RETURN REG SHOULD PRESERVED BE?: _rfac ESI
+ARGUMENT 0 FOR CALL WILL BE TRANSFERED TO: EDI
+ARGUMENT SWAP EDI R9L
+[?] Resize R9L (size 4) into R9L (size 4)
+[?] Resize EDI (size 4) into EDI (size 4)
+[?] Resize RDI (size 8) into RDI (size 8)
+[?] Resize EDI (size 4) into EDI (size 4)
+[?] Resize EAX (size 4) into EAX (size 4)
+[?] Resize RSP (size 8) into RSP (size 8)
+[?] Resize RBP (size 8) into RBP (size 8)
+Running compiled program: false  | ERROR
+ Run Error : Failed test
+Test custom.out in directory . has failed.
+    Line:    0
+    Expected: 4
+    Got:     1
+
+exit status 1

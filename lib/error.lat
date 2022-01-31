@@ -1,0 +1,10 @@
+/*
+ * Runtime Latte library
+ * @Piotr Styczyński
+ */
+ 
+void error(string message) runtime {
+    syscall void printf("Error: %s\n", message);
+    syscall void exit(1);
+    return;
+}

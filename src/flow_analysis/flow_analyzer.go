@@ -1,6 +1,8 @@
 package flow_analysis
 
 import (
+	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -187,10 +189,16 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 					return
 				}
 				flow.Rebuild()
-				ast = flow.Output()
+				//ast = flow.Output()
 
 				//flow.Optimize(c)
 				//nodeForAnalysis.AfterFlowAnalysis(flow)
+
+				//flow.Rebuild()
+				//flow.Optimize(c)
+				//nodeForAnalysis.AfterFlowAnalysis(flow)
+
+				fmt.Printf("ENTIRE CODE IS HERE:\n\n\n%s\n\n\n", flow.Output().Print(c))
 
 				irCode := ir.CreateIR(e, flow, c)
 				irProgram.Statements = append(irProgram.Statements, irCode)
@@ -210,6 +218,7 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 		}
 		ast.Visit(ast, flowVisitor, generic_ast.NewEmptyVisitorContext())
 
+		//os.Exit(42)
 		if flowErrGlobal != nil {
 			r <- LatteAnalyzedProgram{
 				Program:           program,

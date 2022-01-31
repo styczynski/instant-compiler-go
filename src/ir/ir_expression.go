@@ -45,6 +45,15 @@ const (
 	IR_OP_UNARY_LOG_NEG IROperator = "LogicalNeg"
 )
 
+var SELF_OPS map[IROperator]struct{} = map[IROperator]struct{}{
+	IR_OP_SELF_ADD: {},
+	IR_OP_SELF_SUB: {},
+	IR_OP_SELF_MUL: {},
+	IR_OP_SELF_DIV: {},
+	IR_OP_SELF_AND: {},
+	IR_OP_SELF_OR:  {},
+}
+
 type IROperatorSpecs struct {
 	ArgsCount          int
 	MappedName         string
@@ -264,10 +273,16 @@ func (ast *IRExpression) GetUsedVariables(vars cfg.VariableSet, visitedMap map[g
 	for _, arg := range ast.Arguments {
 		vars.Add(cfg.NewVariable(arg, nil))
 	}
+	if _, ok := SELF_OPS[ast.Operation]; ok {
+		vars.Add(cfg.NewVariable(ast.TargetName, nil))
+	}
 	return vars
 }
 
 func (ast *IRExpression) GetDeclaredVariables(visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	if _, ok := SELF_OPS[ast.Operation]; ok {
+		//return cfg.NewVariableSet()
+	}
 	return cfg.NewVariableSet(cfg.NewVariable(ast.TargetName, nil))
 }
 

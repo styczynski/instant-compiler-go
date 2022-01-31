@@ -13,10 +13,12 @@ import (
 
 type InputReader interface {
 	Read(c *context.ParsingContext) ([]LatteInput, error)
+	ResolveInclude(c *context.ParsingContext, includePath string) (LatteInput, error)
 }
 
 type LatteInputReader struct {
-	input []string
+	input    []string
+	includes []string
 }
 
 type LatteInput interface {
@@ -42,14 +44,19 @@ func fileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-func CreateLatteInputReader(input []string) *LatteInputReader {
+func CreateLatteInputReader(input []string, includes []string) *LatteInputReader {
 	return &LatteInputReader{
-		input: input,
+		input:    input,
+		includes: includes,
 	}
 }
 
 func (reader *LatteInputReader) LogContext(c *context.ParsingContext) map[string]interface{} {
 	return map[string]interface{}{}
+}
+
+func (reader *LatteInputReader) ResolveInclude(c *context.ParsingContext, includePath string) (LatteInput, error) {
+	return localFSResolveInclude(c, includePath)
 }
 
 func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, error) {
@@ -91,7 +98,7 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 				if path == "." || path == ".." {
 					continue
 				}
-				subreader := CreateLatteInputReader([]string{path})
+				subreader := CreateLatteInputReader([]string{path}, reader.includes)
 				subinputs, err := subreader.Read(c)
 				if err != nil {
 					return nil, err
@@ -107,5 +114,9 @@ func (reader *LatteInputReader) Read(c *context.ParsingContext) ([]LatteInput, e
 		logs.Warning(reader, "No inputs were detected.")
 	}
 
-	return allInputs, nil
+	inputs, err := mergeAllIncludes(c, allInputs, reader.includes, reader.ResolveInclude)
+	if err != nil {
+		return nil, err
+	}
+	return inputs, nil
 }

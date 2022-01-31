@@ -164,6 +164,15 @@ func (c *CodeCursorSlice) IsOutside() bool {
 func inlineFunction(fn *Function, returnLabel string) []*Instruction {
 	output := []*Instruction{}
 	wasLabelUsed := false
+
+	localLabels := map[string]struct{}{}
+
+	for _, stmt := range fn.Body {
+		if stmt.IsLabel() {
+			localLabels[stmt.Label] = struct{}{}
+		}
+	}
+
 	for i, stmt := range fn.Body {
 		if !stmt.IsLabel() && stmt.Inst.Op == RET {
 			if i == len(fn.Body)-1 {
@@ -173,6 +182,16 @@ func inlineFunction(fn *Function, returnLabel string) []*Instruction {
 			wasLabelUsed = true
 			output = append(output, DoJump(returnLabel))
 			continue
+		} else if stmt.IsLabel() {
+			stmt.Label = fmt.Sprintf("inline_%s_%s", fn.Name, stmt.Label)
+		} else if !stmt.IsLabel() {
+			for j, arg := range stmt.Args {
+				if argLabel, ok := arg.(*RelLabel); ok {
+					if _, ok := localLabels[argLabel.label]; ok {
+						stmt.Args[j] = CreateRelLabel(fmt.Sprintf("inline_%s_%s", fn.Name, argLabel.label))
+					}
+				}
+			}
 		}
 		output = append(output, stmt)
 	}
@@ -198,10 +217,17 @@ func Optimize(code []Entry) []Entry {
 
 	// Filter unused functions
 	usedLabels := map[string]int{}
+	recursive := map[string]bool{}
 	for _, fn := range funcs {
+		if _, ok := recursive[fn.Label()]; !ok {
+			recursive[fn.Label()] = false
+		}
 		cursor := CreateCursor(fn.Body)
 		_, usedLabelsPartial := GetUnusedLabels(cursor)
 		for label, count := range usedLabelsPartial {
+			if label == fn.Label() {
+				recursive[fn.Label()] = true
+			}
 			if count > 0 {
 				if val, ok := usedLabels[label]; ok {
 					usedLabels[label] = val + count
@@ -224,11 +250,13 @@ func Optimize(code []Entry) []Entry {
 				} else if instr.Op == CALL {
 					label := instr.Args[0].(*RelLabel).label
 					if calledFn, ok := funcMap[label]; ok {
-						// Inline function
-						backLabel := fmt.Sprintf("inline_call_%d_return_%s", i, fn.Label())
-						inlinedContent := inlineFunction(calledFn, backLabel)
-						filteresInstrs = append(filteresInstrs, inlinedContent...)
-						continue
+						if calledFn.Name != fn.Name && !recursive[calledFn.Label()] {
+							// Inline function
+							backLabel := fmt.Sprintf("inline_call_%d_return_%s", i, fn.Label())
+							inlinedContent := inlineFunction(calledFn, backLabel)
+							filteresInstrs = append(filteresInstrs, inlinedContent...)
+							continue
+						}
 					}
 				}
 				filteresInstrs = append(filteresInstrs, instr)
