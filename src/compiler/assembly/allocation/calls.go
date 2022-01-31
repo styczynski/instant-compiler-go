@@ -40,6 +40,39 @@ func allocateRegistryStorage(
 	return results, meta
 }
 
+func DoDereference(
+	src ir.IRAllocation,
+	target ir.IRAllocation,
+) []*x86.Instruction {
+	ret := []*x86.Instruction{}
+
+	if srcReg, ok := IsAllocReg(src); ok {
+		if tgtReg, ok := IsAllocReg(target); ok {
+			return []*x86.Instruction{
+				x86.DoRegDereference(tgtReg.Reg, srcReg.Reg, srcReg.Size),
+			}
+		} else if tgtMem, ok := IsAllocMem(target); ok {
+			return []*x86.Instruction{
+				x86.DoRegDereference(x86.GetMemoryVarLocation(tgtMem.Index, tgtMem.Size), srcReg.Reg, srcReg.Size),
+			}
+		}
+	} else if srcMem, ok := IsAllocMem(src); ok {
+		if tgtReg, ok := IsAllocReg(target); ok {
+			return []*x86.Instruction{
+				x86.DoMemoryLoad(srcMem.Index, srcMem.Size, x86.RAX),
+				x86.DoRegDereference(tgtReg.Reg, x86.RAX, srcMem.Size),
+			}
+		} else if tgtMem, ok := IsAllocMem(target); ok {
+			return []*x86.Instruction{
+				x86.DoMemoryLoad(srcMem.Index, srcMem.Size, x86.RAX),
+				x86.DoRegDereference(x86.GetMemoryVarLocation(tgtMem.Index, tgtMem.Size), x86.RAX, srcMem.Size),
+			}
+		}
+	}
+
+	return ret
+}
+
 func DoCall(
 	parentFn *ir.IRFunction,
 	label string,
@@ -52,6 +85,7 @@ func DoCall(
 	registriesOverrides map[x86.Reg]int64,
 	transferResult bool,
 	preserveAnything bool,
+	forcePush bool,
 ) (AssemblyFunctionMeta, []*x86.Instruction) {
 
 	fmt.Printf("OUTPUT CONTEXT FOR %s IS %v\n", label, allocationOutputContext)
@@ -166,6 +200,8 @@ func DoCall(
 		}
 	}
 
+	fmt.Printf("Prserve for call %s: %v", label, allocationOutputContext.String())
+
 	// We need to preserver regsToPreserve before the call
 	regsPreserveOrder := []x86.Reg{}
 	regsSizes := []int{}
@@ -192,7 +228,11 @@ func DoCall(
 				regsPreserveOrder = append(regsPreserveOrder, specs.Reg8B)
 				//ret = append(ret, x86.DoPush(specs.Reg8B, 8))
 				regStorage := registryStorage[registryStorageIndex]
-				ret = append(ret, x86.DoMemoryStore(regStorage.Index, regStorage.Size, specs.Reg8B))
+				if forcePush {
+					ret = append(ret, x86.DoPush(specs.Reg8B, 8))
+				} else {
+					ret = append(ret, x86.DoMemoryStore(regStorage.Index, regStorage.Size, specs.Reg8B))
+				}
 				registryStorageIndex++
 			}
 		}
@@ -272,6 +312,7 @@ func DoCall(
 
 	// Transfer args (memory)
 	for memNo, argMem := range argsMem {
+		// Crashes here?
 		tgtReg := targetRegs[argsMemIndexes[memNo]]
 		ret = append(ret, x86.DoMemoryLoad(argMem.Index, argMem.Size, tgtReg.Normalized))
 	}
@@ -300,7 +341,11 @@ func DoCall(
 		registryStorageIndex = 0
 		for _, reg := range regsPreserveOrder {
 			regStorage := registryStorage[registryStorageIndex]
-			ret = append(ret, x86.DoMemoryLoad(regStorage.Index, regStorage.Size, reg))
+			if forcePush {
+				ret = append(ret, x86.DoPop(reg, 8))
+			} else {
+				ret = append(ret, x86.DoMemoryLoad(regStorage.Index, regStorage.Size, reg))
+			}
 			registryStorageIndex++
 		}
 	}

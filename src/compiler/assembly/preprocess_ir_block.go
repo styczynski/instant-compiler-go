@@ -476,6 +476,8 @@ func (backend CompilerX86Backend) preprocessIRBlock(c *context.ParsingContext, f
 				return err
 			}
 			ret = append(ret, mappedInstrs...)
+		} else if instr.IsLocalLabel() {
+			ret = append(ret, instr)
 		} else if instr.IsCall() {
 			call := instr.Call
 			name, alloc := instr.GetAllocationTarget()

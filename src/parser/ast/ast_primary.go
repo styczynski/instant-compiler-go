@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
 
@@ -77,7 +78,7 @@ func (a *Primary) Add(b *Primary, Op string) *Primary {
 	} else if a.IsString() && b.IsString() {
 		v := ""
 		if Op == "+" {
-			v = *a.String + *b.String
+			v = strings.TrimSuffix(*a.String, "\"") + strings.TrimPrefix(*b.String, "\"")
 		} else {
 			panic("Invalid add operation")
 		}

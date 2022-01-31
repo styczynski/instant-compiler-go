@@ -44,6 +44,33 @@ func outputIR(root generic_ast.Expression, graph *cfg.CFG, c *context.ParsingCon
 			}
 			next(stmt)
 		}
+
+		if len(ret.FunctionBody) > 0 {
+			lastBlock := ret.FunctionBody[len(ret.FunctionBody)-1]
+			if len(lastBlock.Statements) > 0 {
+				lastStmt := lastBlock.Statements[len(lastBlock.Statements)-1]
+				if lastStmt.IsExit() {
+					// Ok
+				} else {
+					lastBlock.Statements = append(lastBlock.Statements, WrapIRExit(&IRExit{
+						BaseASTNode: lastStmt.BaseASTNode,
+						Value:       nil,
+					}))
+				}
+			} else {
+				lastBlock.Statements = append(lastBlock.Statements, WrapIRExit(&IRExit{
+					Value: nil,
+				}))
+			}
+		} else {
+			lastBlock := IRBlock{
+				Statements: []*IRStatement{},
+			}
+			lastBlock.Statements = append(lastBlock.Statements, WrapIRExit(&IRExit{
+				Value: nil,
+			}))
+			ret.FunctionBody = append(ret.FunctionBody, &lastBlock)
+		}
 	})
 
 	fmt.Printf("FUNCTION ROOT %s\n", reflect.TypeOf(root).String())

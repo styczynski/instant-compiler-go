@@ -20,6 +20,7 @@ type IRIf struct {
 	BlockElse     int    `"else" @Int`
 	ParentNode    generic_ast.TraversableNode
 	Negated       bool
+	LocalLabel    string
 }
 
 func (ast *IRIf) Parent() generic_ast.TraversableNode {
@@ -48,6 +49,10 @@ func (ast *IRIf) GetChildren() []generic_ast.TraversableNode {
 	}
 }
 
+func (ast *IRIf) IsLocal() bool {
+	return len(ast.LocalLabel) > 0
+}
+
 func (ast *IRIf) HasElseBlock() bool {
 	return ast.BlockElse > -1
 }
@@ -56,6 +61,9 @@ func (ast *IRIf) Print(c *context.ParsingContext) string {
 	ifPostfix := " "
 	if ast.Negated {
 		ifPostfix = " not "
+	}
+	if ast.IsLocal() {
+		return utils.PrintASTNode(c, ast, "If%s%s %s jump to local label %s", ifPostfix, ast.ConditionType, ast.Condition, ast.LocalLabel)
 	}
 	if !ast.HasElseBlock() {
 		return utils.PrintASTNode(c, ast, "If%s%s %s jump to block%d else continue", ifPostfix, ast.ConditionType, ast.Condition, ast.BlockThen)

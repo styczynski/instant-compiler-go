@@ -401,6 +401,24 @@ func DoPop(reg Reg, size int) *Instruction {
 	}
 }
 
+func DoRegDereference(target Arg, source Reg, size int) *Instruction {
+
+	_, sourceReg := ResizeReg(source, 8) // Resize to match architecture pointer size
+
+	instSet := Inst{}
+	instSet.Op = MOV
+	instSet.MemBytes = size
+	instSet.Args = Args{
+		target,
+		Mem{
+			Base: sourceReg,
+		},
+	}
+	return &Instruction{
+		Inst: instSet,
+	}
+}
+
 func DoSwapRegistryWithMemory(index, size int, from Reg) *Instruction {
 	fromSize, fromResized := ResizeReg(from, size)
 	return doRawSwap(fromResized, GetMemoryVarLocation(index, size), fromSize)
@@ -422,6 +440,18 @@ func DoSwap(to Reg, from Reg, size int) *Instruction {
 func doRawSetNotEqual(target Arg, size int) *Instruction {
 	instSet := Inst{}
 	instSet.Op = SETNE
+	instSet.MemBytes = size
+	instSet.Args = Args{
+		target,
+	}
+	return &Instruction{
+		Inst: instSet,
+	}
+}
+
+func doRawSetEqual(target Arg, size int) *Instruction {
+	instSet := Inst{}
+	instSet.Op = SETE
 	instSet.MemBytes = size
 	instSet.Args = Args{
 		target,
@@ -471,7 +501,7 @@ func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int, argType ir.
 
 	if operation == ir.IR_OP_SELF_ADD {
 		inst.Op = ADD
-	} else if operation == ir.IR_OP_SELF_DIV {
+	} else if operation == ir.IR_OP_SELF_DIV || operation == ir.IR_OP_SELF_MOD {
 
 		// Move self to EAX
 		if self == EAX || self == EBX || val == EAX || val == EBX {
@@ -486,9 +516,24 @@ func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int, argType ir.
 			val,
 		}
 
+		rollbackStart := DoNop()
+		rollbackEnd := DoNop()
+		if selfReg, ok := self.(Reg); ok {
+			_, normalizedSelfReg := ResizeReg(selfReg, 8)
+			if normalizedSelfReg != RDX {
+				rollbackStart = doRawMov(RBX, RDX, 8)
+				rollbackEnd = doRawMov(RDX, RBX, 8)
+			}
+		}
+
+		resultReg := EAX
+		if operation == ir.IR_OP_SELF_MOD {
+			resultReg = EDX
+		}
+
 		return []*Instruction{
 			// Preserve RDX
-			doRawMov(RBX, RDX, 8),
+			rollbackStart,
 			// Load argument
 			DoZeroRegistry(RDX, 8),
 			doRawMov(EAX, self, size),
@@ -497,14 +542,76 @@ func DoUnaryOp(self Arg, val Arg, operation ir.IROperator, size int, argType ir.
 				Inst: instDiv,
 			},
 			// Get result
-			doRawMov(self, EAX, size),
+			doRawMov(self, resultReg, size),
 			// Preserve (rollback)
-			doRawMov(RDX, RBX, 8),
+			rollbackEnd,
 		}
 	} else if operation == ir.IR_OP_SELF_SUB {
 		inst.Op = SUB
 	} else if operation == ir.IR_OP_SELF_MUL {
-		inst.Op = IMUL
+		// Move self to EAX
+		if self == EAX || self == EBX || val == EAX || val == EBX {
+			panic("Invalid division (source EAX or EBX)!")
+		}
+
+		// Perform multiplication
+		instMul := Inst{}
+		instMul.MemBytes = size
+		instMul.Op = IMUL
+		instMul.Args = Args{
+			val,
+		}
+
+		rollbackStart := DoNop()
+		rollbackEnd := DoNop()
+		if selfReg, ok := self.(Reg); ok {
+			_, normalizedSelfReg := ResizeReg(selfReg, 8)
+			if normalizedSelfReg != RDX {
+				rollbackStart = doRawMov(RBX, RDX, 8)
+				rollbackEnd = doRawMov(RDX, RBX, 8)
+			}
+		}
+
+		return []*Instruction{
+			// Preserve RDX
+			rollbackStart,
+			// Load argument
+			doRawMov(EAX, self, size),
+			// Multiplication
+			{
+				Inst: instMul,
+			},
+			// Get result
+			doRawMov(self, EAX, size),
+			// Preserve (rollback)
+			rollbackEnd,
+		}
+	} else if operation == ir.IR_OP_UNARY_LOG_NEG {
+		inst.Op = NEG
+		inst.Args = Args{
+			self,
+		}
+		resizedSelf := self
+		if selfReg, ok := self.(Reg); ok {
+			_, resizedSelf = ResizeReg(selfReg, 1)
+		}
+		return []*Instruction{
+			DoCompare(val, Imm(0)),
+			doRawSetEqual(resizedSelf, size),
+		}
+	} else if operation == ir.IR_OP_UNARY_NEG {
+		instNeg := Inst{}
+		instNeg.MemBytes = size
+		instNeg.Op = NEG
+		instNeg.Args = Args{
+			self,
+		}
+		return []*Instruction{
+			doRawMov(self, val, size),
+			{
+				Inst: instNeg,
+			},
+		}
 	} else {
 		panic(fmt.Sprintf("Unsuported operation for DoArithmeticSelfOp: %v", operation))
 	}

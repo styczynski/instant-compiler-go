@@ -236,6 +236,18 @@ func (backend CompilerX86Backend) compileIROpBinary(ret []*x86.Instruction, inst
 	if mem, ok := allocation.IsAllocMem(alloc); ok {
 		if srcReg1, ok := allocation.IsAllocReg(srcAlloc1); ok {
 			if srcReg2, ok := allocation.IsAllocReg(srcAlloc2); ok {
+				if op == ir.IR_OP_AND || op == ir.IR_OP_OR {
+					ret = append(ret, x86.DoLogicOp(
+						x86.EAX,
+						srcReg1.Reg,
+						srcReg2.Reg,
+						op,
+						mem.Size,
+					)...)
+					ret = append(ret, x86.DoMemoryLoad(mem.Index, mem.Size, x86.EAX))
+					return nil, ret
+				}
+
 				ret = append(ret, x86.DoCompare(
 					srcReg1.Reg,
 					srcReg2.Reg,
@@ -362,6 +374,7 @@ func (backend CompilerX86Backend) compileIRCall(
 	shouldGetResult := true
 	shouldPreserveRegs := true
 	shouldContinueTrace := true
+	forcePush := false
 	tagetName := instr.CallTarget
 	overrides := map[x86.Reg]int64{}
 	if !instr.IsBuiltin {
@@ -378,13 +391,28 @@ func (backend CompilerX86Backend) compileIRCall(
 		// No-op
 	} else if tagetName == "strcat" {
 		// No-op
+	} else if tagetName == "scanf" {
+		forcePush = true
+		overrides[x86.EAX] = 0
 	} else if tagetName == "malloc" {
 		// No-op
 	} else {
 		return fmt.Errorf("Unknown system call: %s\n", tagetName), ret, allocation.AssemblyFunctionMeta{}, false
 	}
+
+	if tagetName == "_rawLoadInt" {
+		forcePush = true
+	} else if tagetName == "_rawLoadString" {
+		forcePush = true
+	}
+
+	if tagetName == "_dereference" {
+		ret = append(ret, allocation.DoDereference(argsAllocs[argsOrder[0]], alloc)...)
+		return nil, ret, parentFn.GetMeta().(allocation.AssemblyFunctionMeta), shouldContinueTrace
+	}
+
 	//ret = append(ret, x86.DoSub(x86.RSP, x86.Imm(entireStackSize), 4))
-	meta, instrs := allocation.DoCall(parentFn, tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext, allocOutputContext, overrides, shouldGetResult, shouldPreserveRegs)
+	meta, instrs := allocation.DoCall(parentFn, tagetName, instr.Type, alloc, argsOrder, argsAllocs, allocContext, allocOutputContext, overrides, shouldGetResult, shouldPreserveRegs, forcePush)
 	ret = append(ret, instrs...)
 	return nil, ret, meta, shouldContinueTrace
 }
@@ -462,13 +490,23 @@ func (backend CompilerX86Backend) compileIRJump(ret []*x86.Instruction, fnName s
 	return nil, ret
 }
 
-func (backend CompilerX86Backend) compileIRIf(ret []*x86.Instruction, fnName string, instr *ir.IRIf, alloc ir.IRAllocation) (error, []*x86.Instruction) {
+func (backend CompilerX86Backend) compileIRIf(ret []*x86.Instruction, fnName string, blockID int, instr *ir.IRIf, alloc ir.IRAllocation) (error, []*x86.Instruction) {
 	if mem, ok := allocation.IsAllocMem(alloc); ok {
 		ret = append(ret, x86.DoMemoryLoad(
 			mem.Index,
 			mem.Size,
 			x86.EAX,
 		))
+		if instr.IsLocal() {
+			ret = append(ret, x86.DoIf(
+				fmt.Sprintf("%s_%d_local_%s", fnName, blockID, instr.LocalLabel),
+				"",
+				false,
+				x86.EAX,
+				instr.Negated,
+			)...)
+			return nil, ret
+		}
 		ret = append(ret, x86.DoIf(
 			fmt.Sprintf("%s_block%d", fnName, instr.BlockThen),
 			fmt.Sprintf("%s_block%d", fnName, instr.BlockElse),
@@ -478,6 +516,16 @@ func (backend CompilerX86Backend) compileIRIf(ret []*x86.Instruction, fnName str
 		)...)
 		return nil, ret
 	} else if reg, ok := allocation.IsAllocReg(alloc); ok {
+		if instr.IsLocal() {
+			ret = append(ret, x86.DoIf(
+				fmt.Sprintf("%s_%d_local_%s", fnName, blockID, instr.LocalLabel),
+				"",
+				false,
+				reg.Reg,
+				instr.Negated,
+			)...)
+			return nil, ret
+		}
 		ret = append(ret, x86.DoIf(
 			fmt.Sprintf("%s_block%d", fnName, instr.BlockThen),
 			fmt.Sprintf("%s_block%d", fnName, instr.BlockElse),
@@ -564,7 +612,7 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 		} else if instr.IsIf() {
 			ifStmt := instr.If
 			alloc := instr.GetAllocationContext()[ifStmt.Condition]
-			err, newRet := backend.compileIRIf(ret, fnName, ifStmt, alloc)
+			err, newRet := backend.compileIRIf(ret, fnName, code.BlockID, ifStmt, alloc)
 			if err != nil {
 				return err, nil
 			}
@@ -583,6 +631,10 @@ func (backend CompilerX86Backend) compileIRBlock(c *context.ParsingContext, fn *
 				return err, nil
 			}
 			ret = newRet
+		} else if instr.IsLocalLabel() {
+			ret = append(ret, &x86.Instruction{
+				Label: fmt.Sprintf("%s_%d_local_%s", fnName, code.BlockID, instr.LocalLabel),
+			})
 		} else if instr.IsCall() {
 			call := instr.Call
 			name, alloc := instr.GetAllocationTarget()

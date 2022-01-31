@@ -59,13 +59,42 @@ func translateType(t hindley_milner.Type) IRType {
 	return resolvedType
 }
 
+var translatorFreeID int = 0
+
 func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generic_ast.Expression) ([]*IRStatement, IRType, string) {
 	fmt.Printf("  -> Expr: %s{%s}\n", reflect.TypeOf(node), node.(generic_ast.PrintableNode).Print(c))
 
 	ret := []*IRStatement{}
 	resultVar := ir.NextTempVar()
 
-	if block, ok := node.(*ast.Block); ok {
+	if e, ok := node.(*ast.UnaryStatement); ok {
+		opVal := 0
+		opName := ""
+		if e.Operation == "--" {
+			opVal = 1
+			opName = "-="
+		} else if e.Operation == "++" {
+			opVal = 1
+			opName = "+="
+		} else {
+			panic(fmt.Sprintf("Invalid uanry statement operation: %s", e.Operation))
+		}
+		ret = append(ret, WrapIRConst(&IRConst{
+			BaseASTNode: e.BaseASTNode,
+			TargetName:  resultVar,
+			Type:        IR_INT32,
+			Value:       int64(opVal),
+		}).SetComment("Const int %d", opVal))
+		ret = append(ret, WrapIRExpression(&IRExpression{
+			BaseASTNode:    e.BaseASTNode,
+			TargetName:     *e.TargetName,
+			Operation:      CreateIROperator(opName, 1, IR_OP_KIND_NUMERIC),
+			Type:           IR_INT32,
+			Arguments:      []string{resultVar},
+			ArgumentsTypes: []IRType{IR_INT32},
+		}))
+		return ret, IR_VOID, ""
+	} else if block, ok := node.(*ast.Block); ok {
 		// Nested block
 		for _, stmt := range block.Statements {
 			code, _, _ := generateIRExpr(c, ir, stmt)
@@ -124,6 +153,8 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 				StringValue: e.String,
 			}).SetComment("Const string %s", *e.String))
 			return ret, translateType(e.ResolvedType), resultVar
+		} else if e.IsSubexpression() {
+			return generateIRExpr(c, ir, e.SubExpression)
 		}
 	} else if e, ok := node.(*ast.Index); ok {
 		if !e.HasIndexingExpr() {
@@ -260,15 +291,72 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			ls, lt, lv := generateIRExpr(c, ir, e.Equality)
 			rs, rt, rv := generateIRExpr(c, ir, e.Next)
 			ret = append(ret, ls...)
+			if e.Op == "||" {
+				ret = append(ret, WrapIRConst(&IRConst{
+					BaseASTNode: e.BaseASTNode,
+					TargetName:  resultVar,
+					Type:        translateType(e.ResolvedType),
+					Value:       1,
+				}).SetComment("True value for lazy expression"))
+				ret = append(ret, WrapIRIf(&IRIf{
+					BaseASTNode:   e.BaseASTNode,
+					ConditionType: IR_BIT,
+					Condition:     lv,
+					LocalLabel:    fmt.Sprintf("lazy_%d", translatorFreeID),
+					Negated:       false,
+				}))
+				ret = append(ret, WrapIRConst(&IRConst{
+					BaseASTNode: e.BaseASTNode,
+					TargetName:  resultVar,
+					Type:        translateType(e.ResolvedType),
+					Value:       0,
+				}).SetComment("False (fallback) value for lazy expression"))
+			} else if e.Op == "&&" {
+				ret = append(ret, WrapIRConst(&IRConst{
+					BaseASTNode: e.BaseASTNode,
+					TargetName:  resultVar,
+					Type:        translateType(e.ResolvedType),
+					Value:       0,
+				}).SetComment("False value for lazy expression"))
+				ret = append(ret, WrapIRIf(&IRIf{
+					BaseASTNode:   e.BaseASTNode,
+					ConditionType: IR_BIT,
+					Condition:     lv,
+					LocalLabel:    fmt.Sprintf("lazy_%d", translatorFreeID),
+					Negated:       true,
+				}))
+				ret = append(ret, WrapIRConst(&IRConst{
+					BaseASTNode: e.BaseASTNode,
+					TargetName:  resultVar,
+					Type:        translateType(e.ResolvedType),
+					Value:       1,
+				}).SetComment("True (fallback) value for lazy expression"))
+			}
 			ret = append(ret, rs...)
-			ret = append(ret, WrapIRExpression(&IRExpression{
-				BaseASTNode:    e.BaseASTNode,
-				TargetName:     resultVar,
-				Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_LOGIC),
-				Type:           translateType(e.ResolvedType),
-				Arguments:      []string{lv, rv},
-				ArgumentsTypes: []IRType{lt, rt},
-			}))
+			if e.Op == "||" || e.Op == "&&" {
+				ret = append(ret, WrapIRCopy(&IRCopy{
+					BaseASTNode: e.BaseASTNode,
+					TargetName:  resultVar,
+					Type:        translateType(e.ResolvedType),
+					Var:         rv,
+				}))
+			} else {
+				ret = append(ret, WrapIRExpression(&IRExpression{
+					BaseASTNode:    e.BaseASTNode,
+					TargetName:     resultVar,
+					Operation:      CreateIROperator(e.Op, 2, IR_OP_KIND_LOGIC),
+					Type:           translateType(e.ResolvedType),
+					Arguments:      []string{lv, rv},
+					ArgumentsTypes: []IRType{lt, rt},
+				}))
+			}
+			if e.Op == "||" {
+				ret = append(ret, WrapIRLocalLabel(fmt.Sprintf("lazy_%d", translatorFreeID)))
+				translatorFreeID++
+			} else if e.Op == "&&" {
+				ret = append(ret, WrapIRLocalLabel(fmt.Sprintf("lazy_%d", translatorFreeID)))
+				translatorFreeID++
+			}
 			return ret, translateType(e.ResolvedType), resultVar
 		} else {
 			return generateIRExpr(c, ir, e.Equality)
@@ -325,6 +413,10 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 			exprIR, _, _ := generateIRExpr(c, ir, bl)
 			ret = append(ret, exprIR...)
 			return ret
+		} else if e, ok := node.(*ast.UnaryStatement); ok {
+			exprIR, _, _ := generateIRExpr(c, ir, e)
+			ret = append(ret, exprIR...)
+			return ret
 		} else if e, ok := node.(*ast.While); ok {
 			sCond, tCond, vCond := generateIRExpr(c, ir, e.Condition)
 			//doNode := e.Do.GetChildren()[0].(*ast.Block).Statements[0].GetChildren()[0].(cfg.CFGCodeNode)
@@ -373,6 +465,10 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 			// fmt.Printf("[?] If contents: %s{%s}\n", reflect.TypeOf(thenNode), thenNode.Print(c))
 
 			thenBlockID := extractIfBlockJumpID(e.Then, graph)
+			if thenBlockID == -1 {
+				sucs := block.GetSuccs()
+				thenBlockID = sucs[len(sucs)-1]
+			}
 			elseBlockID := -1
 			if e.HasElseBlock() {
 				elseBlockID = extractIfBlockJumpID(e.Else, graph)

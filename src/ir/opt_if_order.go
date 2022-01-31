@@ -24,7 +24,13 @@ func ifOrder(graph *cfg.CFG, c *context.ParsingContext) {
 		for _, stmt := range b.Statements {
 			if stmt.IsIf() {
 				ifStmt := stmt.If
-				if ifStmt.BlockThen == firstNextBlock && ifStmt.HasElseBlock() {
+				if ifStmt.IsLocal() {
+					newStmts = append(newStmts, stmt)
+					continue
+				}
+				if ifStmt.BlockThen == -1 && !ifStmt.HasElseBlock() {
+					continue
+				} else if ifStmt.BlockThen == firstNextBlock && ifStmt.HasElseBlock() {
 					ifStmt.BlockThen, ifStmt.BlockElse = ifStmt.BlockElse, -1
 					ifStmt.Negated = true
 				}

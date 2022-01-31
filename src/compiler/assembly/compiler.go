@@ -150,7 +150,7 @@ func (backend CompilerX86Backend) Compile(program flow_analysis.LatteAnalyzedPro
 			return
 		}
 
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 0; i++ {
 			entries = x86.Optimize(entries)
 		}
 

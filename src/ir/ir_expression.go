@@ -27,10 +27,12 @@ const (
 	IR_OP_SUB           IROperator = "Sub"
 	IR_OP_MUL           IROperator = "Mul"
 	IR_OP_DIV           IROperator = "Div"
+	IR_OP_MOD           IROperator = "Mod"
 	IR_OP_SELF_ADD      IROperator = "SelfAdd"
 	IR_OP_SELF_SUB      IROperator = "SelfSub"
 	IR_OP_SELF_MUL      IROperator = "SelfMul"
 	IR_OP_SELF_DIV      IROperator = "SelfDiv"
+	IR_OP_SELF_MOD      IROperator = "SelfMod"
 	IR_OP_EQ            IROperator = "Eq"
 	IR_OP_NOT_EQ        IROperator = "NotEq"
 	IR_OP_LT            IROperator = "Lt"
@@ -50,6 +52,7 @@ var SELF_OPS map[IROperator]struct{} = map[IROperator]struct{}{
 	IR_OP_SELF_SUB: {},
 	IR_OP_SELF_MUL: {},
 	IR_OP_SELF_DIV: {},
+	IR_OP_SELF_MOD: {},
 	IR_OP_SELF_AND: {},
 	IR_OP_SELF_OR:  {},
 }
@@ -86,17 +89,23 @@ var OPERATORS_SPECS = map[IROperator]IROperatorSpecs{
 		MappedName:         "/",
 		TranslationEnabled: true,
 	},
+	IR_OP_MOD: {
+		Kind:               IR_OP_KIND_NUMERIC,
+		ArgsCount:          2,
+		MappedName:         "%",
+		TranslationEnabled: true,
+	},
 	IR_OP_SELF_ADD: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          1,
 		MappedName:         "+=",
-		TranslationEnabled: false,
+		TranslationEnabled: true,
 	},
 	IR_OP_SELF_SUB: {
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          1,
 		MappedName:         "-=",
-		TranslationEnabled: false,
+		TranslationEnabled: true,
 	},
 	IR_OP_SELF_MUL: {
 		Kind:               IR_OP_KIND_NUMERIC,
@@ -108,6 +117,12 @@ var OPERATORS_SPECS = map[IROperator]IROperatorSpecs{
 		Kind:               IR_OP_KIND_NUMERIC,
 		ArgsCount:          1,
 		MappedName:         "/=",
+		TranslationEnabled: false,
+	},
+	IR_OP_SELF_MOD: {
+		Kind:               IR_OP_KIND_NUMERIC,
+		ArgsCount:          1,
+		MappedName:         "%=",
 		TranslationEnabled: false,
 	},
 	IR_OP_EQ: {

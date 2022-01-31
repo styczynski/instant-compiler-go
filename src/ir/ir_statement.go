@@ -25,6 +25,7 @@ type IRStatement struct {
 	Const      *IRConst      `| @@`
 	Call       *IRCall       `| @@`
 	MacroCall  *IRMacroCall  `| @@`
+	LocalLabel string        `| "local" @Ident`
 	ParentNode generic_ast.TraversableNode
 
 	VarIn   cfg.VariableSet
@@ -199,6 +200,13 @@ func WrapIRExpression(ast *IRExpression) *IRStatement {
 	return ret
 }
 
+func WrapIRLocalLabel(label string) *IRStatement {
+	ret := &IRStatement{
+		LocalLabel: label,
+	}
+	return ret
+}
+
 func (ast *IRStatement) Parent() generic_ast.TraversableNode {
 	return ast.ParentNode
 }
@@ -225,6 +233,7 @@ func (ast *IRStatement) IsEmpty() bool {
 		!ast.IsJump() &&
 		!ast.IsPhi() &&
 		!ast.IsCopy() &&
+		!ast.IsLocalLabel() &&
 		!ast.IsMacroCall() &&
 		!ast.IsConst() &&
 		!ast.IsCall() &&
@@ -249,6 +258,10 @@ func (ast *IRStatement) IsPhi() bool {
 
 func (ast *IRStatement) IsCopy() bool {
 	return ast.Copy != nil
+}
+
+func (ast *IRStatement) IsLocalLabel() bool {
+	return len(ast.LocalLabel) > 0
 }
 
 func (ast *IRStatement) IsConst() bool {
@@ -332,6 +345,8 @@ func (ast *IRStatement) Print(c *context.ParsingContext) string {
 		ret = ast.Exit.Print(c)
 	} else if ast.IsIf() {
 		ret = ast.If.Print(c)
+	} else if ast.IsLocalLabel() {
+		ret = fmt.Sprintf("Label \"%s\"", ast.LocalLabel)
 	} else if ast.IsJump() {
 		ret = ast.Jump.Print(c)
 	} else if ast.IsPhi() {
