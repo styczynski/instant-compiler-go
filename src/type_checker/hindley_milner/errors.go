@@ -55,7 +55,7 @@ func (err UnificationWrongTypeError) HasSource() bool {
 
 func (err UnificationWrongTypeError) Source() generic_ast.Expression {
 	if err.Constraint.context.Source == nil {
-		logf("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
+		//logs.Debug("LOLZ: %v %v %v %v\n", err.Constraint.a.GetContext().String(), err.Constraint.b.GetContext().String(), err.Constraint.context.String())
 	}
 	return *(err.Constraint.context.Source)
 }
@@ -129,6 +129,36 @@ func (err InvalidOverloadCandidatesError) Error() string {
 }
 
 func (err InvalidOverloadCandidatesError) Source() generic_ast.Expression {
+	return *(err.Context.Source)
+}
+
+type ASTError struct {
+	Name       string
+	InnerError error
+	Context    CodeContext
+}
+
+func (err ASTError) Error() string {
+	return err.InnerError.Error()
+}
+
+func (err ASTError) Source() generic_ast.Expression {
+	return *(err.Context.Source)
+}
+
+
+type InvalidReturnTypeError struct {
+	ReturnType Type
+	Context    CodeContext
+}
+
+func (err InvalidReturnTypeError) Error() string {
+	return fmt.Sprintf("The return statement has invalid return type: %s",
+		err.ReturnType,
+	)
+}
+
+func (err InvalidReturnTypeError) Source() generic_ast.Expression {
 	return *(err.Context.Source)
 }
 

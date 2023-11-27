@@ -1,13 +1,12 @@
 package hindley_milner
 
 import (
-	"fmt"
 	"reflect"
 
-	"github.com/alecthomas/repr"
 	"github.com/pkg/errors"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
+	"github.com/styczynski/latte-compiler/src/logs"
 )
 
 type Cloner interface {
@@ -54,6 +53,7 @@ type OverloadConstraint struct {
 
 type InferenceBackend interface {
 	Fresher
+	logs.LogContext
 	GenerateConstraints(expr generic_ast.Expression, forceType ExpressionType, isTop bool, isOpaqueTop bool) (err error)
 	GetEnv() Env
 	GetReturnEnv() Env
@@ -84,10 +84,8 @@ func Instantiate(f Fresher, s *Scheme) Type {
 	return s.t.Apply(sub).(Type)
 }
 
-func Generalize(env Env, t Type) *Scheme {
-	logf("generalizing %v over %v", t, env)
-	enterLoggingContext()
-	defer leaveLoggingContext()
+func Generalize(i InferenceBackend, env Env, t Type) *Scheme {
+	logs.Debug(i, "Generalizing %v", t)
 	var envFree, tFree, diff TypeVarSet
 
 	if env != nil {
@@ -147,9 +145,9 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 	if config.OnConstrintGenerationStarted != nil {
 		(*config.OnConstrintGenerationStarted)()
 	}
-	logf("Start\n")
+	logs.Debug(infer, "Perform inference")
 	err := infer.GenerateConstraints(expr, E_NONE, true, true)
-	logf("Generated constrints now: %v\n", infer.Constraints())
+	logs.Debug(infer, "Inference constraints: %v", infer.Constraints())
 
 	if config.OnConstrintGenerationFinished != nil {
 		(*config.OnConstrintGenerationFinished)()
@@ -164,7 +162,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 	}
 	cs := infer.Constraints()
 	inferEnv := infer.GetEnv()
-	s.solve(cs, inferEnv.GetIntrospecionListener())
+	s.solve(infer, cs, inferEnv.GetIntrospecionListener())
 	if config.OnSolvingFinished != nil {
 		(*config.OnSolvingFinished)()
 	}
@@ -191,7 +189,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 				context: ocs.tv.context,
 			})
 			s2 := newSolver()
-			s2.solve(cs, infer.GetEnv().GetIntrospecionListener())
+			s2.solve(infer, cs, infer.GetEnv().GetIntrospecionListener())
 			if s2.err == nil {
 
 				hasCleanRun = true
@@ -225,7 +223,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 	}
 
 	t := infer.ProgramType().Apply(s.sub).(Type)
-	ret, err := closeOver(t)
+	ret, err := closeOver(infer, t)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -235,7 +233,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 
 	for _, ics := range infer.GetIntrospectionConstraints() {
 		is := newSolver()
-		is.solve(infer.Constraints(), infer.GetEnv().GetIntrospecionListener())
+		is.solve(infer, infer.Constraints(), infer.GetEnv().GetIntrospecionListener())
 		h := infer.GetReturnEnv().GetIntrospecionListener().GetIntrospectionVariable(ics.tv).Apply(is.sub).(Type)
 		introExpr := (*ics.context.Source).(IntrospectionExpression)
 		introExpr.OnTypeReturned(h)
@@ -246,8 +244,8 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 	return ret, infer.GetReturnEnv(), nil
 }
 
-func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Subs, err error) {
-	//fmt.Printf("UNION %v %v\n", a, b)
+func Unify(a, b Type, context Constraint, infer InferenceBackend, listener IntrospecionListener) (sub Subs, err error) {
+	logs.Debug(infer, "Unify types %v ~ %v", a, b)
 
 	// aTV, bTV := false, false
 
@@ -259,8 +257,8 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 	if unionA, ok := a.(*Union); ok {
 		allSubs := []Subs{}
 		for _, v := range unionA.types {
-			if subs, err := Unify(b, v.(Type), context, listener); err != nil {
-				return nil, fmt.Errorf("Cannot match union type: %w", err)
+			if subs, err := Unify(b, v, context, infer, listener); err != nil {
+				return nil, err
 			} else {
 				allSubs = append(allSubs, subs)
 			}
@@ -271,8 +269,8 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 		allSubs := []Subs{}
 		var lastErr error = nil
 		for _, v := range unionB.types {
-			if subs, err := Unify(a, v.(Type), context, listener); err != nil {
-				lastErr = fmt.Errorf("Cannot match union type: %w", err)
+			if subs, err := Unify(a, v, context, infer, listener); err != nil {
+				lastErr = err
 			} else {
 				allSubs = append(allSubs, subs)
 				lastErr = nil
@@ -295,7 +293,7 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 			defer ReturnTypes(a.Types())
 			defer ReturnTypes(b.Types())
 
-			subs, err := sa.Union(b, context, listener)
+			subs, err := sa.Union(b, context, infer, listener)
 			if err != nil {
 				return nil, UnificationWrongTypeError{
 					TypeA:      a,
@@ -310,14 +308,14 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 
 	switch at := a.(type) {
 	case TypeVariable:
-		return bind(at, b, context, a, listener)
+		return bind(at, b, context, a, infer, listener)
 	default:
 		if TypeEq(a, b) {
 			return nil, nil
 		}
 
 		if btv, ok := b.(TypeVariable); ok {
-			return bind(btv, a, context, b, listener)
+			return bind(btv, a, context, b, infer, listener)
 		}
 		atypes := a.Types()
 		btypes := b.Types()
@@ -328,7 +326,7 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 			goto e
 		}
 
-		return unifyMany(atypes, btypes, a, b, context, listener)
+		return unifyMany(atypes, btypes, a, b, context, infer, listener)
 
 	e:
 	}
@@ -340,7 +338,7 @@ func Unify(a, b Type, context Constraint, listener IntrospecionListener) (sub Su
 	return
 }
 
-func unifyMany(a, b Types, contextA, contextB Type, context Constraint, listener IntrospecionListener) (sub Subs, err error) {
+func unifyMany(a, b Types, contextA, contextB Type, context Constraint, infer InferenceBackend, listener IntrospecionListener) (sub Subs, err error) {
 
 	if len(a) != len(b) {
 		return nil, UnificationLengthError{
@@ -359,7 +357,7 @@ func unifyMany(a, b Types, contextA, contextB Type, context Constraint, listener
 		}
 
 		var s2 Subs
-		if s2, err = Unify(at, bt, context, listener); err != nil {
+		if s2, err = Unify(at, bt, context, infer, listener); err != nil {
 			return nil, err
 		}
 
@@ -377,8 +375,8 @@ func unifyMany(a, b Types, contextA, contextB Type, context Constraint, listener
 	return
 }
 
-func bind(tv TypeVariable, t Type, context Constraint, tvt Type, listener IntrospecionListener) (sub Subs, err error) {
-	logf("Binding %v to %v", tv, t)
+func bind(tv TypeVariable, t Type, context Constraint, tvt Type, infer InferenceBackend, listener IntrospecionListener) (sub Subs, err error) {
+	logs.Debug(infer, "Binding %v to %v", tv, t)
 	listener.OnApplySingle(tv, t)
 
 	switch {
@@ -390,12 +388,6 @@ func bind(tv TypeVariable, t Type, context Constraint, tvt Type, listener Intros
 			sub = ssub
 			return
 		}
-		logf("KURWA 1\n%v\nKURWA 2\n%v\nKURWA 3\n%v\nKURWA 4\n%v\n",
-			repr.String(*t.GetContext().Source),
-			repr.String(*tv.GetContext().Source),
-			repr.String(*tvt.GetContext().Source),
-			repr.String(*context.context.Source))
-
 		err = UnificationRecurrentTypeError{
 			Type:               t,
 			Variable:           tv,
@@ -418,9 +410,9 @@ func occurs(tv TypeVariable, s Substitutable) bool {
 	return ftv.Contains(tv)
 }
 
-func closeOver(t Type) (sch *Scheme, err error) {
-	logf("PATRZ SPERMA: %v\n", t)
-	sch = Generalize(nil, t)
+func closeOver(infer InferenceBackend, t Type) (sch *Scheme, err error) {
+	logs.Debug(infer, "Closing type over: %v", t)
+	sch = Generalize(infer, nil, t)
 	err = sch.Normalize()
 
 	return

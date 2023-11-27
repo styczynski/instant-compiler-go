@@ -1,0 +1,18 @@
+/*
+ * Runtime Latte library
+ * @Piotr Styczyński
+ */
+ 
+void assert(boolean a) {
+	if(a) {
+		int x = 2;
+	} else {
+		error("FAILED ASSERTION");
+	}
+	return;
+}
+
+void assertEq(int a, int b) {
+	assert(a == b);
+	return;
+}

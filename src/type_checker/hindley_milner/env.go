@@ -1,6 +1,11 @@
 package hindley_milner
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/logs"
+	"github.com/styczynski/latte-compiler/src/parser/context"
+)
 
 type Env interface {
 	Substitutable
@@ -94,13 +99,20 @@ func SingleDef(tvs TypeVarSet, t Type) []*Scheme {
 	return []*Scheme{NewScheme(tvs, t)}
 }
 
+type EnvLogContext struct{}
+
+func (envlc EnvLogContext) LogContext(c *context.ParsingContext) map[string]interface{} {
+	return map[string]interface{}{}
+}
+
 func PrintEnv(env Env) {
-	logf("====== Environment ======\n")
+	ret := "====== Environment ======\n"
 	for _, v := range env.VarsNames() {
 		scheme, _ := env.SchemeOf(v)
-		logf("%s => %v\n", v, scheme)
+		ret += fmt.Sprintf("%s => %v\n", v, scheme)
 	}
-	logf("=========================\n")
+	ret += "=========================\n"
+	logs.Debug(EnvLogContext{}, ret)
 }
 
 func (e *SimpleEnv) RegisterIntrospectionListener(listener IntrospecionListener) {
@@ -112,7 +124,7 @@ func (e *SimpleEnv) GetIntrospecionListener() IntrospecionListener {
 }
 
 func (e *SimpleEnv) Apply(sub Subs) Substitutable {
-	logf("Applying %v to env", sub)
+	logs.Debug(EnvLogContext{}, "Applying %v to env", sub)
 
 	if sub == nil {
 		return e
@@ -255,7 +267,7 @@ func (e *SimpleEnv) AddPrototype(f Fresher, name string, s *Scheme, blockScopeLe
 }
 
 func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel int, isPrototype bool, isRedefinable bool) (Env, *Scheme, *Scheme, DeclarationInfo, error) {
-	logf("Add %s ==> %v [%d]\n", name, s, blockScopeLevel)
+	logs.Debug(EnvLogContext{}, "Add identififer %s with type %v on scope level %d", name, s, blockScopeLevel)
 	if _, ok := e.builtins[name]; ok && blockScopeLevel == 0 && !isRedefinable {
 
 		return e, nil, nil, nil, &envError{
@@ -272,7 +284,7 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 
 			inf := levelInfo{
 				level:      blockScopeLevel,
-				isProt:     isPrototype && oldLevel.isProt,
+				isProt:     isPrototype || oldLevel.isProt, // hm?
 				hasAnyProt: isPrototype || oldLevel.hasAnyProt,
 				uid:        e.uid,
 				baseTV:     oldLevel.baseTV,
@@ -282,10 +294,10 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 			e.levels[name] = append(e.levels[name], inf)
 
 			//con1 := NewScheme(nil, inf.baseTV)
-			con1 := inf.baseScheme
-			con2 := s
+			con2 := inf.baseScheme
+			con1 := s
 
-			logf("  -> ADD MERGE %v ~ %v\n", con1, con2)
+			logs.Debug(EnvLogContext{}, "Environment merge: %v ~ %v", con1, con2)
 			if !oldLevel.isProt && !isPrototype {
 
 				return e, con1, con2, oldLevel, &envError{
@@ -308,7 +320,7 @@ func (e *SimpleEnv) addVar(f Fresher, name string, s *Scheme, blockScopeLevel in
 	}
 	e.uid++
 	e.levels[name] = append(e.levels[name], inf)
-	logf("  -> ADD OVERRIDE %s => %v\n", name, s)
+	logs.Debug(EnvLogContext{}, "Override identifier %s => %v", name, s)
 	return e, nil, nil, inf, nil
 }
 
@@ -317,7 +329,7 @@ func (e *SimpleEnv) Remove(name string) Env {
 
 		return e
 	}
-	logf("Remove %s\n", name)
+	logs.Debug(EnvLogContext{}, "Remove identifier %s", name)
 	if len(e.levels[name]) > 0 {
 		e.levels[name] = e.levels[name][:len(e.levels[name])-1]
 	}

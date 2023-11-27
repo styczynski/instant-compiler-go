@@ -10,6 +10,14 @@ import (
 
 type VariableSet map[string]Variable
 
+func (vars VariableSet) Names() []string {
+	ret := []string{}
+	for varName, _ := range vars {
+		ret = append(ret, varName)
+	}
+	return ret
+}
+
 func (vars VariableSet) Copy() VariableSet {
 	out := VariableSet{}
 	for k, v := range vars {
@@ -64,7 +72,7 @@ type NodeWithUsedVariables interface {
 }
 
 type NodeWithVariableReplacement interface {
-	RenameVariables(subst VariableSubstitution)
+	RenameVariables(substUsed, substDecl VariableSubstitution)
 }
 
 type NodeWithRemovableVariableAsignment interface {
@@ -79,9 +87,23 @@ type VariableSubstitution interface {
 
 type VariableSubstitutionMap map[string]string
 
+func (s VariableSubstitutionMap) Join(newMapping VariableSubstitutionMap) {
+	for k, v := range newMapping {
+		s[k] = v
+	}
+}
+
 func (s VariableSubstitutionMap) Has(name string) bool {
 	_, ok := s[name]
 	return ok
+}
+
+func (s VariableSubstitutionMap) Copy() VariableSubstitutionMap {
+	ret := VariableSubstitutionMap{}
+	for k, v := range s {
+		ret[k] = v
+	}
+	return ret
 }
 
 func (s VariableSubstitutionMap) Replace(name string) string {
@@ -146,6 +168,7 @@ func GetAllUsagesVariables(node generic_ast.TraversableNode, visitedMap map[gene
 	}
 	visitedMap[node] = struct{}{}
 	if isNilNode(node) {
+		//fmt.Printf("* NIL RET\n")
 		return NewVariableSet()
 	}
 	vars := VariableSet{}
@@ -155,10 +178,13 @@ func GetAllUsagesVariables(node generic_ast.TraversableNode, visitedMap map[gene
 		}
 	}
 	if nodeWithUsedVariables, ok := node.(NodeWithUsedVariables); ok {
-		return nodeWithUsedVariables.GetUsedVariables(vars, visitedMap)
+		r := nodeWithUsedVariables.GetUsedVariables(vars, visitedMap)
+		//fmt.Printf("* RET %v\n", r)
+		return r
 	} else {
 		//vars.Insert(GetAllVariables(node))
 	}
+	//fmt.Printf("* NORMAL RET %v\n", vars)
 	return vars
 }
 
@@ -188,6 +214,25 @@ func GetAllVariables(node generic_ast.TraversableNode, visitedMap map[generic_as
 
 func isNilNode(node generic_ast.TraversableNode) bool {
 	return node == nil || (reflect.ValueOf(node).Kind() == reflect.Ptr && reflect.ValueOf(node).IsNil())
+}
+
+func ReplaceVariables(node generic_ast.TraversableNode, substUsed VariableSubstitution, substDecl VariableSubstitution, visitedMap map[generic_ast.TraversableNode]struct{}) {
+	if _, wasVisited := visitedMap[node]; wasVisited {
+		return
+	}
+	visitedMap[node] = struct{}{}
+	if isNilNode(node) {
+		return
+	}
+	if nodeWithVariableReplacement, ok := node.(NodeWithVariableReplacement); ok {
+		nodeWithVariableReplacement.RenameVariables(substUsed, substDecl)
+		return
+	}
+	for _, child := range node.GetChildren() {
+		if child != nil {
+			ReplaceVariables(child, substUsed, substDecl, visitedMap)
+		}
+	}
 }
 
 func GetAllAssignedVariables(node generic_ast.TraversableNode, wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet {

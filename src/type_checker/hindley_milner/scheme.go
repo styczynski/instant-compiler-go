@@ -1,6 +1,11 @@
 package hindley_milner
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/logs"
+	"github.com/styczynski/latte-compiler/src/parser/context"
+)
 
 type Scheme struct {
 	tvs TypeVarSet
@@ -29,8 +34,14 @@ func (s *Scheme) Wrap(wrapperFn func(t Type) Type) {
 	s.t = wrapperFn(s.t)
 }
 
+func (s *Scheme) LogContext(c *context.ParsingContext) map[string]interface{} {
+	return map[string]interface{}{
+		"s": s,
+	}
+}
+
 func (s *Scheme) Apply(sub Subs) Substitutable {
-	logf("s: %v, sub: %v", s, sub)
+	logs.Debug(s, "Applying substitution: %v", sub)
 	if sub == nil {
 		return s
 	}

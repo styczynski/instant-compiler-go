@@ -9,7 +9,7 @@ import (
 
 type ConstFoldingErrorImpl struct {
 	Message string
-	Source generic_ast.TraversableNode
+	Source  generic_ast.TraversableNode
 }
 
 func (e *ConstFoldingErrorImpl) GetSource() generic_ast.TraversableNode {
@@ -44,11 +44,11 @@ func (flow *FlowAnalysisImpl) optimizeConst(node generic_ast.TraversableNode, c 
 	//} else {
 	//	return node
 	//}
-	if expr, ok := node.(generic_ast.Expression); ok{
+	if expr, ok := node.(generic_ast.Expression); ok {
 		var mapper generic_ast.ExpressionVisitor
 		var invalidChecker generic_ast.ExpressionVisitor
 		visitedNodes := map[generic_ast.Expression]struct{}{}
-		mapper = func (parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
+		mapper = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
 			if _, wasVisited := visitedNodes[e]; wasVisited {
 				return
 			}
@@ -103,30 +103,30 @@ func (flow *FlowAnalysisImpl) optimizeConst(node generic_ast.TraversableNode, c 
 
 func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingError {
 
-	flow.Graph()
+	g := flow.Graph()
 	flow.Reaching()
 
- 	for true {
- 		//fmt.Printf("fold() iterate\n")
- 		change := false
+	for true {
+		//fmt.Printf("fold() iterate\n")
+		change := false
 
 		// Firstly, run const optimization on each node
 		for _, block := range flow.graph.blocksOrder {
-			if block != nil {
-				newNode, err := flow.optimizeConst(block, c, false)
+			if stmt, ok := g.codeMapping[block].(generic_ast.TraversableNode); ok {
+				newNode, err := flow.optimizeConst(stmt, c, false)
 				if err != nil {
 					return &ConstFoldingErrorImpl{
 						Message: err.Error(),
 						Source:  newNode,
 					}
 				}
-				generic_ast.ReplaceExpressionRecursively(block, block, newNode)
+				generic_ast.ReplaceExpressionRecursively(stmt, stmt, newNode)
 			}
 		}
 
 		for _, block := range flow.graph.blocksOrder {
 			//fmt.Printf("Iterate next block: %d/%d", bi, len(flow.graph.blocksOrder))
-			vars := flow.graph.ReferencedVars(block)
+			vars := flow.graph.ReferencedVars(g.codeMapping[block])
 			//fmt.Printf("now A\n")
 			for _, variable := range vars.use {
 
@@ -135,7 +135,7 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 				for _, reachingBlock := range flow.graph.blocksOrder {
 					//fmt.Printf("iter block order\n")
 					if _, hasBlock := flow.reaching.ReachedBlocks(reachingBlock)[block]; hasBlock {
-						for _, defVar := range flow.graph.ReferencedVars(reachingBlock).decl {
+						for _, defVar := range flow.graph.ReferencedVars(g.codeMapping[reachingBlock]).decl {
 							if defVar.Name() == variable.Name() {
 								variableDecl = &defVar
 								break
@@ -161,7 +161,7 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 							if val == nil || (reflect.ValueOf(val).Kind() == reflect.Ptr && reflect.ValueOf(val).IsNil()) {
 								// Do nothing
 							} else if val != varConst {
-								generic_ast.ReplaceExpressionRecursively(block, val, varConst)
+								generic_ast.ReplaceExpressionRecursively(g.codeMapping[block], val, varConst)
 							}
 						}
 					}
@@ -178,8 +178,8 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 	//fmt.Printf("validate\n")
 	// Validate
 	for _, block := range flow.graph.blocksOrder {
-		if block != nil {
-			newNode, err := flow.optimizeConst(block, c, true)
+		if stmt, ok := g.codeMapping[block].(generic_ast.TraversableNode); ok {
+			newNode, err := flow.optimizeConst(stmt, c, true)
 			if err != nil {
 				return &ConstFoldingErrorImpl{
 					Message: err.Error(),

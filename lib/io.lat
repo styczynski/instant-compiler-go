@@ -1,0 +1,36 @@
+/*
+ * Runtime Latte library
+ * @Piotr Styczyński
+ */
+
+void printInt(int a) runtime {
+    syscall void printf("%d\n", a);
+    return;
+}
+
+void printString(int a) runtime {
+    syscall void printf("%s\n", a);
+    return;
+}
+
+void rawLoadString(string s) {
+    syscall void scanf("%s", s);
+}
+
+void rawLoadInt(int n) {
+    syscall void scanf("%d", n);
+}
+
+string readString() runtime {
+    string s = syscall string malloc(100);
+    rawLoadString(s);
+    return s;
+}
+
+int readInt() runtime {
+    int a = syscall int malloc(16);
+    rawLoadInt(a);
+    a = dereference(a);
+    return a;
+}
+

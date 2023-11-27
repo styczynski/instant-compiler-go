@@ -18,36 +18,33 @@ func (flow *FlowAnalysisImpl) Print(c *context.ParsingContext) string {
 	var describer func(src context.SelectionBlock, id int, mappingID func(selectionBlock context.SelectionBlock) int) []string
 	describer = func(src context.SelectionBlock, id int, mappingID func(selectionBlock context.SelectionBlock) int) []string {
 		items := []string{}
-		srcNode := src.(generic_ast.NormalNodeSelection).GetNode()
-		var srcBlock *block = nil
+		srcNode := src.(generic_ast.NormalNodeSelection).GetNode().(interface{})
+		var srcBlock *Block = nil
 		for _, b := range cfg.blocks {
-			if b.stmt == srcNode {
+			if cfg.codeMapping[b.ID] == srcNode {
 				srcBlock = b
 				break
 			}
 		}
 		for _, pred := range srcBlock.preds {
-			if pred != nil {
-				predID := mappingID(generic_ast.NewNormalNodeSelection(pred, -1, describer))
-				items = append(items, fmt.Sprintf("<-%d", predID))
-			}
+			//predID := mappingID(generic_ast.NewNormalNodeSelection(cfg.codeMapping[pred], -1, describer))
+			items = append(items, fmt.Sprintf("<-%d", pred))
 		}
 		for _, succ := range srcBlock.succs {
-			if succ != nil {
-				predID := mappingID(generic_ast.NewNormalNodeSelection(succ, -1, describer))
-				items = append(items, fmt.Sprintf("->%d", predID))
-			}
+			//predID := mappingID(generic_ast.NewNormalNodeSelection(cfg.codeMapping[succ], -1, describer))
+			items = append(items, fmt.Sprintf("->%d", succ))
 		}
-		items = append(items, cfg.ReferencedVars(srcNode).Print())
-		items = append(items, liveness.BlockIn(srcBlock.stmt).String())
-		items = append(items, reaching.ReachedBlocks(srcNode).Print(cfg))
+		items = append(items, cfg.ReferencedVars(srcNode.(CFGCodeNode)).Print())
+		items = append(items, liveness.BlockIn(srcBlock.ID).String())
+		items = append(items, reaching.ReachedBlocks(src.GetID()).Print(cfg))
+		items = append(items, cfg.GetBlockCode(srcBlock.ID).Print(c))
 		return items
 	}
 
 	for _, b := range cfg.blocks {
 		block := b
-		if block.stmt != nil {
-			blocks = append(blocks, generic_ast.NewNormalNodeSelection(block.stmt, block.ID, describer))
+		if cfg.codeMapping[block.ID] != nil {
+			blocks = append(blocks, generic_ast.NewNormalNodeSelection(cfg.codeMapping[block.ID], block.ID, describer))
 			i++
 		}
 	}
@@ -55,5 +52,5 @@ func (flow *FlowAnalysisImpl) Print(c *context.ParsingContext) string {
 	return fmt.Sprintf("%s%s",
 		c.PrintSelectionBlocksList(context.SelectionBlocks(blocks)),
 		c.PrintSelectionBlocks(context.SelectionBlocks(blocks)),
-		)
+	)
 }

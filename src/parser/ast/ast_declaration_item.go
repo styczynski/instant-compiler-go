@@ -86,14 +86,24 @@ func (ast *DeclarationItem) ExpressionType() hindley_milner.ExpressionType {
 //
 
 func (ast *DeclarationItem) GetDeclaredVariables(visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	if ast.HasInitializer() {
+		return cfg.NewVariableSet()
+	}
 	return cfg.NewVariableSet(cfg.NewVariable(ast.Name, ast.Initializer))
+}
+
+func (ast *DeclarationItem) GetAssignedVariables(wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	if ast.HasInitializer() {
+		return cfg.NewVariableSet(cfg.NewVariable(ast.Name, ast.Initializer))
+	}
+	return cfg.NewVariableSet()
 }
 
 func (ast *DeclarationItem) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	if !ast.HasInitializer() {
 		return cfg.NewVariableSet()
 	}
-	return cfg.GetAllUsagesVariables(ast.Initializer, visitedMap)
+	return cfg.GetAllUsagesVariables(ast.Initializer, map[generic_ast.TraversableNode]struct{}{})
 }
 
 func (ast *DeclarationItem) RenameVariables(subst cfg.VariableSubstitution) {

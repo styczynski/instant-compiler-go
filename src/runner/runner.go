@@ -139,10 +139,10 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 				testDescription := runContext.Substitute("Test $INPUT_FILE_BASE.%s", tc.testExtension)
 				c.EventsCollectorStream.Start(testDescription, c, program)
 				lineNo := 0
-                                for _, line := range out {
-                                        if strings.HasPrefix(line, "could") {
-                                                continue
-                                        }
+				for _, line := range out {
+					if strings.HasPrefix(line, "could") {
+						continue
+					}
 					if line != expectedContent[lineNo] {
 						c.EventsCollectorStream.End(testDescription, c, program)
 						r <- LatteRunnedProgram{
@@ -153,7 +153,7 @@ func (tc *LatteCompiledCodeRunner) checkAsync(programPromise compiler.LatteCompi
 						}
 						return
 					}
-                                        lineNo = lineNo+1
+					lineNo = lineNo + 1
 				}
 				c.EventsCollectorStream.End(testDescription, c, program)
 			}

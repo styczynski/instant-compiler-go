@@ -6,18 +6,29 @@ import (
 )
 
 type LatteConstInputReader struct {
-	inputs []LatteInput
+	inputs   []LatteInput
+	includes []string
 }
 
-func CreateLatteConstInputReader(inputs []LatteInput) *LatteConstInputReader {
+func CreateLatteConstInputReader(inputs []LatteInput, includes []string) *LatteConstInputReader {
 	return &LatteConstInputReader{
-		inputs: inputs,
+		inputs:   inputs,
+		includes: includes,
 	}
+}
+
+func (reader *LatteConstInputReader) ResolveInclude(c *context.ParsingContext, includePath string) (LatteInput, error) {
+	return localFSResolveInclude(c, includePath)
 }
 
 func (reader *LatteConstInputReader) Read(c *context.ParsingContext) ([]LatteInput, error) {
 	c.EventsCollectorStream.Start("Read input", c, events_utils.GeneralEventSource{})
 	defer c.EventsCollectorStream.End("Read input", c, events_utils.GeneralEventSource{})
 
-	return reader.inputs, nil
+	inputs, err := mergeAllIncludes(c, reader.inputs, reader.includes, reader.ResolveInclude)
+	if err != nil {
+		return nil, err
+	}
+
+	return inputs, nil
 }

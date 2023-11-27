@@ -2157,7 +2157,7 @@ func (pc *persistConn) roundTrip(req *transportRequest) (resp *Response, err err
 		select {
 		case err := <-writeErrCh:
 			if debugRoundTrip {
-				req.logf("writeErrCh resv: %T/%#v", err, err)
+				req.logs.Debug("writeErrCh resv: %T/%#v", err, err)
 			}
 			if err != nil {
 				pc.close(fmt.Errorf("write error: %v", err))
@@ -2165,7 +2165,7 @@ func (pc *persistConn) roundTrip(req *transportRequest) (resp *Response, err err
 			}
 			if d := pc.t.ResponseHeaderTimeout; d > 0 {
 				if debugRoundTrip {
-					req.logf("starting timer for %v", d)
+					req.logs.Debug("starting timer for %v", d)
 				}
 				timer := time.NewTimer(d)
 				defer timer.Stop() // prevent leaks
@@ -2173,12 +2173,12 @@ func (pc *persistConn) roundTrip(req *transportRequest) (resp *Response, err err
 			}
 		case <-pc.closech:
 			if debugRoundTrip {
-				req.logf("closech recv: %T %#v", pc.closed, pc.closed)
+				req.logs.Debug("closech recv: %T %#v", pc.closed, pc.closed)
 			}
 			return nil, pc.mapRoundTripError(req, startBytesWritten, pc.closed)
 		case <-respHeaderTimer:
 			if debugRoundTrip {
-				req.logf("timeout waiting for response headers.")
+				req.logs.Debug("timeout waiting for response headers.")
 			}
 			pc.close(errTimeout)
 			return nil, errTimeout
@@ -2187,7 +2187,7 @@ func (pc *persistConn) roundTrip(req *transportRequest) (resp *Response, err err
 				panic(fmt.Sprintf("internal error: exactly one of res or err should be set; nil=%v", re.res == nil))
 			}
 			if debugRoundTrip {
-				req.logf("resc recv: %p, %T/%#v", re.res, re.err, re.err)
+				req.logs.Debug("resc recv: %p, %T/%#v", re.res, re.err, re.err)
 			}
 			if re.err != nil {
 				return nil, pc.mapRoundTripError(req, startBytesWritten, re.err)
@@ -2208,9 +2208,9 @@ func (pc *persistConn) roundTrip(req *transportRequest) (resp *Response, err err
 // a t.Logf func. See export_test.go's Request.WithT method.
 type tLogKey struct{}
 
-func (tr *transportRequest) logf(format string, args ...interface{}) {
+func (tr *transportRequest) logs.Debug(format string, args ...interface{}) {
 	if logf, ok := tr.Request.Context().Value(tLogKey{}).(func(string, ...interface{})); ok {
-		logf(time.Now().Format(time.RFC3339Nano)+": "+format, args...)
+		logs.Debug(time.Now().Format(time.RFC3339Nano)+": "+format, args...)
 	}
 }
 

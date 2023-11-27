@@ -10,10 +10,11 @@ import (
 
 type New struct {
 	generic_ast.BaseASTNode
-	Class            *string   `"new" @Ident`
-	ClassInitializer string    `( @("(" ")")`
-	Dimensions       *Accessor `| @@ )`
-	ParentNode       generic_ast.TraversableNode
+	Class          *string       `"new" @Ident (`
+	ClassArguments []*Expression `( "(" (@@ ("," @@)*)? ")" )`
+	//ClassInitializer string    `( @("(" ")")`
+	Dimensions *Accessor `| @@ )?`
+	ParentNode generic_ast.TraversableNode
 }
 
 func (ast *New) Parent() generic_ast.TraversableNode {

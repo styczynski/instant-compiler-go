@@ -10,10 +10,15 @@ import (
 
 type LogicalOperation struct {
 	generic_ast.BaseASTNode
-	Equality   *Equality         `@@`
-	Op         string            `[ @( "|" "|" | "&" "&" )`
-	Next       *LogicalOperation `  @@ ]`
-	ParentNode generic_ast.TraversableNode
+	Equality     *Equality         `@@`
+	Op           string            `[ @( "|" "|" | "&" "&" )`
+	Next         *LogicalOperation `  @@ ]`
+	ParentNode   generic_ast.TraversableNode
+	ResolvedType hindley_milner.Type
+}
+
+func (ast *LogicalOperation) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *LogicalOperation) ExtractConst() (generic_ast.TraversableNode, bool) {

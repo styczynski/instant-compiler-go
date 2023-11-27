@@ -69,7 +69,7 @@ func (pipeline *HeadlessCompilerPipeline) deamonHandler() {
 	c := config.EntityConstConfig{
 		Strings: map[string]string{
 			"status-updater": "updater-silent",
-			"backend":        "jvm",
+			"backend":        "x86",
 			"runner":         "runner",
 			"summary":        "summary-cli",
 		},
@@ -92,7 +92,7 @@ func (pipeline *HeadlessCompilerPipeline) deamonHandler() {
 		pipeline.responseCache = map[string]*CompilationResponse{}
 
 		p := config.CreateEntity(config.ENTITY_COMPILER_PIPELINE, "compiler-pipeline", c).(CompilerPipeline)
-		message, progs, ok := p.RunPipeline(c, input_reader.CreateLatteConstInputReader([]input_reader.LatteInput{request}))
+		message, progs, ok := p.RunPipeline(c, input_reader.CreateLatteConstInputReader([]input_reader.LatteInput{request}, input_reader.DEFAULT_RUNTIME_INCLUDES))
 
 		response := &CompilationResponse{
 			Summary: message,

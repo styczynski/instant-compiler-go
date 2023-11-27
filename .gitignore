@@ -4,10 +4,12 @@ tests/**/*.class
 tests/**/*.j
 tests/**/*.jasmine
 tests/**/*.ll
-./*.j
-./*.class
-./*.lat
-./*.txt
+custom.j
+custom.class
+custom
+custom.s
+custom.valid_output
+logs.txt
 ./*.png
 
 *.profile

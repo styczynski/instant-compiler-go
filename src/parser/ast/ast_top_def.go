@@ -27,17 +27,13 @@ func (ast *TopDef) OverrideParent(node generic_ast.TraversableNode) {
 	ast.ParentNode = node
 }
 
-func (ast *TopDef) GetDefinedIdentifier(c hindley_milner.InferContext, pre bool) ([]string, []*hindley_milner.Scheme) {
+func (ast *TopDef) GetDefinedIdentifiers(c hindley_milner.InferContext, pre bool) *hindley_milner.NameGroup {
 	if ast.IsFunction() {
-		return []string{
-				ast.Function.Name,
-			}, []*hindley_milner.Scheme{
-				ast.Function.GetDeclarationType(),
-			}
+		return hindley_milner.NameWithType(ast.Function.Name, ast.Function.GetDeclarationType())
 	} else if ast.IsClass() {
 		return ast.Class.GetDeclarationIdentifiers()
 	}
-	return []string{}, []*hindley_milner.Scheme{}
+	return hindley_milner.EmptyNameGroup()
 }
 
 func (ast *TopDef) Begin() lexer.Position {
@@ -181,14 +177,14 @@ graph := flow.Graph()
 */
 
 func (ast *TopDef) AfterFlowAnalysis(flow cfg.FlowAnalysis) {
-	if ast.IsFunction() {
-		output := []*Statement{}
-		graph := flow.Graph()
-		for _, stmt := range ast.Function.FunctionBody.Statements {
-			if graph.Exists(stmt.GetChildren()[0].(generic_ast.NormalNode)) {
-				output = append(output, stmt)
-			}
-		}
-		ast.Function.FunctionBody.Statements = output
-	}
+	// if ast.IsFunction() {
+	// 	output := []*Statement{}
+	// 	graph := flow.Graph()
+	// 	for _, stmt := range ast.Function.FunctionBody.Statements {
+	// 		if graph.Exists(stmt.GetChildren()[0].(generic_ast.NormalNode)) {
+	// 			output = append(output, stmt)
+	// 		}
+	// 	}
+	// 	ast.Function.FunctionBody.Statements = output
+	// }
 }

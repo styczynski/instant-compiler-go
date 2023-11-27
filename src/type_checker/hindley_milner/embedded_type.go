@@ -12,10 +12,16 @@ type EmbeddedTypeExpr struct {
 }
 
 func (n EmbeddedTypeExpr) Begin() lexer.Position {
+	if n.Source == nil {
+		return generic_ast.UnknownLocation()
+	}
 	return n.Source.Begin()
 }
 
 func (n EmbeddedTypeExpr) End() lexer.Position {
+	if n.Source == nil {
+		return generic_ast.UnknownLocation()
+	}
 	return n.Source.End()
 }
 

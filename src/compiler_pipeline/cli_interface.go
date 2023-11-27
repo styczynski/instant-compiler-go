@@ -17,7 +17,17 @@ func (RunCompilerPipelineCliInterface) Run() {
 	flags := config.GetEntityParams()
 
 	app := &cli.App{
-		Flags: flags,
+		Name:        "latc",
+		Description: "Latte compiler written in Go",
+		Version:     "1.0.0",
+		Authors: []*cli.Author{
+			{
+				Name:  "Piotr Styczyński",
+				Email: "piotr@styczynski.in",
+			},
+		},
+		Copyright: "MIT License",
+		Flags:     flags,
 		Commands: []*cli.Command{
 			{
 				Name:    "shell",
@@ -32,16 +42,16 @@ func (RunCompilerPipelineCliInterface) Run() {
 		},
 		Action: func(c *cli.Context) error {
 			p := config.CreateEntity(config.ENTITY_COMPILER_PIPELINE, "compiler-pipeline", c).(CompilerPipeline)
-			message, _, ok := p.RunPipeline(c, input_reader.CreateLatteInputReader(c.Args().Slice()))
+			message, _, ok := p.RunPipeline(c, input_reader.CreateLatteInputReader(c.Args().Slice(), input_reader.DEFAULT_RUNTIME_INCLUDES))
 			if !ok {
 				os.Stderr.WriteString("ERROR\n")
 				fmt.Print(message)
-                                fmt.Print("\n")
+				fmt.Print("\n")
 				os.Exit(1)
 			} else {
 				os.Stderr.WriteString("OK\n")
 				fmt.Print(message)
-                                fmt.Print("\n")
+				fmt.Print("\n")
 			}
 			return nil
 		},

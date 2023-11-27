@@ -14,11 +14,22 @@ import (
 
 type FnDef struct {
 	generic_ast.BaseASTNode
-	ReturnType   Type   `@@`
-	Name         string `@Ident`
-	Arg          []*Arg `"(" (@@ ( "," @@ )*)? ")"`
-	FunctionBody *Block `@@`
-	ParentNode   generic_ast.TraversableNode
+	ReturnType     Type   `@@`
+	Name           string `@Ident`
+	Arg            []*Arg `"(" (@@ ( "," @@ )*)? ")"`
+	RuntimeKeyword string `((@"runtime")?)`
+	FunctionBody   *Block `@@`
+	ParentNode     generic_ast.TraversableNode
+	ResolvedType   hindley_milner.Type
+}
+
+func (ast *FnDef) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
+}
+
+func (ast *FnDef) IsRuntime() bool {
+	fmt.Printf("CHECK [%s] IS RUNTIME??\n", ast.RuntimeKeyword)
+	return ast.RuntimeKeyword == "runtime"
 }
 
 func (ast *FnDef) Parent() generic_ast.TraversableNode {
@@ -74,7 +85,6 @@ func (ast *FnDef) canBeInputType(t hindley_milner.Type) bool {
 }
 
 func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
-	//fmt.Printf("Validate! HUJUPIZDO %s\n", ast.Name)
 	if _, ok := ast.Parent().(*TopDef); ok {
 		if ast.Name == "main" {
 			returnedType, _ := ast.ReturnType.GetType(nil).Type()
@@ -170,7 +180,7 @@ func (ast *FnDef) GetDeclarationType() *hindley_milner.Scheme {
 	// return s
 }
 
-func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
+func (ast *FnDef) Args(c hindley_milner.InferContext) *hindley_milner.NameGroup {
 	if len(ast.Arg) == 0 {
 		return hindley_milner.NamesWithTypes([]string{""}, map[string]*hindley_milner.Scheme{
 			"": hindley_milner.Concreate(CreatePrimitive(T_VOID_ARG)),
@@ -185,7 +195,10 @@ func (ast *FnDef) Args(c hindley_milner.InferContext) hindley_milner.NameGroup {
 	return hindley_milner.NamesWithTypes(names, argsTypes)
 }
 
-func (ast *FnDef) Var(c hindley_milner.InferContext) hindley_milner.NameGroup {
+func (ast *FnDef) Var(c hindley_milner.InferContext) *hindley_milner.NameGroup {
+	if ast.IsRuntime() {
+		return hindley_milner.EmptyNameGroup()
+	}
 	return hindley_milner.NameWithType(ast.Name, ast.GetDeclarationType())
 }
 
@@ -194,6 +207,9 @@ func (ast *FnDef) Body() generic_ast.Expression {
 }
 
 func (ast *FnDef) ExpressionType() hindley_milner.ExpressionType {
+	if ast.IsRuntime() {
+		return hindley_milner.E_FUNCTION
+	}
 	return hindley_milner.E_FUNCTION_DECLARATION
 }
 

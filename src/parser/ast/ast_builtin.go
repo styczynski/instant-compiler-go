@@ -33,7 +33,7 @@ func (ast *BuiltinFunction) GetNode() interface{} {
 	return ast
 }
 
-func (ast *BuiltinFunction) Name() hindley_milner.NameGroup { return hindley_milner.Name(ast.name) }
+func (ast *BuiltinFunction) Name() *hindley_milner.NameGroup { return hindley_milner.Name(ast.name) }
 
 func (ast *BuiltinFunction) Body() generic_ast.Expression { return ast }
 

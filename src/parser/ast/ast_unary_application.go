@@ -13,10 +13,15 @@ import (
 
 type UnaryApplication struct {
 	generic_ast.BaseASTNode
-	Target     *string       `( @Ident`
-	Arguments  []*Expression `"(" (@@ ("," @@)*)? ")" )`
-	Index      *Index        `| @@`
-	ParentNode generic_ast.TraversableNode
+	Index        *Index        `@@`
+	AppToken     string        `( @"("`
+	Arguments    []*Expression `(@@ ("," @@)*)? ")" )?`
+	ParentNode   generic_ast.TraversableNode
+	ResolvedType hindley_milner.Type
+}
+
+func (ast *UnaryApplication) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *UnaryApplication) ExtractConst() (generic_ast.TraversableNode, bool) {
@@ -49,7 +54,7 @@ func (ast *UnaryApplication) GetNode() interface{} {
 func (ast *UnaryApplication) GetChildren() []generic_ast.TraversableNode {
 	if ast.IsApplication() {
 		nodes := make([]generic_ast.TraversableNode, len(ast.Arguments)+1)
-		nodes = append(nodes, generic_ast.MakeTraversableNodeToken(ast, *ast.Target, ast.Pos, ast.EndPos))
+		nodes = append(nodes, ast.Index)
 		for _, child := range ast.Arguments {
 			nodes = append(nodes, child)
 		}
@@ -63,11 +68,11 @@ func (ast *UnaryApplication) GetChildren() []generic_ast.TraversableNode {
 }
 
 func (ast *UnaryApplication) IsApplication() bool {
-	return ast.Target != nil
+	return len(ast.AppToken) > 0
 }
 
 func (ast *UnaryApplication) IsIndex() bool {
-	return ast.Index != nil
+	return len(ast.AppToken) == 0
 }
 
 func (ast *UnaryApplication) Print(c *context.ParsingContext) string {
@@ -76,7 +81,7 @@ func (ast *UnaryApplication) Print(c *context.ParsingContext) string {
 		for _, argument := range ast.Arguments {
 			args = append(args, argument.Print(c))
 		}
-		return printNode(c, ast, "%s(%s)", *ast.Target, strings.Join(args, ", "))
+		return printNode(c, ast, "%s(%s)", ast.Index.Print(c), strings.Join(args, ", "))
 	} else if ast.IsIndex() {
 		return ast.Index.Print(c)
 	}
@@ -93,7 +98,7 @@ func (ast *UnaryApplication) Map(parent generic_ast.Expression, mapper generic_a
 		}
 		return mapper(parent, &UnaryApplication{
 			BaseASTNode: ast.BaseASTNode,
-			Target:      ast.Target,
+			Index:       mapper(ast, ast.Index, context, false).(*Index),
 			Arguments:   args,
 			ParentNode:  parent.(generic_ast.TraversableNode),
 		}, context, true)
@@ -108,8 +113,9 @@ func (ast *UnaryApplication) Map(parent generic_ast.Expression, mapper generic_a
 }
 
 func (ast *UnaryApplication) Visit(parent generic_ast.Expression, mapper generic_ast.ExpressionVisitor, context generic_ast.VisitorContext) {
+	mapper(ast, ast.Index, context)
 	if ast.IsIndex() {
-		mapper(ast, ast.Index, context)
+		// Do nothing
 	} else if ast.IsApplication() {
 		for _, arg := range ast.Arguments {
 			mapper(ast, arg, context)
@@ -119,10 +125,7 @@ func (ast *UnaryApplication) Visit(parent generic_ast.Expression, mapper generic
 }
 
 func (ast *UnaryApplication) Fn(c hindley_milner.InferContext) generic_ast.Expression {
-	return &VarName{
-		BaseASTNode: ast.BaseASTNode,
-		name:        *ast.Target,
-	}
+	return ast.Index
 }
 
 func (ast *UnaryApplication) Body() generic_ast.Expression {
@@ -160,20 +163,20 @@ func (ast *UnaryApplication) ExpressionType() hindley_milner.ExpressionType {
 ///
 
 func (ast *UnaryApplication) RenameVariables(subst cfg.VariableSubstitution) {
-	if ast.IsApplication() {
-		v := subst.Replace(*ast.Target)
-		ast.Target = &v
-	}
+	// if ast.IsApplication() {
+	// 	v := subst.Replace(*ast.Target)
+	// 	ast.Target = &v
+	// }
 }
 
 func (ast *UnaryApplication) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	if ast.IsApplication() {
-		vars.Add(cfg.NewVariable(*ast.Target, nil))
+		vars.Insert(cfg.GetAllUsagesVariables(ast.Index, map[generic_ast.TraversableNode]struct{}{}))
 		for _, arg := range ast.Arguments {
-			vars.Insert(cfg.GetAllUsagesVariables(arg, visitedMap))
+			vars.Insert(cfg.GetAllUsagesVariables(arg, map[generic_ast.TraversableNode]struct{}{}))
 		}
 	} else if ast.IsIndex() {
-		vars.Insert(cfg.GetAllUsagesVariables(ast.Index, visitedMap))
+		vars.Insert(cfg.GetAllUsagesVariables(ast.Index, map[generic_ast.TraversableNode]struct{}{}))
 	}
 	return vars
 }

@@ -1,0 +1,44 @@
+string AddStrings(string a, string b) {
+    int a_len = syscall int strlen(a);
+    int b_len = syscall int strlen(b);
+    string result = syscall string malloc(a_len+b_len+1);
+    syscall void strcpy(result, a);
+    syscall void strcat(result, b);
+    return result;
+}
+
+void error(string message) runtime {
+    syscall void printf("Error: %s\n", message);
+    syscall void exit(1);
+    return;
+}
+
+void printString(string a) runtime {
+    syscall void printf("%s\n", a);
+    return;
+}
+
+void printInt(int a) runtime {
+    syscall void printf("%d\n", a);
+    return;
+}
+
+int rfac(int n) {
+	if (n == 0)
+	  return 1;
+	else
+	  return n * rfac(n-1);
+}
+
+
+int main() {
+    int c = 0;
+    while(c+c+c<10) {
+        c = c+1;
+    }
+    printInt(c);
+    if (c==4) {
+        error("NOPE");
+    }
+    return 0;
+}

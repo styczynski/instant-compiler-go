@@ -1,12 +1,21 @@
 package hindley_milner
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/styczynski/latte-compiler/src/logs"
+	"github.com/styczynski/latte-compiler/src/parser/context"
+)
 
 type UnionableType interface {
-	Union(t2 interface{}, context Constraint, listener IntrospecionListener) (Subs, error)
+	Union(t2 interface{}, context Constraint, infer InferenceBackend, listener IntrospecionListener) (Subs, error)
 }
 
 type Constraints []Constraint
+
+func (cs Constraints) LogContext(c *context.ParsingContext) map[string]interface{} {
+	return map[string]interface{}{}
+}
 
 func (cs Constraints) Apply(sub Subs) Substitutable {
 
@@ -18,12 +27,12 @@ func (cs Constraints) Apply(sub Subs) Substitutable {
 		return cs
 	}
 
-	logf("Constraints: %d", len(cs))
-	logf("Applying %v to %v", sub, cs)
+	logs.Debug(cs, "Number of constraints: %d", len(cs))
+	logs.Debug(cs, "Applying %v to %v", sub, cs)
 	for i, c := range cs {
 		cs[i] = c.Apply(sub).(Constraint)
 	}
-	logf("Constraints %v", cs)
+	logs.Debug(cs, "Output constraints %v", cs)
 	return cs
 }
 

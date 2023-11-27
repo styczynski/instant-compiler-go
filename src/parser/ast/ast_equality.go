@@ -10,10 +10,15 @@ import (
 
 type Equality struct {
 	generic_ast.BaseASTNode
-	Comparison *Comparison `@@`
-	Op         string      `[ @( "!" "=" | "=" "=" )`
-	Next       *Equality   `  @@ ]`
-	ParentNode generic_ast.TraversableNode
+	Comparison   *Comparison `@@`
+	Op           string      `[ @( "!" "=" | "=" "=" )`
+	Next         *Equality   `  @@ ]`
+	ParentNode   generic_ast.TraversableNode
+	ResolvedType hindley_milner.Type
+}
+
+func (ast *Equality) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *Equality) ExtractConst() (generic_ast.TraversableNode, bool) {

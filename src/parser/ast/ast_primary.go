@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
 
@@ -25,6 +26,11 @@ type Primary struct {
 	SubExpression *Expression `| ( "(" @@ ")" )`
 	ParentNode    generic_ast.TraversableNode
 	Invalid       *PrimaryInvalid
+	ResolvedType  hindley_milner.Type
+}
+
+func (ast *Primary) OnTypeReturned(t hindley_milner.Type) {
+	ast.ResolvedType = t
 }
 
 func (ast *Primary) ExtractConst() (generic_ast.TraversableNode, bool) {
@@ -72,7 +78,7 @@ func (a *Primary) Add(b *Primary, Op string) *Primary {
 	} else if a.IsString() && b.IsString() {
 		v := ""
 		if Op == "+" {
-			v = *a.String + *b.String
+			v = strings.TrimSuffix(*a.String, "\"") + strings.TrimPrefix(*b.String, "\"")
 		} else {
 			panic("Invalid add operation")
 		}
@@ -296,7 +302,7 @@ func (ast *Primary) Print(c *context.ParsingContext) string {
 
 ////
 
-func (ast *Primary) Name() hindley_milner.NameGroup {
+func (ast *Primary) Name() *hindley_milner.NameGroup {
 	if ast.IsVariable() {
 		return hindley_milner.Name(*ast.Variable)
 	}
@@ -358,10 +364,13 @@ func (ast *Primary) ExpressionType() hindley_milner.ExpressionType {
 
 func (ast *Primary) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	if ast.IsVariable() {
+		//fmt.Printf("GET USED VARIABLES PRIMARY: VAR[%s]\n", *ast.Variable)
 		return cfg.NewVariableSet(cfg.NewVariable(*ast.Variable, ast))
 	} else if ast.IsSubexpression() {
+		//fmt.Printf("GET USED VARIABLES PRIMARY: SUB\n")
 		return vars
 	}
+	//fmt.Printf("GET USED VARIABLES PRIMARY: NONE\n")
 	return cfg.NewVariableSet()
 }
 

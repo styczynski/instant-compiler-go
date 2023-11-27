@@ -141,7 +141,7 @@ func (ast *If) Validate(c *context.ParsingContext) generic_ast.NodeError {
 	}
 	return nil
 }
-
+ 
 //
 
 func (ast *If) BuildFlowGraph(builder cfg.CFGBuilder) {
@@ -181,6 +181,14 @@ func (ast *If) BuildFlowGraph(builder cfg.CFGBuilder) {
 	builder.UpdatePrev(ctrlExits)
 }
 
+func (ast *If) GetDeclaredVariables(visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	return cfg.GetAllDeclaredVariables(ast.Condition, map[generic_ast.TraversableNode]struct{}{})
+}
+
+func (ast *If) GetAssignedVariables(wantMembers bool, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
+	return cfg.GetAllAssignedVariables(ast.Condition, wantMembers, map[generic_ast.TraversableNode]struct{}{})
+}
+
 func (ast *If) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
-	return cfg.GetAllUsagesVariables(ast.Condition, visitedMap)
+	return cfg.GetAllUsagesVariables(ast.Condition, map[generic_ast.TraversableNode]struct{}{})
 }

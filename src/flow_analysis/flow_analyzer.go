@@ -1,9 +1,13 @@
 package flow_analysis
 
 import (
+	"fmt"
+
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
+	"github.com/styczynski/latte-compiler/src/ir"
+	"github.com/styczynski/latte-compiler/src/parser/ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 	"github.com/styczynski/latte-compiler/src/type_checker"
 )
@@ -34,6 +38,7 @@ func (e *FlowAnalysisError) CliMessage() string {
 }
 
 type LatteAnalyzedProgram struct {
+	IR                *ir.IRProgram
 	Program           type_checker.LatteTypecheckedProgram
 	FlowAnalysisError *FlowAnalysisError
 	filename          string
@@ -153,13 +158,112 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 		if program.Program.Context() != nil {
 			ctx = program.Program.Context()
 		}
-		ast := program.Program.AST()
+		astTree := program.Program.AST()
+		visitedNodes := map[generic_ast.Expression]interface{}{}
+		var mappingVisitor func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext)
+		mappingVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
+			if _, ok := visitedNodes[e]; ok {
+				return
+			}
+			visitedNodes[e] = true
+			if stmt, ok := e.(*ast.Statement); ok {
+				if stmt.IsDeclaration() {
+					for _, item := range stmt.Declaration.Items {
+						val := int64(0)
+						if !item.HasInitializer() {
+							item.Initializer = &ast.Expression{
+								LogicalOperation: &ast.LogicalOperation{
+									Equality: &ast.Equality{
+										Comparison: &ast.Comparison{
+											Addition: &ast.Addition{
+												Multiplication: &ast.Multiplication{
+													Unary: &ast.Unary{
+														UnaryApplication: &ast.UnaryApplication{
+															Index: &ast.Index{
+																Primary: &ast.Primary{
+																	Int: &val,
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							}
+						}
+					}
+				} else if stmt.IsUnaryStatement() {
+					unaryStmt := stmt.UnaryStatement
+					oldStmt := stmt
+					val := int64(1)
+					opStr := "+"
+					if unaryStmt.Operation == "++" {
+						opStr = "+"
+					} else if unaryStmt.Operation == "--" {
+						opStr = "-"
+					} else {
+						panic("Unsupported unary statement operation")
+					}
+
+					stmt.Assignment = &ast.Assignment{
+						BaseASTNode: oldStmt.BaseASTNode,
+						TargetName:  *unaryStmt.TargetName,
+						Value: &ast.Expression{
+							LogicalOperation: &ast.LogicalOperation{
+								Equality: &ast.Equality{
+									Comparison: &ast.Comparison{
+										Addition: &ast.Addition{
+											Op: opStr,
+											Next: &ast.Addition{
+												Multiplication: &ast.Multiplication{
+													Unary: &ast.Unary{
+														UnaryApplication: &ast.UnaryApplication{
+															Index: &ast.Index{
+																Primary: &ast.Primary{
+																	BaseASTNode: unaryStmt.BaseASTNode,
+																	Int:         &val,
+																},
+															},
+														},
+													},
+												},
+											},
+											Multiplication: &ast.Multiplication{
+												Unary: &ast.Unary{
+													UnaryApplication: &ast.UnaryApplication{
+														Index: &ast.Index{
+															Primary: &ast.Primary{
+																BaseASTNode: unaryStmt.BaseASTNode,
+																Variable:    unaryStmt.TargetName,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						ParentNode: oldStmt.ParentNode,
+					}
+					stmt.UnaryStatement = nil
+				}
+			}
+			e.Visit(parent, mappingVisitor, context)
+		}
+		astTree.Visit(astTree, mappingVisitor, generic_ast.NewEmptyVisitorContext())
 
 		var flowVisitor generic_ast.ExpressionVisitor
-		visitedNodes := map[generic_ast.Expression]interface{}{}
+		visitedNodes = map[generic_ast.Expression]interface{}{}
 
 		var flowErrGlobal *FlowAnalysisError = nil
 
+		irProgram := &ir.IRProgram{
+			Statements: []*ir.IRFunction{},
+		}
 		flowVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
 			if _, ok := visitedNodes[e]; ok {
 				return
@@ -168,6 +272,8 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 			if nodeForAnalysis, ok := (e.(FlowAnalyzableNode)); ok {
 				ast := nodeForAnalysis.(generic_ast.NormalNode)
 				flow := cfg.CreateFlowAnalysis(ast)
+
+				//fmt.Printf("START FLOW ANALYSIS\n")
 
 				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
 				//fmt.Print(flow.Print(ctx))
@@ -180,16 +286,19 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 					return
 				}
 				flow.Rebuild()
-				ast = flow.Output()
+				//ast = flow.Output()
 
 				//flow.Optimize(c)
 				//nodeForAnalysis.AfterFlowAnalysis(flow)
 
-				//fmt.Printf("Fold done:\n")
-				//fmt.Printf("\n\nENTIRE CODE:\n\n%s", ast.Print(c))
-				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				//fmt.Print(flow.Print(ctx))
-				//fmt.Printf("Yeah.\n")
+				//flow.Rebuild()
+				//flow.Optimize(c)
+				//nodeForAnalysis.AfterFlowAnalysis(flow)
+
+				fmt.Printf("ENTIRE CODE IS HERE:\n\n\n%s\n\n\n", flow.Output().Print(c))
+
+				irCode := ir.CreateIR(e, flow, c)
+				irProgram.Statements = append(irProgram.Statements, irCode)
 
 				customErr := nodeForAnalysis.OnFlowAnalysis(flow)
 				if customErr != nil {
@@ -204,8 +313,9 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 			e.Visit(parent, flowVisitor, context)
 			return
 		}
-		ast.Visit(ast, flowVisitor, generic_ast.NewEmptyVisitorContext())
+		astTree.Visit(astTree, flowVisitor, generic_ast.NewEmptyVisitorContext())
 
+		//os.Exit(42)
 		if flowErrGlobal != nil {
 			r <- LatteAnalyzedProgram{
 				Program:           program,
@@ -217,6 +327,7 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 
 		r <- LatteAnalyzedProgram{
 			Program:  program,
+			IR:       irProgram,
 			filename: program.Filename(),
 		}
 	}()

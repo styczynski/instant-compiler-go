@@ -33,6 +33,32 @@ func (tc *LatteTypeChecker) GetEnv() *hindley_milner.SimpleEnv {
 				ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING),
 			),
 		})),
+		"syscall_ssss": hindley_milner.SingleDef(
+			hindley_milner.TypeVarSet{},
+			hindley_milner.NewFnType(
+				ast.CreatePrimitive(ast.T_STRING),
+				ast.CreatePrimitive(ast.T_STRING),
+				ast.CreatePrimitive(ast.T_STRING),
+				ast.CreatePrimitive(ast.T_STRING),
+				ast.CreatePrimitive(ast.T_VOID),
+			)),
+		"dereference": hindley_milner.SingleDef(nil, hindley_milner.NewUnionType([]hindley_milner.Type{
+			hindley_milner.NewFnType(
+				ast.CreatePrimitive(ast.T_INT), ast.CreatePrimitive(ast.T_INT),
+			),
+			hindley_milner.NewFnType(
+				ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_STRING),
+			),
+			hindley_milner.NewFnType(
+				ast.CreatePrimitive(ast.T_BOOL), ast.CreatePrimitive(ast.T_BOOL),
+			),
+		})),
+		"error": hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
+			ast.CreatePrimitive(ast.T_STRING), ast.CreatePrimitive(ast.T_VOID),
+		)),
+		"null": hindley_milner.SingleDef(nil,
+			hindley_milner.NewSignedStructType("", nil),
+		),
 		"true":  hindley_milner.SingleDef(nil, ast.CreatePrimitive(ast.T_BOOL)),
 		"false": hindley_milner.SingleDef(nil, ast.CreatePrimitive(ast.T_BOOL)),
 		"||": hindley_milner.SingleDef(nil, hindley_milner.NewFnType(
@@ -310,11 +336,50 @@ func wrapTypeCheckingError(err error, c *context.ParsingContext) *TypeCheckingEr
 			textMessage: textMessage,
 			errorName:   errorName,
 		}
+	} else if genericASTError, ok := err.(hindley_milner.ASTError); ok {
+		src := genericASTError.Source().(interface{}).(generic_ast.NodeWithPosition)
+		causeInfo := ""
+
+		errorName := genericASTError.Name
+		message, textMessage := c.FormatParsingError(
+			errorName,
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			fmt.Sprintf("%s%s", genericASTError.Error(), causeInfo),
+		)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+			errorName:   errorName,
+		}
+	} else if invalidReturnType, ok := err.(hindley_milner.InvalidReturnTypeError); ok {
+		src := invalidReturnType.Source().(interface{}).(generic_ast.NodeWithPosition)
+		causeInfo := ""
+
+		errorName := "Invalid return"
+		message, textMessage := c.FormatParsingError(
+			errorName,
+			undef.Error(),
+			src.Begin().Line,
+			src.Begin().Column,
+			src.Begin().Filename,
+			"",
+			fmt.Sprintf("%s%s", invalidReturnType.Error(), causeInfo),
+		)
+		return &TypeCheckingError{
+			message:     message,
+			textMessage: textMessage,
+			errorName:   errorName,
+		}
 	}
-	panic(fmt.Sprintf("Unknown error: [%v]\n", err))
+	// panic(fmt.Sprintf("Unknown error: [%v]\n", err))
+	// TODO: Format error
 	return &TypeCheckingError{
-		message:     "Unknown error\n",
-		textMessage: "Unknown error\n",
+		message:     err.Error(),
+		textMessage: err.Error(),
 		errorName:   "Unknown error",
 	}
 }
