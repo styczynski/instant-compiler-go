@@ -1,6 +1,6 @@
 module github.com/styczynski/latte-compiler
 
-go 1.23
+go 1.21
 
 replace github.com/willf/bitset v1.2.1 => github.com/bits-and-blooms/bitset v1.2.1
 
