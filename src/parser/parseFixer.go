@@ -55,8 +55,8 @@ func tryInsertingBracket(done chan struct{}, parser *participle.Parser, bracket 
 	}
 
 	parserError := err.(participle.Error)
-	//fmt.Printf(string(newContent))
-	//fmt.Printf("GOT IMPROVEMENT L: %d->%d C: %d->%d\n", lineNo, parserError.Position().Line, pos, parserError.Position().Column)
+	
+	
 	if parserError.Position().Line > lineNo || (parserError.Position().Line == lineNo && parserError.Position().Column > pos+3) {
 		t1, _, l1, c1 := tryInsertingBracket(done, parser, bracket, newContent, parserError.Position().Line, parserError.Position().Column, true)
 		t2, _, l2, c2 := tryInsertingBracket(done, parser, bracket, newContent, parserError.Position().Line, parserError.Position().Column, false)

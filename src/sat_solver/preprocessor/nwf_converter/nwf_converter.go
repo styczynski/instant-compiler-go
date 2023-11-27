@@ -212,7 +212,7 @@ func optimizeTree(formula *sat_solver.NWFFormula, changeDetected *bool) (error, 
 			// This is expensive
 			opt1s := opt1.Serialize()
 			opt2s := opt2.Serialize()
-			//fmt.Printf("collapse %s and %s (%d vs %d)\n", opt1s, opt2s, opt1complex, opt2complex)
+			
 			if opt1s == opt2s {
 				*changeDetected = true
 				return nil, opt1.UpdateTopNodeMetrics()
@@ -296,7 +296,7 @@ func optimizeTree(formula *sat_solver.NWFFormula, changeDetected *bool) (error, 
 			// This is expensive
 			opt1s := opt1.Serialize()
 			opt2s := opt2.Serialize()
-			//fmt.Printf("collapse %s and %s (%d vs %d)\n", opt1s, opt2s, opt1complex, opt2complex)
+			
 			if opt1s == opt2s {
 				*changeDetected = true
 				return nil, opt1.UpdateTopNodeMetrics()

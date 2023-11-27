@@ -8,11 +8,8 @@ import (
 )
 
 func AssertSatResult(formula *SATFormula, expectedResult bool) {
-	r, assgn := TestSolveFormula(formula)
+	r, _ := TestSolveFormula(formula)
 	if r != expectedResult {
-		for name, val := range assgn {
-			fmt.Printf("  | %s => %t\n", name, val)
-		}
 		panic(fmt.Sprintf("assertSatResult: Expected %t got %t.", expectedResult, r))
 	}
 }

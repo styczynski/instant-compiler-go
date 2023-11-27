@@ -168,7 +168,7 @@ func GetAllUsagesVariables(node generic_ast.TraversableNode, visitedMap map[gene
 	}
 	visitedMap[node] = struct{}{}
 	if isNilNode(node) {
-		//fmt.Printf("* NIL RET\n")
+		
 		return NewVariableSet()
 	}
 	vars := VariableSet{}
@@ -179,12 +179,12 @@ func GetAllUsagesVariables(node generic_ast.TraversableNode, visitedMap map[gene
 	}
 	if nodeWithUsedVariables, ok := node.(NodeWithUsedVariables); ok {
 		r := nodeWithUsedVariables.GetUsedVariables(vars, visitedMap)
-		//fmt.Printf("* RET %v\n", r)
+		
 		return r
 	} else {
 		//vars.Insert(GetAllVariables(node))
 	}
-	//fmt.Printf("* NORMAL RET %v\n", vars)
+	
 	return vars
 }
 

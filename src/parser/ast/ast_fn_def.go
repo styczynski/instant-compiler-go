@@ -28,7 +28,7 @@ func (ast *FnDef) OnTypeReturned(t hindley_milner.Type) {
 }
 
 func (ast *FnDef) IsRuntime() bool {
-	fmt.Printf("CHECK [%s] IS RUNTIME??\n", ast.RuntimeKeyword)
+	
 	return ast.RuntimeKeyword == "runtime"
 }
 
@@ -126,7 +126,7 @@ func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
 					message,
 					message)
 			} else {
-				//fmt.Printf("NOPE HUJU %s\n", t.String())
+				
 			}
 		}
 	} else {

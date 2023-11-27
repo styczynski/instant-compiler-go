@@ -1,8 +1,6 @@
 package ir
 
 import (
-	"fmt"
-
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
@@ -81,8 +79,6 @@ func (ast *IRIf) RenameVariables(substUsed, substDecl cfg.VariableSubstitution) 
 }
 
 func (ast *IRIf) BuildFlowGraph(builder cfg.CFGBuilder) {
-	fmt.Printf("IRIF BUILD FLOW\n")
-
 	builder.AddBlockSuccesor(ast)
 
 	builder.UpdatePrev([]generic_ast.NormalNode{ast})

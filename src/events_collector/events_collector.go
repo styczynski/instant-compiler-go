@@ -89,7 +89,7 @@ func (collector *EventsCollector) insertTimeAggregation(ids []string, t time.Dur
 
 func (collector *EventsCollector) debugOutputEvent(format string, a ...interface{}) {
 	// Enable on debug
-	//fmt.Printf(format, a...)
+	
 }
 
 func (collector *EventsCollector) runEventsCollectorDeamon() {

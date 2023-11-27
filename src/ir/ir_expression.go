@@ -202,7 +202,7 @@ var OPERATORS_SPECS = map[IROperator]IROperatorSpecs{
 func CreateIROperator(name string, argsCount int, kind IROperatorKind) IROperator {
 	for v, spec := range OPERATORS_SPECS {
 		if spec.MappedName == name && spec.ArgsCount == argsCount && spec.TranslationEnabled && (kind == IR_OP_KIND_ANY || kind == spec.Kind) {
-			//fmt.Printf("RESOLVE OP %s TO %v   (%s %v %d)\n", name, v, name, kind, argsCount)
+			
 			return v
 		}
 	}

@@ -96,7 +96,7 @@ func (d *delegatingLexer) Tokenise(options *TokeniseOptions, text string) (Itera
 	t := nextToken()
 	i := nextInsertion()
 	for t != EOF || i != nil {
-		// fmt.Printf("%d->%d:%q   %d->%d:%q\n", offset, offset+len(t.Value), t.Value, i.start, i.end, Stringify(i.tokens...))
+		// 
 		if t == EOF || (i != nil && i.start < offset+len(t.Value)) {
 			var l Token
 			l, t = splitToken(t, i.start-offset)

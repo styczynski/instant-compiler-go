@@ -2,7 +2,6 @@ package ir
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -41,7 +40,6 @@ func (ir *IRGeneratorState) NextTempVar() string {
 }
 
 func translateType(t hindley_milner.Type) IRType {
-	fmt.Printf("Translate? %v\n", t)
 	resolvedType := IR_UNKNOWN
 	if _, ok := t.(*hindley_milner.FunctionType); ok {
 		resolvedType = IR_FN
@@ -62,7 +60,7 @@ func translateType(t hindley_milner.Type) IRType {
 var translatorFreeID int = 0
 
 func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generic_ast.Expression) ([]*IRStatement, IRType, string) {
-	fmt.Printf("  -> Expr: %s{%s}\n", reflect.TypeOf(node), node.(generic_ast.PrintableNode).Print(c))
+	
 
 	ret := []*IRStatement{}
 	resultVar := ir.NextTempVar()
@@ -104,7 +102,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 	} else if syscallExpr, ok := node.(*ast.Syscall); ok {
 		argList := []string{}
 		argListT := []IRType{}
-		fmt.Printf("SYSCALL TARGET %v\n", syscallExpr.Target)
+		
 		for _, arg := range syscallExpr.Arguments {
 			s, t, v := generateIRExpr(c, ir, arg)
 			ret = append(ret, s...)
@@ -167,7 +165,7 @@ func generateIRExpr(c *context.ParsingContext, ir *IRGeneratorState, node generi
 			argList := []string{}
 			argListT := []IRType{}
 			sTarget, vType, vTarget := generateIRExpr(c, ir, e.Index)
-			fmt.Printf("CALL TARGET %v\n", vTarget)
+			
 			ret = append(ret, sTarget...)
 			for _, arg := range e.Arguments {
 				s, t, v := generateIRExpr(c, ir, arg)
@@ -405,7 +403,7 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 	//func(cfg *CFG, block *Block) []generic_ast.NormalNode
 	MapEntireGraph(graph, func(g *cfg.CFG, block *cfg.Block, node cfg.CFGCodeNode) []*IRStatement {
 		if node != nil {
-			fmt.Printf("=> NODE[%d]: %s{%s}\n", block.ID, reflect.TypeOf(node), node.Print(c))
+			
 		}
 		ret := []*IRStatement{}
 
@@ -442,10 +440,8 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 				}
 				traceBlockID, lastDoBlockID = traceNext[0], traceBlock.ID
 				started = true
-				fmt.Printf("--> While points to [%s]\n", g.GetBlockCode(traceBlockID).Print(c))
 			}
 
-			fmt.Printf("WHILE LOOP\n")
 			ret = append(ret, WrapIRIf(&IRIf{
 				BaseASTNode:   e.BaseASTNode,
 				Condition:     vCond,
@@ -462,7 +458,7 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 		} else if e, ok := node.(*ast.If); ok {
 			s, t, v := generateIRExpr(c, ir, e.Condition)
 			// thenNode := e.Then.GetChildren()[0].(*ast.Block).Statements[0].GetChildren()[0].(cfg.CFGCodeNode)
-			// fmt.Printf("[?] If contents: %s{%s}\n", reflect.TypeOf(thenNode), thenNode.Print(c))
+			// 
 
 			thenBlockID := extractIfBlockJumpID(e.Then, graph)
 			if thenBlockID == -1 {
@@ -567,8 +563,6 @@ func MapEntireGraph(graph *cfg.CFG, mapper ControlFlowGraphMapper) {
 			return
 		}
 
-		//fmt.Printf("KURWA MAC PIERDOLONA W DUPE: %d\n", block.ID)
-
 		visitedIDs[block.ID] = struct{}{}
 
 		blockContents[block.ID] = &IRBlock{
@@ -608,7 +602,7 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 	convertToSSA(graph, ir)
 
 	// outputCodeIR := outputIR(root, graph, c)
-	// fmt.Printf("\n\nSSA:\n\n%s", outputCodeIR.Print(c))
+	// 
 
 	phiElim(graph, c)
 	regSplit(graph, c)
@@ -623,7 +617,7 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 	irLiveness := irAnalysis.Liveness()
 	reaching := irAnalysis.Reaching()
 	for _, blockID := range irCFG.ListBlockIDs() {
-		//fmt.Printf("CFG TYPE %s\n", reflect.TypeOf(irCFG.GetBlockCode(blockID)))
+		
 		parent := irCFG.GetBlockCode(blockID).Parent()
 		if parent != nil {
 			stmt := parent.(*IRStatement)
@@ -640,12 +634,6 @@ func CreateIR(root generic_ast.Expression, flow cfg.FlowAnalysis, c *context.Par
 	for cont {
 		subst, cont = copyCollaps(graph, c, subst)
 	}
-
-	// fmt.Printf("Fold done (IR):\n")
-	// fmt.Printf("\n\nENTIRE CODE IR:\n\n%s", outputCodeIR.Print(c))
-	// fmt.Printf("\n\nENTIRE GRAPH IR:\n\n")
-	// fmt.Print(irAnalysis.Print(c))
-	// fmt.Printf("Yeah.\n")
 
 	return outputCodeIR
 }

@@ -1,8 +1,6 @@
 package ir
 
 import (
-	"fmt"
-	"reflect"
 
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -73,13 +71,13 @@ func outputIR(root generic_ast.Expression, graph *cfg.CFG, c *context.ParsingCon
 		}
 	})
 
-	fmt.Printf("FUNCTION ROOT %s\n", reflect.TypeOf(root).String())
+	
 	// TODO: Move elsewhere
 	if topDef, ok := root.(*ast.TopDef); ok {
 		newStmts := []*IRStatement{}
 		argTypes := topDef.Function.GetDeclarationType().Concrete().(*hindley_milner.FunctionType).FlatTypes()
 		for argNo, argAst := range topDef.Function.Arg {
-			fmt.Printf("RESOLVING ARGS!!!!! => %v\n", argTypes[argNo])
+			
 			newStmts = append(newStmts, WrapIRMacroCall(&IRMacroCall{
 				Type: translateType(argTypes[argNo]),
 				Var:  "",
@@ -96,7 +94,7 @@ func outputIR(root generic_ast.Expression, graph *cfg.CFG, c *context.ParsingCon
 			newStmts = append(newStmts, stmt)
 		}
 		ret.FunctionBody[0].Statements = newStmts
-		//fmt.Printf("FUN RET CHECK: <<%v>>\n", newStmts)
+		
 	}
 
 	return ret

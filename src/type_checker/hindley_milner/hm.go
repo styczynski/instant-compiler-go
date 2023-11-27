@@ -228,8 +228,8 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 		return nil, nil, err
 	}
 
-	//fmt.Printf("PIZDO TRY TO GET ALL INTROSPECTION\n")
-	//fmt.Printf("%v\n", infer.cs)
+	
+	
 
 	for _, ics := range infer.GetIntrospectionConstraints() {
 		is := newSolver()
@@ -239,7 +239,7 @@ func Infer(env Env, expr generic_ast.Expression, config *InferConfiguration, inf
 		introExpr.OnTypeReturned(h)
 	}
 
-	//fmt.Printf("EEEEEEND PIZDO TRY TO GET ALL INTROSPECTION!\n")
+	
 
 	return ret, infer.GetReturnEnv(), nil
 }

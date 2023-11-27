@@ -49,6 +49,6 @@ func (c *CFG) ReferencedVars(node generic_ast.TraversableNode) ReferencedVars {
 		decl: GetAllDeclaredVariables(node, map[generic_ast.TraversableNode]struct{}{}),
 		use:  GetAllUsagesVariables(node, map[generic_ast.TraversableNode]struct{}{}),
 	}
-	//fmt.Printf("REF %s\n", r.Print())
+	
 	//return r
 }

@@ -85,13 +85,9 @@ func TestComputeGraphColouring() {
 	g.AddBoth(2, 3) //  2 -- 3
 	g.AddBoth(1, 3)
 
-	err, colouring := ComputeGraphColouring(g)
+	err, _ := ComputeGraphColouring(g)
 	if err != nil {
 		panic(err)
-	}
-
-	for node, colour := range colouring {
-		fmt.Printf("\nNode %d has colour %d", node, colour)
 	}
 }
 

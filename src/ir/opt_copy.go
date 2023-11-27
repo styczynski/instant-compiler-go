@@ -33,7 +33,7 @@ func copyCollaps(graph *cfg.CFG, c *context.ParsingContext, subst cfg.VariableSu
 					isOk := true
 					// for {
 					// 	if vNewName, ok := subst[vName]; ok {
-					// 		fmt.Printf("   %s -> %s\n", vName, vNewName)
+					// 		
 					// 		vName = vNewName
 					// 	} else {
 					// 		break
@@ -42,11 +42,11 @@ func copyCollaps(graph *cfg.CFG, c *context.ParsingContext, subst cfg.VariableSu
 					if varSet.HasVariable(vName) {
 						isOk = false
 					}
-					//fmt.Printf("Ignore %s because it has %s (%s)\n", cpy.Print(c), vName, next.Print(c))
+					
 					if isOk {
 						if !newSubstFound {
 							// We can eliminate variable
-							//fmt.Printf("Subst %s => %s because of %s and next %s\n", cpy.TargetName, cpy.Var, stmt.Print(c), next.Print(c))
+							
 							subst[cpy.TargetName] = cpy.Var
 							newSubstFound = true
 							substFrom = cpy.TargetName
@@ -93,6 +93,6 @@ func copyCollaps(graph *cfg.CFG, c *context.ParsingContext, subst cfg.VariableSu
 		}
 
 	})
-	//fmt.Printf("EXIT subs\n")
+	
 	return subst, true
 }

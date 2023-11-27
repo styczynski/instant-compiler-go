@@ -40,7 +40,7 @@ func (infer *ImperInferenceBackend) LogContext(c *context.ParsingContext) map[st
 	exprStr := ""
 	if len(infer.callQueue) > 0 {
 		expr := infer.callQueue[len(infer.callQueue)-1]
-		//fmt.Printf("ELO :=> %v\n", reflect.TypeOf(expr))
+		
 		if posExpr, ok := expr.(generic_ast.NodeWithPosition); ok {
 			begin := posExpr.Begin()
 			end := posExpr.End()
@@ -135,7 +135,7 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 
 	defer func() {
 		if intro, ok := expr.(IntrospectionExpression); ok {
-			//fmt.Printf("Add intro for %s\n", expr)
+			
 			bodyType := infer.t
 			intro.OnTypeReturned(bodyType)
 		}
@@ -233,9 +233,9 @@ func (infer *ImperInferenceBackend) GenerateConstraints(expr generic_ast.Express
 		}
 	}
 
-	// fmt.Printf("THE ENV:")
+	// 
 	// PrintEnv(infer.env)
-	// fmt.Printf("END")
+	// 
 
 	logs.Debug(infer, "Generate constraints for: %s", reflect.TypeOf(expr))
 

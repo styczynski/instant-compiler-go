@@ -426,7 +426,7 @@ func (tc *LatteTypeChecker) checkAsync(programPromise parser.LatteParsedProgramP
 		}, func() {
 			close(r)
 		})
-		//fmt.Printf("%#v\n", program)
+		
 		if program.ParsingError() != nil {
 			r <- LatteTypecheckedProgram{
 				Program:  program,
@@ -508,5 +508,5 @@ var scheme *hindley_milner.Scheme
 		log.Printf("%+v", errors.Cause(err))
 	}
 	simpleType, ok := scheme.Type()
-	fmt.Printf("simple Type: %v | isMonoType: %v | err: %v\n", simpleType, ok, err)
+	
 */

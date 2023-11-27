@@ -1,8 +1,6 @@
 package flow_analysis
 
 import (
-	"fmt"
-
 	"github.com/styczynski/latte-compiler/src/errors"
 	"github.com/styczynski/latte-compiler/src/flow_analysis/cfg"
 	"github.com/styczynski/latte-compiler/src/generic_ast"
@@ -273,11 +271,11 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				ast := nodeForAnalysis.(generic_ast.NormalNode)
 				flow := cfg.CreateFlowAnalysis(ast)
 
-				//fmt.Printf("START FLOW ANALYSIS\n")
+				
 
-				//fmt.Printf("\n\nENTIRE GRAPH:\n\n")
-				//fmt.Print(flow.Print(ctx))
-				//fmt.Printf("\nPerform fold()\n")
+				
+				
+				
 				err := flow.ConstFold(c)
 				if err != nil {
 					if flowErrGlobal == nil {
@@ -295,7 +293,7 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 				//flow.Optimize(c)
 				//nodeForAnalysis.AfterFlowAnalysis(flow)
 
-				fmt.Printf("ENTIRE CODE IS HERE:\n\n\n%s\n\n\n", flow.Output().Print(c))
+				
 
 				irCode := ir.CreateIR(e, flow, c)
 				irProgram.Statements = append(irProgram.Statements, irCode)

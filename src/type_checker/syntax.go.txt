@@ -384,7 +384,7 @@ func Example_greenspun() {
 		log.Printf("%+v", errors.Cause(err))
 	}
 	simpleType, ok := scheme.Type()
-	fmt.Printf("simple Type: %v | isMonoType: %v | err: %v\n", simpleType, ok, err)
+	
 
 	//scheme, err = hindley_milner.Infer(env, fac)
 	//if err != nil {
@@ -393,7 +393,7 @@ func Example_greenspun() {
 	//}
 	//
 	//facType, ok := scheme.Type()
-	//fmt.Printf("fac Type: %v | isMonoType: %v | err: %v", facType, ok, err)
+	
 
 	// Output:
 	// simple Type: Float | isMonoType: true | err: <nil>

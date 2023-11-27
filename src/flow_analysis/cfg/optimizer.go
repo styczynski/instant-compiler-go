@@ -11,7 +11,7 @@ func (flow *FlowAnalysisImpl) Optimize(c *context.ParsingContext) {
 	for _, b := range cfg.blocks {
 		block := b
 		if cfg.codeMapping[block.ID] != nil {
-			//fmt.Printf("OPTIMIZE %v\n", reflect.TypeOf(block.stmt))
+			
 			if rmb, ok := cfg.codeMapping[block.ID].(NodeWithRemovableVariableAsignment); ok {
 				liveVars := liveness.BlockIn(block.ID)
 				refVars := flow.graph.ReferencedVars(cfg.codeMapping[block.ID])
@@ -26,7 +26,7 @@ func (flow *FlowAnalysisImpl) Optimize(c *context.ParsingContext) {
 						varsToRemove[asgtVarName] = struct{}{}
 					}
 				}
-				//fmt.Printf("REMOVE %v from block %d (live vars %v)\n", varsToRemove, block.ID, liveVars)
+				
 				cfg.ReplaceBlockCode(block.ID, rmb.RemoveVariableAssignment(varsToRemove))
 			}
 

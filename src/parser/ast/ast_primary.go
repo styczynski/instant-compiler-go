@@ -364,13 +364,13 @@ func (ast *Primary) ExpressionType() hindley_milner.ExpressionType {
 
 func (ast *Primary) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	if ast.IsVariable() {
-		//fmt.Printf("GET USED VARIABLES PRIMARY: VAR[%s]\n", *ast.Variable)
+		
 		return cfg.NewVariableSet(cfg.NewVariable(*ast.Variable, ast))
 	} else if ast.IsSubexpression() {
-		//fmt.Printf("GET USED VARIABLES PRIMARY: SUB\n")
+		
 		return vars
 	}
-	//fmt.Printf("GET USED VARIABLES PRIMARY: NONE\n")
+	
 	return cfg.NewVariableSet()
 }
 

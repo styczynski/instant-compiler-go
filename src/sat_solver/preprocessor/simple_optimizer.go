@@ -134,7 +134,7 @@ func (opt *SimpleOptimizer) notEqual(clause *Clause, clause2 *Clause) bool {
 }
 
 func (opt *SimpleOptimizer) subset(clause *Clause, clause2 *Clause) bool {
-	//fmt.Printf("  Is %s subset of %s?", clause.String(opt), clause2.String(opt))
+	
 	if clause.hash & ^clause2.hash != 0 {
 		return false
 	}
@@ -148,11 +148,11 @@ func (opt *SimpleOptimizer) subset(clause *Clause, clause2 *Clause) bool {
 			}
 		}
 		if !found {
-			//fmt.Printf("  NO\n")
+			
 			return false
 		}
 	}
-	//fmt.Printf("  YES\n")
+	
 	return true
 }
 
@@ -172,7 +172,7 @@ func (opt *SimpleOptimizer) findSubsumed(clause *Clause) []*Clause {
 	}
 	for cPrim := range opt.occur[pLit] {
 		if !cPrim.isDeleted {
-			//fmt.Printf("Check %s <%p> and %s <%p>\n", clause.String(opt), clause, cPrim.String(opt), cPrim)
+			
 			if opt.notEqual(clause, cPrim) && len(clause.vars) <= len(cPrim.vars) && opt.subset(clause, cPrim) {
 				res = append(res, cPrim)
 			}
@@ -204,7 +204,7 @@ func (opt *SimpleOptimizer) getAddedClauseCandidates(added *map[*Clause]struct{}
 
 // Remove varID from clause
 func (opt *SimpleOptimizer) strenghten(clause *Clause, varID sat_solver.CNFLiteral) error {
-	//fmt.Printf("Strengthen clause: %s by %s\n", clause.String(opt), opt.vars.Reverse(varID))
+	
 
 	len1 := len(clause.vars)
 
@@ -236,13 +236,13 @@ func (opt *SimpleOptimizer) strenghten(clause *Clause, varID sat_solver.CNFLiter
 	//	opt.removeClause(clause)
 	//}
 
-	//fmt.Printf("Strengthen result: %s\n", clause.String(opt))
+	
 	opt.validateState()
 	return nil
 }
 
 func (opt *SimpleOptimizer) removeClause(clause *Clause) {
-	//fmt.Printf("Remove clause: %s\n", clause.String(opt))
+	
 	clause.isDeleted = true
 	delete(opt.clauses, clause)
 	if len(clause.vars) == 1 {
@@ -483,11 +483,11 @@ func (opt *SimpleOptimizer) simplify() error {
 	for {
 		// Subsumption
 
-		//fmt.Printf("Iterate added %d\n", len(opt.added))
+		
 
 		S0 := opt.getAddedClauseCandidates(&opt.added, true)
 		for {
-			//fmt.Printf("Iterate strenghtened\n")
+			
 
 			S1 := opt.getAddedClauseCandidates(&opt.added, false)
 			for a := range opt.added {
@@ -515,7 +515,7 @@ func (opt *SimpleOptimizer) simplify() error {
 			}
 		}
 
-		//fmt.Printf("Subsuming S0\n")
+		
 		for c := range S0 {
 			if !c.isDeleted {
 				opt.subsume(c)
@@ -524,9 +524,9 @@ func (opt *SimpleOptimizer) simplify() error {
 
 		// Variable elimination
 
-		//fmt.Printf("Variable elimination loop\n")
+		
 		for {
-			//fmt.Printf("Eliminate variables\n")
+			
 			S := opt.touched
 			opt.touched = map[sat_solver.CNFLiteral]struct{}{}
 			for x := range S {
@@ -591,9 +591,9 @@ func (opt *SimpleOptimizer) blockedClauseElimination() bool {
 				}
 				if isBlocked {
 					// We can remove blocked clause
-					/*fmt.Printf("Clause %s is blocked on %s:\n", clauseWithV.String(opt), opt.vars.Reverse(v))
+					/*
 					for i, c := range debugTraceClause {
-						fmt.Printf("   by %s (var %s)\n", c.String(opt), opt.vars.Reverse(debugTraceClauseVarID[i]))
+						
 					}*/
 					opt.removeClause(clauseWithV)
 					changeDetected = true

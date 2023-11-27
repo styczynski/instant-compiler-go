@@ -191,7 +191,7 @@ func (ast *Statement) Body() generic_ast.Expression {
 	}
 	ast.BaseASTNode = generic_ast.BaseASTNode{}
 	ast.ParentNode = nil
-	//fmt.Printf("Failed for node %s\n", repr.String(ast))
+	
 	panic("Invalid Statement type")
 }
 

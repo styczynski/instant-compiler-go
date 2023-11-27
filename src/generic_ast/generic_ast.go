@@ -45,12 +45,12 @@ type TraversableNode interface {
 }
 
 func ReplaceExpressionRecursively(node TraversableNode, oldNode TraversableNode, newNode TraversableNode) TraversableNode {
-	//fmt.Printf("REPLACE %p -> %p <%b>\n", oldNode, newNode, oldNode == newNode)
+	
 	if e, ok := node.(Expression); ok {
 		var mapper ExpressionVisitor
 		visitedNodes := map[Expression]struct{}{}
 		mapper = func(parent Expression, e Expression, context VisitorContext) {
-			//fmt.Printf("REPLACE %p\n", e)
+			
 			if _, ok := visitedNodes[e]; ok {
 				return
 			}
@@ -59,7 +59,7 @@ func ReplaceExpressionRecursively(node TraversableNode, oldNode TraversableNode,
 				//if newExpr, ok := newNode.(Expression); ok {
 				//	return newExpr.Map(parent, mapper, context)
 				//}
-				//fmt.Printf("-- REPLACE --\n")
+				
 				if reflect.TypeOf(e).Kind() == reflect.Ptr {
 					// Pointer:
 					reflect.ValueOf(e).Elem().Set(reflect.ValueOf(newNode).Elem())
@@ -74,7 +74,7 @@ func ReplaceExpressionRecursively(node TraversableNode, oldNode TraversableNode,
 		}
 		e.Visit(e, mapper, NewEmptyVisitorContext())
 	}
-	//fmt.Printf("Replacement done\n")
+	
 	return node
 }
 

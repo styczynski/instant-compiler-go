@@ -316,7 +316,7 @@ func (ast *IRStatement) formatIRStatementInstruction(irstatement string, c *cont
 }
 
 func (ast *IRStatement) RenameVariables(substUsed, substDecl cfg.VariableSubstitution) {
-	//fmt.Printf("RENAME IN STATMENT :DD %s\n", ast.VarOut)
+	
 	newVarIn := cfg.VariableSet{}
 	for v, d := range ast.VarIn {
 		newName := substDecl.Replace(substUsed.Replace(v))
@@ -333,7 +333,7 @@ func (ast *IRStatement) RenameVariables(substUsed, substDecl cfg.VariableSubstit
 	if len(children) > 0 {
 		children[0].(cfg.NodeWithVariableReplacement).RenameVariables(substUsed, substDecl)
 	}
-	//fmt.Printf("RENAME IN STATMENT :C %s (with %v and %v)\n", ast.VarOut, substDecl, substUsed)
+	
 }
 
 func (ast *IRStatement) Print(c *context.ParsingContext) string {
@@ -401,7 +401,7 @@ func (ast *IRStatement) Body() generic_ast.Expression {
 	}
 	ast.BaseASTNode = generic_ast.BaseASTNode{}
 	ast.ParentNode = nil
-	//fmt.Printf("Failed for node %s\n", repr.String(ast))
+	
 	panic("Invalid IRStatement type")
 }
 
