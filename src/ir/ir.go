@@ -436,7 +436,7 @@ func genrateIR(graph *cfg.CFG, c *context.ParsingContext, ir *IRGeneratorState) 
 				traceBlock := g.GetBlock(traceBlockID)
 				traceNext := traceBlock.GetSuccs()
 				if len(traceNext) != 1 {
-					panic("While failure")
+					return ret
 				}
 				traceBlockID, lastDoBlockID = traceNext[0], traceBlock.ID
 				started = true
