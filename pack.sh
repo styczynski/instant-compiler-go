@@ -8,6 +8,7 @@ cd $DIR && \
 rm -rfd /tmp/ps386038/.git && \
 rm -rfd /tmp/ps386038/.go && \
 rm -rfd /tmp/ps386038/tests && \
+rm -rfd /tmp/ps386038/instant-compiler-go && \
 cd /tmp/ && \
 tar -czvf ps386038.tar.gz ./ps386038 && \
 cd $DIR && \
