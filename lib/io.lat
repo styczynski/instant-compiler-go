@@ -13,17 +13,16 @@ void printString(int a) runtime {
     return;
 }
 
-void rawLoadString(string s) {
-    syscall void scanf("%s", s);
-}
+/* void rawLoadString(string s) {} */
 
 void rawLoadInt(int n) {
     syscall void scanf("%d", n);
 }
 
 string readString() runtime {
-    string s = syscall string malloc(100);
-    rawLoadString(s);
+    // string s = syscall string malloc(100);
+    // rawLoadString(s);
+    string s = "";
     return s;
 }
 

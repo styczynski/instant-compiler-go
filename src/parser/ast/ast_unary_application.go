@@ -171,12 +171,12 @@ func (ast *UnaryApplication) RenameVariables(subst cfg.VariableSubstitution) {
 
 func (ast *UnaryApplication) GetUsedVariables(vars cfg.VariableSet, visitedMap map[generic_ast.TraversableNode]struct{}) cfg.VariableSet {
 	if ast.IsApplication() {
-		vars.Insert(cfg.GetAllUsagesVariables(ast.Index, map[generic_ast.TraversableNode]struct{}{}))
+		vars.Insert(cfg.GetAllUsagesVariables(ast.Index, visitedMap))
 		for _, arg := range ast.Arguments {
-			vars.Insert(cfg.GetAllUsagesVariables(arg, map[generic_ast.TraversableNode]struct{}{}))
+			vars.Insert(cfg.GetAllUsagesVariables(arg, visitedMap))
 		}
 	} else if ast.IsIndex() {
-		vars.Insert(cfg.GetAllUsagesVariables(ast.Index, map[generic_ast.TraversableNode]struct{}{}))
+		vars.Insert(cfg.GetAllUsagesVariables(ast.Index, visitedMap))
 	}
 	return vars
 }

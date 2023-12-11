@@ -78,6 +78,18 @@ func (ast *FnDef) Print(c *context.ParsingContext) string {
 		ast.FunctionBody.Print(c))
 }
 
+func (ast *FnDef) PrintSimple(c *context.ParsingContext) string {
+	argsList := []string{}
+	for _, arg := range ast.Arg {
+		argsList = append(argsList, arg.Print(c))
+	}
+
+	return printNode(c, ast, "%s %s(%s) {...}",
+		ast.ReturnType.Print(c),
+		ast.Name,
+		strings.Join(argsList, ", "))
+}
+
 /////
 
 func (ast *FnDef) canBeInputType(t hindley_milner.Type) bool {
@@ -85,6 +97,7 @@ func (ast *FnDef) canBeInputType(t hindley_milner.Type) bool {
 }
 
 func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
+	argsDefs := map[string]*Arg{}
 	if _, ok := ast.Parent().(*TopDef); ok {
 		if ast.Name == "main" {
 			returnedType, _ := ast.ReturnType.GetType(nil).Type()
@@ -107,6 +120,17 @@ func (ast *FnDef) Validate(c *context.ParsingContext) generic_ast.NodeError {
 			}
 		}
 		for _, arg := range ast.Arg {
+			if previous, ok := argsDefs[arg.Name]; ok {
+				t1, _ := arg.ArgumentType.GetType(nil).Type()
+				t2, _ := previous.ArgumentType.GetType(nil).Type()
+				message := fmt.Sprintf("Function definition %s contains duplicate argument defition for '%s' (type %s and %s)", ast.PrintSimple(c), arg.Name, t1.String(), t2.String())
+				return generic_ast.NewNodeError(
+					"Duplicate function argument",
+					ast,
+					message,
+					message)
+			}
+			argsDefs[arg.Name] = arg
 			t, _ := arg.ArgumentType.GetType(nil).Type()
 			if !ast.canBeInputType(t) {
 				filteredArgsStrs := []string{}

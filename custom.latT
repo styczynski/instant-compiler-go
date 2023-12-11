@@ -1,0 +1,7 @@
+int f(auto r) {
+  return 1+r;
+}
+
+int main() {
+  return f(2);
+}

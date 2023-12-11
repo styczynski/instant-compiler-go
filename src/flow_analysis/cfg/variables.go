@@ -163,27 +163,32 @@ func (v VariableSet) Insert(src VariableSet) {
 }
 
 func GetAllUsagesVariables(node generic_ast.TraversableNode, visitedMap map[generic_ast.TraversableNode]struct{}) VariableSet {
+	//fmt.Printf("GAUV 000 %v\n", reflect.TypeOf(node))
 	if _, wasVisited := visitedMap[node]; wasVisited {
 		return NewVariableSet()
 	}
+	//fmt.Printf("GAUV 0\n")
 	visitedMap[node] = struct{}{}
 	if isNilNode(node) {
 		
 		return NewVariableSet()
 	}
 	vars := VariableSet{}
+	//fmt.Printf("GAUV 1\n")
 	for _, child := range node.GetChildren() {
 		if child != nil {
 			vars.Insert(GetAllUsagesVariables(child, visitedMap))
 		}
 	}
+	//fmt.Printf("GAUV 2\n")
 	if nodeWithUsedVariables, ok := node.(NodeWithUsedVariables); ok {
 		r := nodeWithUsedVariables.GetUsedVariables(vars, visitedMap)
-		
+		//fmt.Printf("GAUV 4\n")
 		return r
 	} else {
 		//vars.Insert(GetAllVariables(node))
 	}
+	//fmt.Printf("GAUV 3\n")
 	
 	return vars
 }

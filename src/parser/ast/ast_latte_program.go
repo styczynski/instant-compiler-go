@@ -77,12 +77,23 @@ func (ast *LatteProgram) Body() generic_ast.Expression {
 
 func (ast *LatteProgram) Validate(c *context.ParsingContext) generic_ast.NodeError {
 	
+    declaredFuncs := map[string]*FnDef{}
+
 	hasMain := false
 	for _, def := range ast.Definitions {
 		if def.IsFunction() {
 			if def.Function.Name == "main" {
 				hasMain = true
 			}
+			if previous, ok := declaredFuncs[def.Function.Name]; ok {
+				message := fmt.Sprintf("Function %s was defined twice. First defintion was: '%s' and the second one: '%s'", def.Function.Name, def.Function.PrintSimple(c), previous.PrintSimple(c))
+				return generic_ast.NewNodeError(
+					"Duplicate function",
+					def.Function,
+					message,
+					message)
+			}
+			declaredFuncs[def.Function.Name] = def.Function
 		}
 	}
 	if !hasMain {

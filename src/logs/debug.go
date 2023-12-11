@@ -22,6 +22,12 @@ type LogContext interface {
 	LogContext(c *context.ParsingContext) map[string]interface{}
 }
 
+type EmptyLogContext struct {}
+
+func (EmptyLogContext) LogContext(c *context.ParsingContext) map[string]interface{} {
+	return map[string]interface{}{}
+}
+
 func InitializeLogger(level string, output string) error {
 	// Log as JSON instead of the default ASCII formatter.
 	log.SetFormatter(&formatter.Formatter{

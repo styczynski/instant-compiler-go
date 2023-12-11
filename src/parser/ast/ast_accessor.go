@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
+	"github.com/styczynski/latte-compiler/src/logs"
 
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
@@ -51,6 +52,7 @@ func (ast *Accessor) GetNode() interface{} {
 }
 
 func (ast *Accessor) GetIndexingNode() generic_ast.Expression {
+	logs.Debug(logs.EmptyLogContext{}, "Call GetIndexingNode() on Accessor")
 	if ast.IsIndex() {
 		return ast.IndexingExpr
 	} else if ast.IsProperty() {
@@ -171,6 +173,7 @@ func (ast *Accessor) GetLastAccessor() generic_ast.Expression {
 }
 
 func (ast *Accessor) Body() generic_ast.Expression {
+	logs.Debug(logs.EmptyLogContext{}, "Call Body() on Accessor")
 	/*
 	 * index [target] -> accessor [index1] -> accessor [index2]
 	 *    <proxy>
@@ -180,14 +183,14 @@ func (ast *Accessor) Body() generic_ast.Expression {
 	cur := ast.GetIndexingNode()
 	var expr generic_ast.Expression
 	if ast.IsTop() {
-		var a interface{}
-		fmt.Printf("%v", a.(bool))
 		expr = ast.ParentNode.(*Index).Primary
 	} else {
 		expr = ast.ParentNode.(generic_ast.Expression)
 	}
 
+	logs.Debug(logs.EmptyLogContext{}, "Returned Body() on Accessor")
 	if !ast.IsProperty() {
+		logs.Debug(logs.EmptyLogContext{}, "Batch return")
 		return hindley_milner.Batch{
 			Exp: []generic_ast.Expression{
 				expr,
@@ -195,6 +198,7 @@ func (ast *Accessor) Body() generic_ast.Expression {
 			},
 		}
 	} else {
+		logs.Debug(logs.EmptyLogContext{}, "Batch return")
 		return hindley_milner.Batch{
 			Exp: []generic_ast.Expression{
 				expr,

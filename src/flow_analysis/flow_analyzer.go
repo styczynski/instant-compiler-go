@@ -252,7 +252,9 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 			}
 			e.Visit(parent, mappingVisitor, context)
 		}
-		astTree.Visit(astTree, mappingVisitor, generic_ast.NewEmptyVisitorContext())
+		if 1 == 1 {
+			astTree.Visit(astTree, mappingVisitor, generic_ast.NewEmptyVisitorContext())
+		}
 
 		var flowVisitor generic_ast.ExpressionVisitor
 		visitedNodes = map[generic_ast.Expression]interface{}{}
@@ -263,6 +265,8 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 			Statements: []*ir.IRFunction{},
 		}
 		flowVisitor = func(parent generic_ast.Expression, e generic_ast.Expression, context generic_ast.VisitorContext) {
+			//fmt.Printf("Visiting %v\n", reflect.TypeOf(e))
+
 			if _, ok := visitedNodes[e]; ok {
 				return
 			}
@@ -275,7 +279,7 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 
 				
 				
-				
+				//fmt.Printf("Const fold\n")
 				err := flow.ConstFold(c)
 				if err != nil {
 					if flowErrGlobal == nil {
@@ -283,7 +287,9 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 					}
 					return
 				}
+				//fmt.Printf("Const fold rebuild\n")
 				flow.Rebuild()
+				//fmt.Printf("Trigger\n")
 				//ast = flow.Output()
 
 				//flow.Optimize(c)
@@ -295,8 +301,8 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 
 				
 
-				irCode := ir.CreateIR(e, flow, c)
-				irProgram.Statements = append(irProgram.Statements, irCode)
+				//irCode := ir.CreateIR(e, flow, c)
+				//irProgram.Statements = append(irProgram.Statements, irCode)
 
 				customErr := nodeForAnalysis.OnFlowAnalysis(flow)
 				if customErr != nil {
@@ -311,7 +317,10 @@ func (fa *LatteFlowAnalyzer) analyzerAsync(programPromise type_checker.LatteType
 			e.Visit(parent, flowVisitor, context)
 			return
 		}
-		astTree.Visit(astTree, flowVisitor, generic_ast.NewEmptyVisitorContext())
+		if 1 == 1 {
+			astTree.Visit(astTree, flowVisitor, generic_ast.NewEmptyVisitorContext())
+		}
+		//fmt.Printf("Flow completerd")
 
 		//os.Exit(42)
 		if flowErrGlobal != nil {

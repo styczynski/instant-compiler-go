@@ -1,0 +1,13 @@
+int funkcja_ifbooltrudny (boolean f, boolean t) {
+  if ((!f && f) || !(f || !t)) {
+    printInt(1042);
+  } else {
+    printInt(2042);
+  }
+  return 0;
+}
+
+int main () {
+  funkcja_ifbooltrudny (false, true);
+  return 0;
+}

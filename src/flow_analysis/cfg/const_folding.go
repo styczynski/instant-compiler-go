@@ -2,7 +2,6 @@ package cfg
 
 import (
 	"reflect"
-
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 	"github.com/styczynski/latte-compiler/src/parser/context"
 )
@@ -106,7 +105,8 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 	g := flow.Graph()
 	flow.Reaching()
 
-	for true {
+	for i := 1; i <= 10; i++ {
+		//fmt.Printf("refold...")
 		
 		change := false
 
@@ -123,17 +123,20 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 				generic_ast.ReplaceExpressionRecursively(stmt, stmt, newNode)
 			}
 		}
+		//fmt.Printf("refold A")
 
 		for _, block := range flow.graph.blocksOrder {
-			
+			//fmt.Printf("refold beforeG")
 			vars := flow.graph.ReferencedVars(g.codeMapping[block])
-			
+			//fmt.Printf("refold G")
 			for _, variable := range vars.use {
+				//fmt.Printf("refold B")
 
 				var variableDecl *Variable = nil
 				
 				for _, reachingBlock := range flow.graph.blocksOrder {
-					
+					//fmt.Printf("refold C")
+
 					if _, hasBlock := flow.reaching.ReachedBlocks(reachingBlock)[block]; hasBlock {
 						for _, defVar := range flow.graph.ReferencedVars(g.codeMapping[reachingBlock]).decl {
 							if defVar.Name() == variable.Name() {
@@ -145,13 +148,13 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 					
 				}
 				
-
+				//fmt.Printf("refold F")
 				if variableDecl == nil {
 					
 					continue
 				}
 
-				
+				//fmt.Printf("refold D")
 				node := (*variableDecl).Value()
 				if !isNilNode(node) {
 					if constExtractable, ok := node.(generic_ast.ConstExtractableNode); ok {
@@ -166,6 +169,7 @@ func (flow *FlowAnalysisImpl) ConstFold(c *context.ParsingContext) ConstFoldingE
 						}
 					}
 				}
+				//fmt.Printf("refold E")
 				
 			}
 		}

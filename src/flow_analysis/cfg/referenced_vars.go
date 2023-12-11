@@ -2,7 +2,6 @@ package cfg
 
 import (
 	"fmt"
-
 	"github.com/styczynski/latte-compiler/src/generic_ast"
 )
 
@@ -43,11 +42,21 @@ func (vars ReferencedVars) Print() string {
 }
 
 func (c *CFG) ReferencedVars(node generic_ast.TraversableNode) ReferencedVars {
+
+	//fmt.Printf("REFA\n")
+	asgt := GetAllAssignedVariables(node, false, map[generic_ast.TraversableNode]struct{}{})
+	//fmt.Printf("REFB\n")
+	updt := GetAllAssignedVariables(node, true, map[generic_ast.TraversableNode]struct{}{})
+	//fmt.Printf("REFC\n")
+	decl := GetAllDeclaredVariables(node, map[generic_ast.TraversableNode]struct{}{})
+	//fmt.Printf("REFD %v\n", reflect.TypeOf(node))
+	use := GetAllUsagesVariables(node, map[generic_ast.TraversableNode]struct{}{})
+	//fmt.Printf("REFE\n")
 	return ReferencedVars{
-		asgt: GetAllAssignedVariables(node, false, map[generic_ast.TraversableNode]struct{}{}),
-		updt: GetAllAssignedVariables(node, true, map[generic_ast.TraversableNode]struct{}{}),
-		decl: GetAllDeclaredVariables(node, map[generic_ast.TraversableNode]struct{}{}),
-		use:  GetAllUsagesVariables(node, map[generic_ast.TraversableNode]struct{}{}),
+		asgt: asgt,
+		updt: updt,
+		decl: decl,
+		use:  use,
 	}
 	
 	//return r

@@ -44,8 +44,8 @@ build-native: install
 	go build -o $(BIN) ./cmd/latte-compiler/main.go
 
 tests: build-native
-	./latc_test ./tests/bad/*.lat
-	./latc_test ./tests/good/*.lat
+	./latc_test ./base_tests/bad/*.lat
+	./latc_test ./base_tests/good/*.lat
 
 build-test-image:
 	docker build -t latc-test-image -f test.Dockerfile .
